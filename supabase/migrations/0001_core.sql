@@ -48,3 +48,22 @@ create table if not exists points_ledger (
   ref_id uuid,
   created_at timestamptz not null default now()
 );
+
+-- 行级安全（RLS）：
+-- 公开表（赛程）允许匿名 SELECT；用户数据表锁定（仅服务端/直连可写）。
+alter table tournaments enable row level security;
+alter table teams enable row level security;
+alter table matches enable row level security;
+alter table profiles enable row level security;
+alter table points_ledger enable row level security;
+
+drop policy if exists "public read tournaments" on tournaments;
+create policy "public read tournaments" on tournaments for select using (true);
+
+drop policy if exists "public read teams" on teams;
+create policy "public read teams" on teams for select using (true);
+
+drop policy if exists "public read matches" on matches;
+create policy "public read matches" on matches for select using (true);
+
+-- profiles / points_ledger 不设公开策略：默认拒绝匿名访问，仅服务端/直连操作。

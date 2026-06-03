@@ -32,3 +32,6 @@ Thumbs.db
 
 # 本地工具数据
 .claude/
+
+# 机密（凭据/密钥，绝不提交）
+docs/secret/
