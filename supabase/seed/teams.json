@@ -1,0 +1,9 @@
+[
+  { "name": "东道主", "group": "A 组", "flag": "🏟️" },
+  { "name": "巴西", "group": "C 组", "flag": "🇧🇷" },
+  { "name": "阿根廷", "group": "C 组", "flag": "🇦🇷" },
+  { "name": "法国", "group": "E 组", "flag": "🇫🇷" },
+  { "name": "西班牙", "group": "E 组", "flag": "🇪🇸" },
+  { "name": "德国", "group": "G 组", "flag": "🇩🇪" },
+  { "name": "葡萄牙", "group": "G 组", "flag": "🇵🇹" }
+]

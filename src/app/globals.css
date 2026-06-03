@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+/* DESIGN.md 令牌 —— 暗色硬朗体育/电竞风（Tailwind v4 CSS-first） */
+@theme {
+  --color-bg: #0a0e13;
+  --color-surface: #141a22;
+  --color-surface-2: #1b232d;
+  --color-border: #283340;
+  --color-text: #e8edf2;
+  --color-muted: #8a97a6;
+  --color-green: #1be27f;
+  --color-blue: #2e9bff;
+  --color-amber: #ffb02e;
+  --color-red: #ff5436;
+  --color-gold: #f5c451;
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-pill: 30px;
+
+  --shadow-card: 0 30px 60px rgba(0, 0, 0, 0.55);
+  --shadow-glow: 0 0 18px rgba(27, 226, 127, 0.15);
+}
+
+@theme inline {
+  --font-head: var(--font-oswald), "Noto Sans SC", sans-serif;
+  --font-body: var(--font-inter), "Noto Sans SC", sans-serif;
+}
+
+html,
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+body {
+  font-family: var(--font-body);
+}
