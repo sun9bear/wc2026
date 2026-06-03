@@ -1,0 +1,34 @@
+# 依赖
+node_modules/
+.pnp
+.pnp.*
+
+# Next.js / 构建产物
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+
+# 环境变量 / 密钥
+.env
+.env.local
+.env*.local
+
+# 日志
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# 部署
+.vercel
+
+# 编辑器 / 操作系统
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# 本地工具数据
+.claude/

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>球迷趣味预测·2026 — 样图（暗色硬朗体育/电竞风）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0E13; --surface:#141A22; --surface2:#1B232D; --border:#283340;
+    --text:#E8EDF2; --muted:#8A97A6;
+    --green:#1BE27F; --green-dim:rgba(27,226,127,.14);
+    --blue:#2E9BFF; --amber:#FFB02E; --red:#FF5436; --gold:#F5C451;
+    --num:'Oswald',sans-serif; --body:'Inter','Noto Sans SC',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:radial-gradient(1200px 600px at 50% -10%,#10202a 0%,var(--bg) 55%);
+    color:var(--text);font-family:var(--body);min-height:100vh;padding:40px 20px 80px}
+  .page-title{text-align:center;margin-bottom:6px;font-family:var(--num);font-weight:700;
+    font-size:30px;letter-spacing:.5px}
+  .page-title span{color:var(--green)}
+  .page-sub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:36px}
+  .stage{display:flex;gap:28px;justify-content:center;flex-wrap:wrap;align-items:flex-start}
+  .label{text-align:center;color:var(--muted);font-size:12px;margin-top:12px;letter-spacing:1px;text-transform:uppercase}
+
+  /* phone frame */
+  .phone{width:384px;max-width:92vw;background:var(--surface);border:1px solid var(--border);
+    border-radius:34px;overflow:hidden;box-shadow:0 30px 60px rgba(0,0,0,.55),0 0 0 1px rgba(27,226,127,.05),0 0 40px rgba(27,226,127,.07);
+    position:relative}
+  .scr{height:780px;overflow:hidden;display:flex;flex-direction:column}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 18px 12px}
+  .brand{font-family:var(--num);font-weight:700;font-size:18px;letter-spacing:.5px}
+  .brand b{color:var(--green)}
+  .coins{display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);
+    padding:6px 12px;border-radius:30px;font-family:var(--num);font-weight:600;font-size:15px;color:var(--gold)}
+  .body{flex:1;overflow:hidden;padding:4px 16px 0}
+
+  /* section headings */
+  .sec-h{display:flex;align-items:center;justify-content:space-between;margin:16px 2px 10px}
+  .sec-h h3{font-family:var(--num);font-weight:600;font-size:15px;letter-spacing:.5px;color:var(--text)}
+  .seg{display:flex;gap:4px;background:var(--surface2);border:1px solid var(--border);padding:3px;border-radius:30px}
+  .seg span{font-size:11px;padding:5px 11px;border-radius:30px;color:var(--muted)}
+  .seg span.on{background:var(--green);color:#06231a;font-weight:700}
+
+  /* match card */
+  .match{background:linear-gradient(180deg,#18222c,#131a22);border:1px solid var(--border);
+    border-radius:18px;padding:16px;margin-top:6px}
+  .mtag{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);margin-bottom:14px}
+  .live{display:inline-flex;align-items:center;gap:5px;color:var(--green);font-weight:700;letter-spacing:.5px}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(27,226,127,.7);animation:p 1.6s infinite}
+  @keyframes p{0%{box-shadow:0 0 0 0 rgba(27,226,127,.6)}70%{box-shadow:0 0 0 8px rgba(27,226,127,0)}100%{box-shadow:0 0 0 0 rgba(27,226,127,0)}}
+  .teams{display:flex;align-items:center;justify-content:space-between}
+  .team{display:flex;flex-direction:column;align-items:center;gap:8px;width:96px}
+  .crest{font-size:40px;line-height:1}
+  .team .nm{font-weight:600;font-size:14px}
+  .vs{font-family:var(--num);font-weight:700;color:var(--muted);font-size:13px}
+  .kick{font-family:var(--num);font-size:13px;color:var(--text);text-align:center}
+  .kick .d{color:var(--muted);font-size:11px}
+
+  /* selections */
+  .picks{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+  .pick{background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:11px 6px;text-align:center;position:relative;cursor:pointer}
+  .pick .pl{font-size:11px;color:var(--muted);margin-bottom:5px}
+  .pick .od{font-family:var(--num);font-weight:700;font-size:24px;line-height:1}
+  .pick.sel{border-color:var(--green);background:var(--green-dim);box-shadow:0 0 18px rgba(27,226,127,.15)}
+  .pick.sel .od{color:var(--green)}
+  .pick .arrow{font-size:9px;position:absolute;top:7px;right:8px}
+  .up{color:var(--green)} .down{color:var(--red)}
+
+  /* community sentiment */
+  .senti{margin-top:14px}
+  .senti .row{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px}
+  .bar{height:7px;border-radius:6px;background:var(--surface2);overflow:hidden;display:flex}
+  .bar i{display:block;height:100%}
+  .bar .b1{width:64%;background:var(--green)} .bar .b2{width:21%;background:var(--amber)} .bar .b3{width:15%;background:var(--red)}
+
+  /* stake */
+  .stake{background:var(--surface2);border:1px solid var(--border);border-radius:16px;padding:14px;margin-top:16px}
+  .stake .ln{display:flex;justify-content:space-between;align-items:center}
+  .stake .k{font-size:12px;color:var(--muted)}
+  .stake .inv{font-family:var(--num);font-weight:700;font-size:22px}
+  .slider{height:6px;border-radius:6px;background:#0d141b;margin:14px 0 4px;position:relative}
+  .slider .fill{position:absolute;left:0;top:0;height:100%;width:42%;background:var(--green);border-radius:6px}
+  .slider .knob{position:absolute;left:42%;top:50%;transform:translate(-50%,-50%);width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px rgba(27,226,127,.25)}
+  .win{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:12px;color:var(--muted)}
+  .win b{font-family:var(--num);font-size:20px;color:var(--green)}
+
+  .cta{margin:16px 0 8px;background:var(--green);color:#06231a;text-align:center;font-weight:700;
+    padding:15px;border-radius:14px;font-size:16px;box-shadow:0 8px 24px rgba(27,226,127,.28)}
+  .disc{text-align:center;font-size:10px;color:var(--muted);padding-bottom:8px}
+
+  /* tab bar */
+  .tabs{display:flex;justify-content:space-around;padding:12px 8px 16px;border-top:1px solid var(--border);background:#0f151c}
+  .tab{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:var(--muted)}
+  .tab .ic{font-size:18px}
+  .tab.on{color:var(--green)}
+
+  /* leaderboard */
+  .podium{display:flex;justify-content:center;align-items:flex-end;gap:10px;margin:14px 0 6px}
+  .pod{display:flex;flex-direction:column;align-items:center;gap:6px}
+  .pod .av{width:54px;height:54px;border-radius:50%;background:linear-gradient(145deg,#22303d,#15202a);
+    display:flex;align-items:center;justify-content:center;font-size:24px;border:2px solid var(--border)}
+  .pod.first .av{width:66px;height:66px;border-color:var(--gold);box-shadow:0 0 22px rgba(245,196,81,.35)}
+  .pod.second .av{border-color:#cfd8e3}.pod.third .av{border-color:#d98a4a}
+  .pod .rk{font-family:var(--num);font-weight:700;font-size:15px}
+  .pod.first .rk{color:var(--gold)} .pod .nm{font-size:11px;color:var(--text)} .pod .pt{font-family:var(--num);font-size:12px;color:var(--muted)}
+  .crown{font-size:16px;margin-bottom:-4px}
+
+  .lrow{display:flex;align-items:center;gap:11px;background:var(--surface2);border:1px solid var(--border);
+    border-radius:13px;padding:10px 12px;margin-bottom:8px}
+  .lrow .pos{font-family:var(--num);font-weight:700;font-size:16px;width:22px;text-align:center;color:var(--muted)}
+  .lrow .av2{width:36px;height:36px;border-radius:50%;background:#22303d;display:flex;align-items:center;justify-content:center;font-size:17px}
+  .lrow .info{flex:1}
+  .lrow .nm2{font-size:13px;font-weight:600}
+  .badge{display:inline-block;font-size:9px;padding:2px 7px;border-radius:20px;font-weight:700;margin-top:3px}
+  .bz-gold{background:rgba(245,196,81,.16);color:var(--gold)}
+  .bz-plat{background:rgba(46,155,255,.16);color:var(--blue)}
+  .bz-silver{background:rgba(207,216,227,.14);color:#cfd8e3}
+  .lrow .pt2{font-family:var(--num);font-weight:700;font-size:16px}
+  .lrow .ch{font-size:10px;margin-left:6px}
+  .lrow.me{border-color:var(--green);background:var(--green-dim)}
+
+  /* profile */
+  .phead{display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 0 4px}
+  .phead .pav{width:78px;height:78px;border-radius:50%;background:linear-gradient(145deg,#22303d,#15202a);
+    display:flex;align-items:center;justify-content:center;font-size:36px;border:2px solid var(--gold);box-shadow:0 0 24px rgba(245,196,81,.25)}
+  .phead .pn{font-weight:700;font-size:18px}
+  .rankchip{display:inline-flex;align-items:center;gap:6px;background:rgba(245,196,81,.14);color:var(--gold);
+    font-family:var(--num);font-weight:700;font-size:13px;padding:5px 12px;border-radius:20px}
+  .xp{width:100%;margin-top:6px}
+  .xp .xt{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:5px}
+  .xp .xbar{height:8px;border-radius:6px;background:var(--surface2);overflow:hidden}
+  .xp .xbar i{display:block;height:100%;width:72%;background:linear-gradient(90deg,var(--green),var(--blue))}
+  .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+  .tile{background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:14px}
+  .tile .tv{font-family:var(--num);font-weight:700;font-size:26px}
+  .tile .tk{font-size:11px;color:var(--muted);margin-top:2px}
+  .tile .g{color:var(--green)} .tile .a{color:var(--amber)} .tile .b{color:var(--blue)}
+  .badges{display:flex;gap:10px;margin-top:8px}
+  .bd{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:12px 6px;text-align:center}
+  .bd .bi{font-size:26px} .bd .bn{font-size:10px;color:var(--muted);margin-top:5px}
+  .bd.lock{opacity:.4;filter:grayscale(1)}
+  .sharecard{margin-top:16px;background:linear-gradient(135deg,#0f2a20,#10202b);border:1px solid var(--green);
+    border-radius:16px;padding:14px;display:flex;align-items:center;justify-content:space-between}
+  .sharecard .st{font-size:12px;color:var(--text)} .sharecard .ss{font-size:10px;color:var(--muted);margin-top:3px}
+  .sharebtn{background:var(--green);color:#06231a;font-weight:700;font-size:12px;padding:8px 14px;border-radius:20px}
+  @media(max-width:480px){.scr{height:auto;min-height:680px}}
+</style>
+</head>
+<body>
+  <div class="page-title">环球足球<span>预测</span> · 2026</div>
+  <div class="page-sub">样图 · 暗色硬朗体育/电竞风 · 移动端（手机/电脑自适应）· 措辞中性 · 仅供娱乐</div>
+
+  <div class="stage">
+
+    <!-- 1. 比赛预测页 -->
+    <div>
+    <div class="phone"><div class="scr">
+      <div class="topbar">
+        <div class="brand">环球足球<b>预测</b></div>
+        <div class="coins">🪙 1,280</div>
+      </div>
+      <div class="body">
+        <div class="match">
+          <div class="mtag">小组赛 · C组 · 第2轮 &nbsp;|&nbsp; <span class="live"><span class="dot"></span>实时倍率</span></div>
+          <div class="teams">
+            <div class="team"><div class="crest">🇧🇷</div><div class="nm">巴西</div></div>
+            <div style="text-align:center"><div class="vs">VS</div><div class="kick">06-18 03:00<div class="d">8 小时后开赛</div></div></div>
+            <div class="team"><div class="crest">🇦🇷</div><div class="nm">阿根廷</div></div>
+          </div>
+          <div class="picks">
+            <div class="pick"><span class="arrow down">▼</span><div class="pl">主胜</div><div class="od">2.15</div></div>
+            <div class="pick sel"><span class="arrow up">▲</span><div class="pl">平局</div><div class="od">3.40</div></div>
+            <div class="pick"><span class="arrow up">▲</span><div class="pl">客胜</div><div class="od">3.05</div></div>
+          </div>
+          <div class="senti">
+            <div class="row"><span>大家怎么选</span><span>巴西 64% · 平 21% · 阿根廷 15%</span></div>
+            <div class="bar"><i class="b1"></i><i class="b2"></i><i class="b3"></i></div>
+          </div>
+        </div>
+
+        <div class="stake">
+          <div class="ln"><span class="k">投入积分</span><span class="inv">200</span></div>
+          <div class="slider"><div class="fill"></div><div class="knob"></div></div>
+          <div class="win"><span>命中可派分</span><span><b>+680</b> 积分</span></div>
+        </div>
+        <div class="cta">提交预测</div>
+        <div class="disc">仅供娱乐 · 积分无现实价值 · 不可兑换现金</div>
+      </div>
+      <div class="tabs">
+        <div class="tab on"><span class="ic">⚽</span>预测</div>
+        <div class="tab"><span class="ic">🏆</span>排行</div>
+        <div class="tab"><span class="ic">📊</span>战绩</div>
+        <div class="tab"><span class="ic">👤</span>我的</div>
+      </div>
+    </div></div>
+    <div class="label">① 比赛预测页</div>
+    </div>
+
+    <!-- 2. 排行榜 -->
+    <div>
+    <div class="phone"><div class="scr">
+      <div class="topbar">
+        <div class="brand">排行榜</div>
+        <div class="seg"><span>总榜</span><span class="on">本轮</span><span>好友</span></div>
+      </div>
+      <div class="body">
+        <div class="podium">
+          <div class="pod second"><div class="av">🦊</div><div class="rk">2</div><div class="nm">老球痞</div><div class="pt">9,840</div></div>
+          <div class="pod first"><div class="crown">👑</div><div class="av">🐉</div><div class="rk">1</div><div class="nm">预测之神</div><div class="pt">12,310</div></div>
+          <div class="pod third"><div class="av">🐺</div><div class="rk">3</div><div class="nm">绿茵狼</div><div class="pt">9,120</div></div>
+        </div>
+
+        <div class="lrow"><div class="pos">4</div><div class="av2">🦁</div><div class="info"><div class="nm2">铁卫不败</div><span class="badge bz-gold">黄金 I</span></div><div class="pt2">8,760 <span class="ch up">▲2</span></div></div>
+        <div class="lrow me"><div class="pos">5</div><div class="av2">🎯</div><div class="info"><div class="nm2">你 · 进球如麻</div><span class="badge bz-plat">铂金 III</span></div><div class="pt2">8,430 <span class="ch up">▲5</span></div></div>
+        <div class="lrow"><div class="pos">6</div><div class="av2">🐲</div><div class="info"><div class="nm2">看球老炮</div><span class="badge bz-gold">黄金 II</span></div><div class="pt2">8,210 <span class="ch down">▼1</span></div></div>
+        <div class="lrow"><div class="pos">7</div><div class="av2">🦅</div><div class="info"><div class="nm2">冷门收割机</div><span class="badge bz-silver">白银 I</span></div><div class="pt2">7,990 <span class="ch up">▲3</span></div></div>
+        <div class="lrow"><div class="pos">8</div><div class="av2">🐯</div><div class="info"><div class="nm2">南看台之声</div><span class="badge bz-silver">白银 II</span></div><div class="pt2">7,640 <span class="ch down">▼2</span></div></div>
+      </div>
+      <div class="tabs">
+        <div class="tab"><span class="ic">⚽</span>预测</div>
+        <div class="tab on"><span class="ic">🏆</span>排行</div>
+        <div class="tab"><span class="ic">📊</span>战绩</div>
+        <div class="tab"><span class="ic">👤</span>我的</div>
+      </div>
+    </div></div>
+    <div class="label">② 排行榜（段位勋章）</div>
+    </div>
+
+    <!-- 3. 个人战绩 -->
+    <div>
+    <div class="phone"><div class="scr">
+      <div class="topbar">
+        <div class="brand">我的战绩</div>
+        <div class="coins">🪙 1,280</div>
+      </div>
+      <div class="body">
+        <div class="phead">
+          <div class="pav">🎯</div>
+          <div class="pn">进球如麻</div>
+          <div class="rankchip">🛡 铂金 III</div>
+          <div class="xp">
+            <div class="xt"><span>距 钻石 I</span><span>720 / 1000 XP</span></div>
+            <div class="xbar"><i></i></div>
+          </div>
+        </div>
+        <div class="tiles">
+          <div class="tile"><div class="tv g">61%</div><div class="tk">命中率</div></div>
+          <div class="tile"><div class="tv a">7</div><div class="tk">最高连胜</div></div>
+          <div class="tile"><div class="tv b">8,430</div><div class="tk">总积分</div></div>
+          <div class="tile"><div class="tv">142</div><div class="tk">预测场次</div></div>
+        </div>
+        <div class="sec-h"><h3>徽章</h3><span style="font-size:11px;color:var(--muted)">8 / 24 已解锁</span></div>
+        <div class="badges">
+          <div class="bd"><div class="bi">🎯</div><div class="bn">比分大师</div></div>
+          <div class="bd"><div class="bi">🔥</div><div class="bn">五连胜</div></div>
+          <div class="bd"><div class="bi">🦄</div><div class="bn">冷门猎手</div></div>
+          <div class="bd lock"><div class="bi">💎</div><div class="bn">全中之夜</div></div>
+        </div>
+        <div class="sharecard">
+          <div><div class="st">🏅 生成炫耀战报卡</div><div class="ss">把你的连胜战绩分享到朋友圈/小红书</div></div>
+          <div class="sharebtn">生成</div>
+        </div>
+      </div>
+      <div class="tabs">
+        <div class="tab"><span class="ic">⚽</span>预测</div>
+        <div class="tab"><span class="ic">🏆</span>排行</div>
+        <div class="tab on"><span class="ic">📊</span>战绩</div>
+        <div class="tab"><span class="ic">👤</span>我的</div>
+      </div>
+    </div></div>
+    <div class="label">③ 个人战绩页</div>
+    </div>
+
+  </div>
+</body>
+</html>
