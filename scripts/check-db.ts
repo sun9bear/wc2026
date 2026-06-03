@@ -14,7 +14,9 @@ async function main(): Promise<void> {
   const sb = createClient(url, key);
   const { data, error } = await sb
     .from("matches")
-    .select("id, kickoff_at, stage")
+    .select(
+      "id, kickoff_at, stage, home:home_team_id(name, flag, grp), away:away_team_id(name, flag)"
+    )
     .order("kickoff_at");
 
   if (error) {

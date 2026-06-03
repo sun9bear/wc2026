@@ -64,6 +64,11 @@ create policy "public read teams" on teams for select using (true);
 drop policy if exists "public read matches" on matches;
 create policy "public read matches" on matches for select using (true);
 
+-- 授予 Data API 角色对公开表的读取（因建项目时关闭了"自动暴露新表"）。
+-- 服务端用 secret key 时不依赖此项；将来要做客户端直读/实时再用。
+grant usage on schema public to anon, authenticated, service_role;
+grant select on tournaments, teams, matches to anon, authenticated, service_role;
+
 -- 占位赛程数据（仅当 matches 为空时灌入；中性命名，不含 FIFA/世界杯字样）。
 do $$
 declare t_id uuid;
