@@ -1,11 +1,11 @@
 // DeepSeek（OpenAI 兼容）聊天补全。仅服务端使用。
-// 带 15s 超时（AbortController）：避免在 cron 结算等场景里挂死、吃满 maxDuration。
-export async function chat(system: string, user: string): Promise<string> {
+// 带超时（AbortController，默认 15s；受限场景如 cron 可传更短值）：避免挂死、吃满 maxDuration。
+export async function chat(system: string, user: string, timeoutMs = 15000): Promise<string> {
   const key = process.env.DEEPSEEK_API_KEY;
   if (!key) throw new Error("缺少 DEEPSEEK_API_KEY");
 
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 15000);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await fetch("https://api.deepseek.com/chat/completions", {
       method: "POST",

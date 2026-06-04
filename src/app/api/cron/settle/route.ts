@@ -17,6 +17,7 @@ interface FdMatch {
 // 受 CRON_SECRET 保护：Vercel Cron 会自动带 Authorization: Bearer <CRON_SECRET>；
 // 外部定时服务（cron-job.org 等）也用同一密钥调用即可。
 export async function GET(req: NextRequest) {
+  const t0 = Date.now();
   const secret = process.env.CRON_SECRET;
   if (!secret) {
     return NextResponse.json({ error: "CRON_SECRET 未配置" }, { status: 500 });
@@ -71,17 +72,21 @@ export async function GET(req: NextRequest) {
   const settled = newlySettled.length;
 
   // 阶段二：结算已全部落库后，再尽力而为生成赛后小结。
-  // 限量 RECAP_CAP 条 + 每次调用 15s 超时（见 deepseek.ts），避免吃满 maxDuration；
-  // 超出部分留给 `scripts/gen-recaps.ts` 补录。任何失败都不影响已完成的结算。
+  // 用「整体时间预算(相对 t0) + 更短单次超时」严格约束在 maxDuration(60s) 内返回：
+  //   最坏 = 预算 40s 内停止启动新调用，最后一次 ≤ 8s×2(可能重试) → ≈56s < 60s。
+  //   未完成的（被预算/上限/失败卡住）一律留给 `scripts/gen-recaps.ts` 补录，绝不影响已落库的结算。
   const RECAP_CAP = 8;
+  const RECAP_DEADLINE_MS = 40000;
+  const RECAP_CALL_TIMEOUT_MS = 8000;
   let recaps = 0;
   for (const s of newlySettled.slice(0, RECAP_CAP)) {
+    if (Date.now() - t0 > RECAP_DEADLINE_MS) break;
     try {
-      const body = await generateRecap(s.home, s.away, s.hs, s.as);
+      const body = await generateRecap(s.home, s.away, s.hs, s.as, RECAP_CALL_TIMEOUT_MS);
       await upsertContent(sb, s.id, "recap", body);
       recaps++;
     } catch {
-      /* 忽略 AI 失败 */
+      /* 忽略 AI 失败/超时 */
     }
   }
 

@@ -15,12 +15,18 @@ const SENTIMENT_SYSTEM = `你是足球赛事的趣味解说员，为一款【无
 - 绝对禁止出现：投注、下注、赌、博彩、赔率、庄家、盘口、彩票、竞彩、体彩、推荐、必赢、稳赢、稳赚 等字眼，也不得给出任何下注/投注建议或暗示。
 - 用"人气、热门、冷门、倍率、预测"等中性词。不要写免责声明（系统会另行追加）。`;
 
-async function safeGen(system: string, user: string, fallback: string): Promise<string> {
-  let body = await chat(system, user);
+async function safeGen(
+  system: string,
+  user: string,
+  fallback: string,
+  timeoutMs?: number
+): Promise<string> {
+  let body = await chat(system, user, timeoutMs);
   if (findBannedTerms(body, "zh").length > 0) {
     body = await chat(
       system + "\n注意：上次输出包含了违禁词，请务必彻底避免任何博彩/投注相关字眼。",
-      user
+      user,
+      timeoutMs
     );
   }
   // 仍不合规则用安全兜底文案（§9.1 护栏：公开输出必须过雷词 lint 才发布）
@@ -40,12 +46,14 @@ export function generateRecap(
   home: string,
   away: string,
   homeScore: number,
-  awayScore: number
+  awayScore: number,
+  timeoutMs?: number
 ): Promise<string> {
   return safeGen(
     RECAP_SYSTEM,
     `请为这场已结束的比赛写一段赛后趣味小结，最终比分 ${home} ${homeScore}:${awayScore} ${away}。`,
-    `${home} ${homeScore}:${awayScore} ${away}，一场精彩对决落下帷幕！`
+    `${home} ${homeScore}:${awayScore} ${away}，一场精彩对决落下帷幕！`,
+    timeoutMs
   );
 }
 

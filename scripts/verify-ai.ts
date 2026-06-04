@@ -11,7 +11,12 @@ interface Row {
 
 async function main() {
   const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!);
-  const { data } = await sb.from("ai_content").select("type, body");
+  const { data, error } = await sb.from("ai_content").select("type, body");
+  // 作为合规闸：读不到表（缺表/权限/库不可用）必须判失败，不能当成"零违规"放行。
+  if (error) {
+    console.error("✗ 读取 ai_content 失败，无法校验（按失败处理）:", error.message);
+    process.exit(1);
+  }
   const rows = (data as Row[] | null) ?? [];
 
   let bad = 0;
