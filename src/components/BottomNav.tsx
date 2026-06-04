@@ -12,8 +12,6 @@ const TABS = [
 
 export function BottomNav() {
   const pathname = usePathname();
-  // 串关页有自己的底部提交条，隐藏底栏避免叠放
-  if (pathname === "/parlay") return null;
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 h-14 border-t border-border bg-surface/95 backdrop-blur">

@@ -153,7 +153,7 @@ export default function ParlayPage() {
       <p className="mt-1 mb-4 text-xs text-muted">选 2 场以上、每场一个结果，全部命中才赢，倍率连乘。</p>
 
       {loading ? (
-        <div className="space-y-3 pb-40">
+        <div className="space-y-3 pb-52">
           {[0, 1, 2, 3, 4].map((i) => (
             <Skeleton key={i} className="h-24 w-full" />
           ))}
@@ -165,7 +165,7 @@ export default function ParlayPage() {
         </div>
       ) : null}
 
-      <div className="pb-40">
+      <div className="pb-52">
         {matches.map((m) => (
           <div key={m.id} className="mb-3 rounded-lg border border-border bg-surface p-3">
             <div className="mb-2 text-[11px] text-muted">
@@ -201,7 +201,7 @@ export default function ParlayPage() {
         ))}
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 border-t border-border bg-bg/95 backdrop-blur">
+      <div className="fixed inset-x-0 bottom-14 border-t border-border bg-bg/95 backdrop-blur">
         <div className="mx-auto w-full max-w-xl px-4 py-3">
           <div className="flex items-center justify-between text-xs text-muted">
             <span>
