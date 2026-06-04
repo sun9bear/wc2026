@@ -7,6 +7,7 @@ import { teamZh } from "@/lib/football/teams";
 import { combinedMultiplier } from "@/lib/odds/pooledOdds";
 import { quotePayout } from "@/lib/bets/quote";
 import { Disclaimer } from "@/components/Disclaimer";
+import { Skeleton } from "@/components/Skeleton";
 
 interface Sel {
   id: string;
@@ -45,6 +46,7 @@ const ORDER: Record<string, number> = { home: 0, draw: 1, away: 2 };
 
 export default function ParlayPage() {
   const [matches, setMatches] = useState<Mt[]>([]);
+  const [loading, setLoading] = useState(true);
   const [picked, setPicked] = useState<Record<string, string>>({});
   const [stake, setStake] = useState(100);
   const [busy, setBusy] = useState(false);
@@ -83,6 +85,7 @@ export default function ParlayPage() {
         });
       }
       setMatches(list);
+      setLoading(false);
     })();
   }, []);
 
@@ -149,9 +152,15 @@ export default function ParlayPage() {
       </div>
       <p className="mt-1 mb-4 text-xs text-muted">选 2 场以上、每场一个结果，全部命中才赢，倍率连乘。</p>
 
-      {matches.length === 0 && (
+      {loading ? (
+        <div className="space-y-3 pb-40">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-24 w-full" />
+          ))}
+        </div>
+      ) : matches.length === 0 ? (
         <p className="mt-10 text-center text-sm text-muted">暂无可串关的比赛。</p>
-      )}
+      ) : null}
 
       <div className="pb-40">
         {matches.map((m) => (

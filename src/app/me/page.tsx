@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase/client";
 import { Disclaimer } from "@/components/Disclaimer";
 import { CheckinCard } from "@/components/CheckinCard";
 import { fmtPoints } from "@/lib/format";
+import { Skeleton } from "@/components/Skeleton";
 
 interface MeData {
   balance: number;
@@ -63,7 +64,17 @@ export default function MePage() {
         <CheckinCard />
       </div>
 
-      {state === "loading" && <p className="mt-10 text-center text-sm text-muted">加载中…</p>}
+      {state === "loading" && (
+        <div className="mt-5 space-y-4">
+          <Skeleton className="h-20 w-full" />
+          <div className="grid grid-cols-2 gap-3">
+            <Skeleton className="h-[72px]" />
+            <Skeleton className="h-[72px]" />
+            <Skeleton className="h-[72px]" />
+            <Skeleton className="h-[72px]" />
+          </div>
+        </div>
+      )}
 
       {state === "none" && (
         <div className="mt-10 text-center">

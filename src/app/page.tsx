@@ -15,8 +15,20 @@ function dateKey(iso: string): string {
   });
 }
 
-export default async function Home() {
-  const matches = await getMatches();
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ filter?: string }>;
+}) {
+  const { filter = "all" } = await searchParams;
+  const all = await getMatches();
+  const now = Date.now();
+  const matches = all.filter((m) => {
+    if (filter === "upcoming")
+      return m.status !== "settled" && new Date(m.kickoffAt).getTime() > now;
+    if (filter === "done") return m.status === "settled";
+    return true;
+  });
 
   const groups: { date: string; items: FixtureMatch[] }[] = [];
   for (const m of matches) {
@@ -50,6 +62,30 @@ export default async function Home() {
           </Link>
         </nav>
       </header>
+
+      <div className="mb-5 flex gap-2 text-xs">
+        {(
+          [
+            ["all", "全部"],
+            ["upcoming", "未开赛"],
+            ["done", "已结束"],
+          ] as const
+        ).map(([k, label]) => (
+          <Link
+            key={k}
+            href={k === "all" ? "/" : `/?filter=${k}`}
+            className={`rounded-pill border px-3 py-1 ${
+              filter === k ? "border-green text-green" : "border-border text-muted"
+            }`}
+          >
+            {label}
+          </Link>
+        ))}
+      </div>
+
+      {groups.length === 0 && (
+        <p className="mt-10 text-center text-sm text-muted">该筛选下暂无比赛。</p>
+      )}
 
       {groups.map((g) => (
         <section key={g.date} className="mb-6">
