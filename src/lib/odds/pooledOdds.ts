@@ -46,3 +46,9 @@ export function computeMultipliers(stakes: number[], cfg: OddsConfig = {}): numb
   const total = stakes.reduce((a, b) => a + b, 0);
   return stakes.map((s) => pooledMultiplier(s, total, stakes.length, cfg));
 }
+
+/** 串关连乘倍率 = 各腿倍率之积（保留两位小数）。 */
+export function combinedMultiplier(multipliers: number[]): number {
+  const p = multipliers.reduce((a, b) => a * b, 1);
+  return Math.round(p * 100) / 100;
+}

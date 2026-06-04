@@ -1,5 +1,5 @@
 import { it, expect, describe } from "vitest";
-import { pooledMultiplier, computeMultipliers } from "./pooledOdds";
+import { pooledMultiplier, computeMultipliers, combinedMultiplier } from "./pooledOdds";
 
 describe("pooledMultiplier", () => {
   it("无人下注时各选项倍率 = 选项数", () => {
@@ -41,5 +41,15 @@ describe("computeMultipliers", () => {
   });
   it("偏斜池 → 热门低冷门高", () => {
     expect(computeMultipliers([300, 0, 0])).toEqual([1.5, 6, 6]);
+  });
+});
+
+describe("combinedMultiplier", () => {
+  it("连乘各腿", () => {
+    expect(combinedMultiplier([3, 3])).toBe(9);
+    expect(combinedMultiplier([2, 2.5, 2])).toBe(10);
+  });
+  it("空数组 → 1", () => {
+    expect(combinedMultiplier([])).toBe(1);
   });
 });
