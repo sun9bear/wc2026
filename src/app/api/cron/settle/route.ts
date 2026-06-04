@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { settleMatch } from "@/lib/settlement/settleMatch";
+import { generateRecap } from "@/lib/ai/content";
+import { upsertContent } from "@/lib/ai/store";
+import { teamZh } from "@/lib/football/teams";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -45,12 +48,29 @@ export async function GET(req: NextRequest) {
     if (ft?.home == null || ft?.away == null) continue;
     const { data: row } = await sb
       .from("matches")
-      .select("id, status")
+      .select("id, status, home:home_team_id(name), away:away_team_id(name)")
       .eq("external_id", m.id)
       .maybeSingle();
-    const match = row as { id: string; status: string } | null;
+    const match = row as {
+      id: string;
+      status: string;
+      home: { name: string } | null;
+      away: { name: string } | null;
+    } | null;
     if (!match || match.status === "settled") continue;
     await settleMatch(sb, match.id, ft.home, ft.away);
+    // 赛后小结：DeepSeek 生成 + 入库，尽力而为，失败不影响结算
+    try {
+      const body = await generateRecap(
+        teamZh(match.home?.name ?? "?"),
+        teamZh(match.away?.name ?? "?"),
+        ft.home,
+        ft.away
+      );
+      await upsertContent(sb, match.id, "recap", body);
+    } catch {
+      /* 忽略 AI 失败 */
+    }
     settled++;
   }
 
