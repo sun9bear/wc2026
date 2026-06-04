@@ -3,6 +3,7 @@ import Script from "next/script";
 import { Oswald, Inter } from "next/font/google";
 import "./globals.css";
 import { BottomNav } from "@/components/BottomNav";
+import { Footer } from "@/components/Footer";
 import { ToastProvider } from "@/components/Toast";
 
 const oswald = Oswald({
@@ -37,13 +38,14 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-bg text-text font-body pb-16">
         <ToastProvider>
           {children}
+          <Footer />
           <BottomNav />
         </ToastProvider>
         <Script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6993272715247473"
           crossOrigin="anonymous"
-          strategy="afterInteractive"
+          strategy="beforeInteractive"
         />
       </body>
     </html>
