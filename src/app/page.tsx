@@ -16,9 +16,14 @@ export default async function Home() {
           </h1>
           <p className="mt-1 text-sm text-muted">{zh.tagline}</p>
         </div>
-        <Link href="/leaderboard" className="shrink-0 text-xs text-green">
-          🏆 排行榜
-        </Link>
+        <nav className="flex shrink-0 gap-3 text-xs">
+          <Link href="/leaderboard" className="text-green">
+            🏆 排行榜
+          </Link>
+          <Link href="/me" className="text-green">
+            👤 我的
+          </Link>
+        </nav>
       </header>
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
