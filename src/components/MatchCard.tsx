@@ -1,20 +1,9 @@
 import Link from "next/link";
 import type { FixtureMatch } from "@/lib/fixtures/matches";
+import { TeamBadge } from "@/components/TeamBadge";
 
 function formatKickoff(iso: string): string {
-  return new Date(iso).toLocaleString("zh-CN", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function Team({ name, flag }: { name: string; flag: string }) {
-  return (
-    <div className="flex w-24 flex-col items-center gap-2">
-      <span className="text-4xl leading-none">{flag}</span>
-      <span className="text-center text-sm font-medium">{name}</span>
-    </div>
-  );
+  return new Date(iso).toLocaleString("zh-CN", { hour: "2-digit", minute: "2-digit" });
 }
 
 export function MatchCard({ match }: { match: FixtureMatch }) {
@@ -36,7 +25,7 @@ export function MatchCard({ match }: { match: FixtureMatch }) {
         )}
       </div>
       <div className="flex items-center justify-between">
-        <Team name={match.home.name} flag={match.home.flag} />
+        <TeamBadge name={match.home.name} />
         <div className="text-center">
           {settled ? (
             <div className="font-head text-xl font-bold">
@@ -51,7 +40,7 @@ export function MatchCard({ match }: { match: FixtureMatch }) {
             </>
           )}
         </div>
-        <Team name={match.away.name} flag={match.away.flag} />
+        <TeamBadge name={match.away.name} />
       </div>
     </Link>
   );

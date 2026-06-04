@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getMatchDetail } from "@/lib/markets/getMatchDetail";
 import { MarketPicks } from "@/components/MarketPicks";
 import { Disclaimer } from "@/components/Disclaimer";
+import { TeamBadge } from "@/components/TeamBadge";
 import { result1x2 } from "@/lib/settlement/result";
 
 const RESULT_LABEL: Record<string, string> = { home: "主胜", draw: "平局", away: "客胜" };
@@ -14,15 +15,6 @@ function fmt(iso: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
-}
-
-function Team({ name, flag }: { name: string; flag: string | null }) {
-  return (
-    <div className="flex w-24 flex-col items-center gap-2">
-      <span className="text-4xl leading-none">{flag}</span>
-      <span className="text-center text-sm font-medium">{name}</span>
-    </div>
-  );
 }
 
 export default async function MatchPage({ params }: { params: Promise<{ id: string }> }) {
@@ -45,7 +37,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
           {m.stage} · {fmt(m.kickoffAt)}
         </div>
         <div className="flex items-center justify-between">
-          <Team name={m.home.name} flag={m.home.flag} />
+          <TeamBadge name={m.home.name} size="lg" />
           <div className="text-center">
             {settled ? (
               <div className="font-head text-3xl font-bold">
@@ -55,7 +47,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
               <span className="font-head text-sm text-muted">VS</span>
             )}
           </div>
-          <Team name={m.away.name} flag={m.away.flag} />
+          <TeamBadge name={m.away.name} size="lg" />
         </div>
       </div>
 
