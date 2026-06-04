@@ -39,6 +39,9 @@ export default async function Home() {
           <p className="mt-1 text-sm text-muted">{zh.tagline}</p>
         </div>
         <nav className="flex shrink-0 gap-3 text-xs">
+          <Link href="/parlay" className="text-green">
+            🔗 串关
+          </Link>
           <Link href="/leaderboard" className="text-green">
             🏆 排行榜
           </Link>
