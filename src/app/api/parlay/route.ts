@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { combinedMultiplier } from "@/lib/odds/pooledOdds";
 import { validateStake } from "@/lib/bets/quote";
+import { marketsOpenError } from "@/lib/bets/marketOpen";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +61,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "同一场只能选一个结果" }, { status: 400 });
   }
 
+  // H3：服务端校验所有涉及比赛均未封盘
+  const closedErr = await marketsOpenError(db, sels.map((s) => s.market_id));
+  if (closedErr) return NextResponse.json({ error: closedErr }, { status: 409 });
+
   const combined = combinedMultiplier(sels.map((s) => Number(s.current_multiplier)));
 
   const { data: betRow, error: betErr } = await db
@@ -78,6 +83,22 @@ export async function POST(req: NextRequest) {
   }
   const betId = (betRow as { id: string }).id;
 
+  // H1：原子扣减积分；失败/不足则回滚注单。
+  const { data: debitedBalance, error: debitErr } = await db.rpc("apply_points", {
+    p_user: user.id,
+    p_delta: -stake,
+    p_reason: "bet_stake",
+    p_ref: betId,
+  });
+  if (debitErr || debitedBalance === null || debitedBalance === undefined) {
+    await db.from("bets").delete().eq("id", betId);
+    return NextResponse.json(
+      { error: debitErr ? "下注写入失败" : "积分不足" },
+      { status: debitErr ? 500 : 400 }
+    );
+  }
+  const newBalance = Number(debitedBalance);
+
   await db.from("bet_selections").insert(
     sels.map((s) => ({
       bet_id: betId,
@@ -85,12 +106,6 @@ export async function POST(req: NextRequest) {
       multiplier_at_bet: Number(s.current_multiplier),
     }))
   );
-
-  await db
-    .from("points_ledger")
-    .insert({ user_id: user.id, delta: -stake, reason: "bet_stake", ref_id: betId });
-  const newBalance = balance - stake;
-  await db.from("profiles").update({ points_balance: newBalance }).eq("user_id", user.id);
 
   return NextResponse.json({ ok: true, balance: newBalance, combined, legs: sels.length, betId });
 }

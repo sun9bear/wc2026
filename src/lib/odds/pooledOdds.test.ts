@@ -1,5 +1,5 @@
 import { it, expect, describe } from "vitest";
-import { pooledMultiplier, computeMultipliers, combinedMultiplier } from "./pooledOdds";
+import { pooledMultiplier, computeMultipliers, combinedMultiplier, COMBINED_CAP } from "./pooledOdds";
 
 describe("pooledMultiplier", () => {
   it("无人下注时各选项倍率 = 选项数", () => {
@@ -51,5 +51,11 @@ describe("combinedMultiplier", () => {
   });
   it("空数组 → 1", () => {
     expect(combinedMultiplier([])).toBe(1);
+  });
+  it("连乘超过上限时封顶 COMBINED_CAP", () => {
+    // 10 腿各 50 → 50^10，远超上限
+    expect(combinedMultiplier(Array(10).fill(50))).toBe(COMBINED_CAP);
+    // 恰好低于上限不封顶
+    expect(combinedMultiplier([10, 10])).toBe(100);
   });
 });

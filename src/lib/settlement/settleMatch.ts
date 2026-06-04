@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { result1x2 } from "./result";
+import { combinedMultiplier } from "../odds/pooledOdds";
 
 export interface SettleSummary {
   winningCode: string;
@@ -93,22 +94,31 @@ export async function settleMatch(
     const allLegs = (allLegData as AllLegRow[] | null) ?? [];
 
     if (allLegs.some((l) => l.leg_status === "lost")) {
-      await db.from("bets").update({ status: "lost", payout: 0 }).eq("id", betId);
-      betsSettled++;
+      const { data: lost } = await db
+        .from("bets")
+        .update({ status: "lost", payout: 0 })
+        .eq("id", betId)
+        .eq("status", "pending")
+        .select("id");
+      if (lost && lost.length > 0) betsSettled++;
     } else if (allLegs.length > 0 && allLegs.every((l) => l.leg_status === "won")) {
-      const combined = allLegs.reduce((p, l) => p * Number(l.multiplier_at_bet), 1);
+      const combined = combinedMultiplier(allLegs.map((l) => Number(l.multiplier_at_bet)));
       const payout = Math.round(Number(bet.total_stake) * combined);
-      await db.from("bets").update({ status: "won", payout }).eq("id", betId);
-      const { data: prof } = await db
-        .from("profiles")
-        .select("points_balance")
-        .eq("user_id", bet.user_id)
-        .maybeSingle();
-      const bal = (prof as { points_balance: number } | null)?.points_balance ?? 0;
-      await db
-        .from("points_ledger")
-        .insert({ user_id: bet.user_id, delta: payout, reason: "bet_payout", ref_id: betId });
-      await db.from("profiles").update({ points_balance: bal + payout }).eq("user_id", bet.user_id);
+      // 条件式状态流转：只有把 pending→won 的那一次执行才派分（防并发/重复结算双重派分 H2）
+      const { data: won } = await db
+        .from("bets")
+        .update({ status: "won", payout })
+        .eq("id", betId)
+        .eq("status", "pending")
+        .select("id");
+      if (!won || won.length === 0) continue;
+      // 原子加分（H1：避免读-改-写丢失更新）；服务端 service_role 调用 SQL 函数
+      await db.rpc("apply_points", {
+        p_user: bet.user_id,
+        p_delta: payout,
+        p_reason: "bet_payout",
+        p_ref: betId,
+      });
       winners++;
       totalPaid += payout;
       betsSettled++;
