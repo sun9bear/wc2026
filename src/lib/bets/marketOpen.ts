@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-// 封盘判定（纯函数，可单测）：已结算的盘口、已结算/已开赛的比赛一律封盘。
+// 封盘判定（纯函数，可单测）：盘口非 'open'（含 locked/settled）、比赛已结算/已开赛 → 封盘。
 export function isMarketClosed(params: {
   kickoffAt: string;
   matchStatus: string | null;
@@ -8,7 +8,8 @@ export function isMarketClosed(params: {
   now: number;
 }): boolean {
   const { kickoffAt, matchStatus, marketStatus, now } = params;
-  if (marketStatus === "settled") return true;
+  // 盘口只有 'open' 可下注（schema: open / locked / settled）；非 open 一律封盘
+  if (marketStatus !== "open") return true;
   if (matchStatus === "settled") return true;
   const t = new Date(kickoffAt).getTime();
   if (Number.isNaN(t)) return true; // 时间异常按封盘处理（fail-closed）

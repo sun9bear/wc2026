@@ -26,6 +26,11 @@ describe("isMarketClosed", () => {
       isMarketClosed({ kickoffAt: future, matchStatus: "scheduled", marketStatus: "settled", now: NOW })
     ).toBe(true);
   });
+  it("closed when market is locked (pre-kickoff lock)", () => {
+    expect(
+      isMarketClosed({ kickoffAt: future, matchStatus: "scheduled", marketStatus: "locked", now: NOW })
+    ).toBe(true);
+  });
   it("closed (fail-closed) on invalid kickoff timestamp", () => {
     expect(
       isMarketClosed({ kickoffAt: "not-a-date", matchStatus: "scheduled", marketStatus: "open", now: NOW })

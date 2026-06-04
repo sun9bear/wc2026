@@ -49,6 +49,14 @@ create table if not exists daily_checkins (
 );
 alter table daily_checkins enable row level security;
 
+-- 回填：把已有的每日签到记录(points_ledger reason='daily')灌入新表，
+-- 避免「部署当天已签到的老用户」因新表为空而二次领取(按 UTC 日期对齐路由的 todayUTC)。
+insert into daily_checkins (user_id, day)
+  select distinct user_id, (created_at at time zone 'UTC')::date
+  from points_ledger
+  where reason = 'daily'
+  on conflict do nothing;
+
 create or replace function claim_daily(
   p_user uuid,
   p_award bigint,
