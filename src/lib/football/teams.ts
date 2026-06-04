@@ -68,6 +68,9 @@ const NATIONS: Record<string, Nation> = {
   Uzbekistan: { zh: "乌兹别克斯坦", iso2: "uz" },
   Jordan: { zh: "约旦", iso2: "jo" },
   "Cape Verde": { zh: "佛得角", iso2: "cv" },
+  "Cape Verde Islands": { zh: "佛得角", iso2: "cv" },
+  "Congo DR": { zh: "刚果（金）", iso2: "cd" },
+  Iraq: { zh: "伊拉克", iso2: "iq" },
   Panama_: { zh: "巴拿马", iso2: "pa" },
 };
 
