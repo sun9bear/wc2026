@@ -13,7 +13,7 @@ export function MatchCard({ match }: { match: FixtureMatch }) {
   return (
     <Link
       href={`/match/${match.id}`}
-      className="block rounded-lg border border-border bg-surface p-4 transition hover:border-green/50"
+      className="block rounded-lg border border-border bg-surface p-4 transition duration-150 hover:-translate-y-0.5 hover:border-green/50"
     >
       <div className="mb-3 flex items-center justify-between text-[11px] text-muted">
         <span>

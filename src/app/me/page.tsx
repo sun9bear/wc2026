@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { Disclaimer } from "@/components/Disclaimer";
 import { CheckinCard } from "@/components/CheckinCard";
+import { fmtPoints } from "@/lib/format";
 
 interface MeData {
   balance: number;
@@ -83,7 +84,7 @@ export default function MePage() {
               </div>
               <div className="text-xs text-muted">当前积分</div>
             </div>
-            <div className="font-head text-3xl font-bold text-green">{data.balance}</div>
+            <div className="font-head text-3xl font-bold text-green">{fmtPoints(data.balance)}</div>
           </div>
 
           <div className="mt-4 grid grid-cols-2 gap-3">

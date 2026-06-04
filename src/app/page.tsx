@@ -53,7 +53,9 @@ export default async function Home() {
 
       {groups.map((g) => (
         <section key={g.date} className="mb-6">
-          <h2 className="font-head mb-2 text-sm font-semibold text-muted">{g.date}</h2>
+          <h2 className="font-head sticky top-0 z-10 -mx-4 mb-2 bg-bg/90 px-4 py-2 text-sm font-semibold text-muted backdrop-blur">
+            {g.date}
+          </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {g.items.map((m) => (
               <MatchCard key={m.id} match={m} />

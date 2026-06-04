@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getLeaderboard } from "@/lib/leaderboard/getLeaderboard";
 import { Disclaimer } from "@/components/Disclaimer";
+import { fmtPoints } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -43,7 +44,7 @@ export default async function LeaderboardPage() {
               <span className={`text-[10px] ${TIER_COLOR[r.tierCode] ?? "text-muted"}`}>
                 {r.tierLabel}
               </span>
-              <span className="font-head text-base font-bold">{r.points}</span>
+              <span className="font-head text-base font-bold">{fmtPoints(r.points)}</span>
             </li>
           ))}
         </ul>
