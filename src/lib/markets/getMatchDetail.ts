@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase/client";
+import { findBannedTerms } from "@/lib/compliance/bannedTerms";
 
 export interface SelectionView {
   id: string;
@@ -86,7 +87,11 @@ export async function getMatchDetail(matchId: string): Promise<MatchDetail | nul
     .select("type, body")
     .eq("match_id", matchId);
   const ac = (acRows as { type: string; body: string }[] | null) ?? [];
-  const byType = (t: string) => ac.find((r) => r.type === t)?.body ?? null;
+  // 展示层兜底雷词闸（纵深防御 §9.1）：即使库里混入违规文本也绝不外显（fail-closed）。
+  const byType = (t: string) => {
+    const body = ac.find((r) => r.type === t)?.body ?? null;
+    return body && findBannedTerms(body, "zh").length === 0 ? body : null;
+  };
 
   return {
     id: m.id,
