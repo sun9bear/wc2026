@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Oswald, Inter } from "next/font/google";
 import "./globals.css";
 import { BottomNav } from "@/components/BottomNav";
@@ -16,8 +17,11 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://wc2026.cool"),
   title: "环球足球预测 · 2026",
   description: "趣味足球预测游戏：用虚拟积分预测比赛、冲排行榜、解锁段位。仅供娱乐。",
+  // Google AdSense 站点验证（元标记方式，SSR 渲染最可靠）
+  other: { "google-adsense-account": "ca-pub-6993272715247473" },
 };
 
 export default function RootLayout({
@@ -35,6 +39,12 @@ export default function RootLayout({
           {children}
           <BottomNav />
         </ToastProvider>
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6993272715247473"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
