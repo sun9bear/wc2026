@@ -1,0 +1,57 @@
+import Link from "next/link";
+import { getLeaderboard } from "@/lib/leaderboard/getLeaderboard";
+import { Disclaimer } from "@/components/Disclaimer";
+
+export const dynamic = "force-dynamic";
+
+const TIER_COLOR: Record<string, string> = {
+  legend: "text-gold",
+  diamond: "text-blue",
+  platinum: "text-blue",
+  gold: "text-gold",
+  silver: "text-muted",
+  bronze: "text-muted",
+};
+
+export default async function LeaderboardPage() {
+  const rows = await getLeaderboard();
+
+  return (
+    <main className="mx-auto w-full max-w-xl px-4 py-8">
+      <div className="flex items-center justify-between">
+        <h1 className="font-head text-2xl font-bold">🏆 排行榜</h1>
+        <Link href="/" className="text-xs text-muted">
+          ← 返回
+        </Link>
+      </div>
+
+      {rows.length === 0 ? (
+        <p className="mt-10 text-center text-sm text-muted">
+          还没有人上榜，快去预测拿积分吧！
+        </p>
+      ) : (
+        <ul className="mt-5 space-y-2">
+          {rows.map((r) => (
+            <li
+              key={r.rank}
+              className="flex items-center gap-3 rounded-md border border-border bg-surface-2 p-3"
+            >
+              <span className="font-head w-6 text-center text-lg font-bold text-muted">
+                {r.rank}
+              </span>
+              <span className="flex-1 truncate text-sm font-medium">{r.name}</span>
+              <span className={`text-[10px] ${TIER_COLOR[r.tierCode] ?? "text-muted"}`}>
+                {r.tierLabel}
+              </span>
+              <span className="font-head text-base font-bold">{r.points}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <footer className="mt-8 text-center">
+        <Disclaimer />
+      </footer>
+    </main>
+  );
+}

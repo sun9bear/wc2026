@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getMatches } from "@/lib/matches/getMatches";
 import { MatchCard } from "@/components/MatchCard";
 import { Disclaimer } from "@/components/Disclaimer";
@@ -8,11 +9,16 @@ export default async function Home() {
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8">
-      <header className="mb-6">
-        <h1 className="font-head text-2xl font-bold tracking-wide">
-          环球足球<span className="text-green">预测</span> · 2026
-        </h1>
-        <p className="mt-1 text-sm text-muted">{zh.tagline}</p>
+      <header className="mb-6 flex items-end justify-between">
+        <div>
+          <h1 className="font-head text-2xl font-bold tracking-wide">
+            环球足球<span className="text-green">预测</span> · 2026
+          </h1>
+          <p className="mt-1 text-sm text-muted">{zh.tagline}</p>
+        </div>
+        <Link href="/leaderboard" className="shrink-0 text-xs text-green">
+          🏆 排行榜
+        </Link>
       </header>
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
