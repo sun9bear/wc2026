@@ -43,24 +43,11 @@ export default async function Home({
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8">
-      <header className="mb-6 flex items-end justify-between">
-        <div>
-          <h1 className="font-head text-2xl font-bold tracking-wide">
-            环球足球<span className="text-green">预测</span> · 2026
-          </h1>
-          <p className="mt-1 text-sm text-muted">{zh.tagline}</p>
-        </div>
-        <nav className="flex shrink-0 gap-3 text-xs">
-          <Link href="/parlay" className="text-green">
-            🔗 串关
-          </Link>
-          <Link href="/leaderboard" className="text-green">
-            🏆 排行榜
-          </Link>
-          <Link href="/me" className="text-green">
-            👤 我的
-          </Link>
-        </nav>
+      <header className="mb-6">
+        <h1 className="font-head text-2xl font-bold tracking-wide">
+          环球足球<span className="text-green">预测</span> · 2026
+        </h1>
+        <p className="mt-1 text-sm text-muted">{zh.tagline}</p>
       </header>
 
       <div className="mb-5 flex gap-2 text-xs">
