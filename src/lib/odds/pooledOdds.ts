@@ -47,8 +47,11 @@ export function computeMultipliers(stakes: number[], cfg: OddsConfig = {}): numb
   return stakes.map((s) => pooledMultiplier(s, total, stakes.length, cfg));
 }
 
-/** 串关连乘倍率 = 各腿倍率之积（保留两位小数）。 */
+/** 串关连乘倍率上限：防止 10 串理论上 50^10 的天文派分毁掉排行榜（M1）。 */
+export const COMBINED_CAP = 1000;
+
+/** 串关连乘倍率 = 各腿倍率之积（保留两位小数，封顶 COMBINED_CAP）。 */
 export function combinedMultiplier(multipliers: number[]): number {
   const p = multipliers.reduce((a, b) => a * b, 1);
-  return Math.round(p * 100) / 100;
+  return Math.min(COMBINED_CAP, Math.round(p * 100) / 100);
 }

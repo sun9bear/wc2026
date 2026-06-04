@@ -68,8 +68,16 @@ export async function POST(req: NextRequest) {
   }
 
   const today = todayUTC();
-  let dates = await dailyDates(db, userId);
-  if (dates.includes(today)) {
+  // H4：原子领取（DB 内唯一 (user, day) 主键 + 同事务发奖）；当天已领则返回 null。
+  const { data: newBal, error: claimErr } = await db.rpc("claim_daily", {
+    p_user: userId,
+    p_award: DAILY_AWARD,
+    p_day: today,
+  });
+  if (claimErr) return NextResponse.json({ error: "签到失败" }, { status: 500 });
+
+  const dates = await dailyDates(db, userId);
+  if (newBal === null || newBal === undefined) {
     return NextResponse.json({
       alreadyCheckedIn: true,
       balance,
@@ -77,15 +85,9 @@ export async function POST(req: NextRequest) {
       checkedInToday: true,
     });
   }
-
-  await db.from("points_ledger").insert({ user_id: userId, delta: DAILY_AWARD, reason: "daily" });
-  balance += DAILY_AWARD;
-  await db.from("profiles").update({ points_balance: balance }).eq("user_id", userId);
-  dates = [today, ...dates];
-
   return NextResponse.json({
     awarded: DAILY_AWARD,
-    balance,
+    balance: Number(newBal),
     streak: computeStreak(dates, today),
     checkedInToday: true,
   });

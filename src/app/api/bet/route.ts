@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { pooledMultiplier } from "@/lib/odds/pooledOdds";
 import { validateStake } from "@/lib/bets/quote";
+import { marketsOpenError } from "@/lib/bets/marketOpen";
 
 // 下注写入：服务端用 secret key（service_role）把关与落库。
 // 注：MVP 采用顺序写入，未做单事务原子化；后续可用 Postgres 函数(RPC)硬化。
@@ -53,6 +54,10 @@ export async function POST(req: NextRequest) {
   const sel = selRow as { id: string; market_id: string; pooled_stake: number } | null;
   if (!sel) return NextResponse.json({ error: "选项不存在" }, { status: 404 });
 
+  // H3：服务端校验是否已封盘（比赛已开赛/结束则拒绝——前端隐藏不够，API 必须拦）
+  const closedErr = await marketsOpenError(db, [sel.market_id]);
+  if (closedErr) return NextResponse.json({ error: closedErr }, { status: 409 });
+
   const { data: sibData } = await db
     .from("selections")
     .select("id, pooled_stake")
@@ -78,6 +83,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "下注写入失败" }, { status: 500 });
   }
   const betId = (betRow as { id: string }).id;
+
+  // H1：原子扣减积分（SQL 函数内 `balance + delta >= 0` 守卫，杜绝并发双花）。
+  // 失败/不足则回滚刚建的注单，保持一致。
+  const { data: debitedBalance, error: debitErr } = await db.rpc("apply_points", {
+    p_user: user.id,
+    p_delta: -stake,
+    p_reason: "bet_stake",
+    p_ref: betId,
+  });
+  if (debitErr || debitedBalance === null || debitedBalance === undefined) {
+    await db.from("bets").delete().eq("id", betId);
+    return NextResponse.json(
+      { error: debitErr ? "下注写入失败" : "积分不足" },
+      { status: debitErr ? 500 : 400 }
+    );
+  }
+  const newBalance = Number(debitedBalance);
+
   await db
     .from("bet_selections")
     .insert({ bet_id: betId, selection_id: selectionId, multiplier_at_bet: mult });
@@ -89,13 +112,6 @@ export async function POST(req: NextRequest) {
     const m = pooledMultiplier(ps, newTotal, n);
     await db.from("selections").update({ pooled_stake: ps, current_multiplier: m }).eq("id", s.id);
   }
-
-  // 积分流水 + 扣除余额
-  await db
-    .from("points_ledger")
-    .insert({ user_id: user.id, delta: -stake, reason: "bet_stake", ref_id: betId });
-  const newBalance = balance - stake;
-  await db.from("profiles").update({ points_balance: newBalance }).eq("user_id", user.id);
 
   return NextResponse.json({ ok: true, balance: newBalance, multiplier: mult, betId });
 }
