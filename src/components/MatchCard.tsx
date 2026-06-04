@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { FixtureMatch } from "@/lib/fixtures/matches";
 
 function formatKickoff(iso: string): string {
@@ -21,7 +22,10 @@ function Team({ name, flag }: { name: string; flag: string }) {
 
 export function MatchCard({ match }: { match: FixtureMatch }) {
   return (
-    <div className="rounded-lg border border-border bg-surface p-4">
+    <Link
+      href={`/match/${match.id}`}
+      className="block rounded-lg border border-border bg-surface p-4 transition hover:border-green/50"
+    >
       <div className="mb-3 text-[11px] text-muted">
         {match.stage}
         {match.group ? ` · ${match.group}` : ""}
@@ -30,12 +34,10 @@ export function MatchCard({ match }: { match: FixtureMatch }) {
         <Team name={match.home.name} flag={match.home.flag} />
         <div className="text-center">
           <div className="font-head text-sm font-bold text-muted">VS</div>
-          <div className="font-head mt-1 text-xs text-text">
-            {formatKickoff(match.kickoffAt)}
-          </div>
+          <div className="font-head mt-1 text-xs text-text">{formatKickoff(match.kickoffAt)}</div>
         </div>
         <Team name={match.away.name} flag={match.away.flag} />
       </div>
-    </div>
+    </Link>
   );
 }

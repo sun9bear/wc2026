@@ -61,3 +61,6 @@ create policy "own bet_selections" on bet_selections for select
 grant usage on schema public to anon, authenticated, service_role;
 grant select on markets, selections to anon, authenticated, service_role;
 grant select on bets, bet_selections to authenticated, service_role;
+
+-- 服务端写入：service_role 拥有全部应用表的完整 DML（写入一律走服务端 secret key，绝不开放匿名写）。
+grant all on tournaments, teams, matches, profiles, points_ledger, markets, selections, bets, bet_selections to service_role;
