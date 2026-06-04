@@ -27,9 +27,10 @@ export default async function LeaderboardPage() {
       </div>
 
       {rows.length === 0 ? (
-        <p className="mt-10 text-center text-sm text-muted">
-          还没有人上榜，快去预测拿积分吧！
-        </p>
+        <div className="mt-16 text-center">
+          <div className="text-5xl">🏆</div>
+          <p className="mt-3 text-sm text-muted">还没有人上榜，快去预测拿积分吧！</p>
+        </div>
       ) : (
         <ul className="mt-5 space-y-2">
           {rows.map((r) => (

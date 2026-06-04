@@ -71,7 +71,10 @@ export default async function Home({
       </div>
 
       {groups.length === 0 && (
-        <p className="mt-10 text-center text-sm text-muted">该筛选下暂无比赛。</p>
+        <div className="mt-16 text-center">
+          <div className="text-5xl">📭</div>
+          <p className="mt-3 text-sm text-muted">该筛选下暂无比赛。</p>
+        </div>
       )}
 
       {groups.map((g) => (

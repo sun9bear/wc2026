@@ -8,6 +8,7 @@ import { combinedMultiplier } from "@/lib/odds/pooledOdds";
 import { quotePayout } from "@/lib/bets/quote";
 import { Disclaimer } from "@/components/Disclaimer";
 import { Skeleton } from "@/components/Skeleton";
+import { useToast } from "@/components/Toast";
 
 interface Sel {
   id: string;
@@ -50,7 +51,7 @@ export default function ParlayPage() {
   const [picked, setPicked] = useState<Record<string, string>>({});
   const [stake, setStake] = useState(100);
   const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     (async () => {
@@ -111,7 +112,6 @@ export default function ParlayPage() {
   async function submit() {
     if (legs < 2 || busy) return;
     setBusy(true);
-    setMsg(null);
     try {
       let session = (await supabase.auth.getSession()).data.session;
       if (!session) {
@@ -130,13 +130,13 @@ export default function ParlayPage() {
       });
       const j = (await res.json()) as { error?: string; legs?: number; combined?: number; balance?: number };
       if (!res.ok) throw new Error(j.error ?? "提交失败");
-      setMsg({
-        ok: true,
-        text: `串关成功！${j.legs} 串 · 连乘 ${j.combined} · 命中可派 ${quotePayout(stake, j.combined ?? combined)} · 余额 ${j.balance}`,
-      });
+      toast(
+        `串关成功！${j.legs} 串 · 连乘 ${j.combined} · 命中可派 ${quotePayout(stake, j.combined ?? combined)} · 余额 ${j.balance}`,
+        "ok"
+      );
       setPicked({});
     } catch (e) {
-      setMsg({ ok: false, text: e instanceof Error ? e.message : "提交失败" });
+      toast(e instanceof Error ? e.message : "提交失败", "err");
     } finally {
       setBusy(false);
     }
@@ -159,7 +159,10 @@ export default function ParlayPage() {
           ))}
         </div>
       ) : matches.length === 0 ? (
-        <p className="mt-10 text-center text-sm text-muted">暂无可串关的比赛。</p>
+        <div className="mt-16 text-center">
+          <div className="text-5xl">🔗</div>
+          <p className="mt-3 text-sm text-muted">暂无可串关的比赛。</p>
+        </div>
       ) : null}
 
       <div className="pb-40">
@@ -226,11 +229,6 @@ export default function ParlayPage() {
               {busy ? "提交中…" : legs < 2 ? "至少选 2 场" : "提交串关"}
             </button>
           </div>
-          {msg && (
-            <p className={`mt-2 text-center text-xs ${msg.ok ? "text-green" : "text-red"}`}>
-              {msg.text}
-            </p>
-          )}
           <div className="mt-2 text-center">
             <Disclaimer />
           </div>

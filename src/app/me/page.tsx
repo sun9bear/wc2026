@@ -77,8 +77,9 @@ export default function MePage() {
       )}
 
       {state === "none" && (
-        <div className="mt-10 text-center">
-          <p className="text-sm text-muted">你还没开始游戏。</p>
+        <div className="mt-16 text-center">
+          <div className="text-5xl">🎯</div>
+          <p className="mt-3 text-sm text-muted">你还没开始游戏。</p>
           <Link href="/" className="mt-3 inline-block text-sm text-green">
             去预测一场 →
           </Link>

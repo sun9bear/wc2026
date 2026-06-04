@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { quotePayout } from "@/lib/bets/quote";
+import { useToast } from "@/components/Toast";
 import type { SelectionView } from "@/lib/markets/getMatchDetail";
 
 const ORDER: Record<string, number> = { home: 0, draw: 1, away: 2 };
@@ -17,8 +18,8 @@ export function MarketPicks({
   const [selections, setSelections] = useState<SelectionView[]>(initial);
   const [pickedId, setPickedId] = useState<string | null>(null);
   const [stake, setStake] = useState(100);
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const { toast } = useToast();
 
   const picked = selections.find((s) => s.id === pickedId) ?? null;
   const payout = picked ? quotePayout(stake, picked.multiplier) : 0;
@@ -44,7 +45,6 @@ export function MarketPicks({
   async function submit() {
     if (!picked || busy) return;
     setBusy(true);
-    setMsg(null);
     try {
       let session = (await supabase.auth.getSession()).data.session;
       if (!session) {
@@ -62,14 +62,14 @@ export function MarketPicks({
       });
       const json = (await res.json()) as { error?: string; balance?: number; multiplier?: number };
       if (!res.ok) throw new Error(json.error ?? "提交失败");
-      setMsg({
-        ok: true,
-        text: `预测成功！命中可派 ${quotePayout(stake, json.multiplier ?? picked.multiplier)} 积分 · 余额 ${json.balance}`,
-      });
+      toast(
+        `预测成功！命中可派 ${quotePayout(stake, json.multiplier ?? picked.multiplier)} · 余额 ${json.balance}`,
+        "ok"
+      );
       setPickedId(null);
-      await refreshOdds(); // 立刻反映"你的预测让倍率变了"
+      await refreshOdds();
     } catch (e) {
-      setMsg({ ok: false, text: e instanceof Error ? e.message : "提交失败" });
+      toast(e instanceof Error ? e.message : "提交失败", "err");
     } finally {
       setBusy(false);
     }
@@ -85,7 +85,7 @@ export function MarketPicks({
               key={s.id}
               type="button"
               onClick={() => setPickedId(s.id)}
-              className={`rounded-md border p-3 text-center transition ${
+              className={`rounded-md border p-3 text-center transition active:scale-95 ${
                 on ? "border-green bg-green/15 shadow-glow" : "border-border bg-surface-2"
               }`}
             >
@@ -119,14 +119,10 @@ export function MarketPicks({
         type="button"
         onClick={submit}
         disabled={!picked || busy}
-        className="mt-4 w-full rounded-md bg-green py-3 text-center font-bold text-[#06231a] shadow-glow disabled:opacity-40"
+        className="mt-4 w-full rounded-md bg-green py-3 text-center font-bold text-[#06231a] shadow-glow transition active:scale-[0.98] disabled:opacity-40"
       >
         {busy ? "提交中…" : "提交预测"}
       </button>
-
-      {msg && (
-        <p className={`mt-3 text-center text-xs ${msg.ok ? "text-green" : "text-red"}`}>{msg.text}</p>
-      )}
 
       <p className="mt-3 text-center text-[10px] text-muted">仅供娱乐 · 积分无现实价值 · 不可兑换</p>
     </div>
