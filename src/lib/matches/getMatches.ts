@@ -5,18 +5,20 @@ interface Row {
   id: string;
   kickoff_at: string;
   stage: string | null;
+  status: string | null;
+  home_score: number | null;
+  away_score: number | null;
   home: { name: string; flag: string | null; grp: string | null } | null;
   away: { name: string; flag: string | null } | null;
 }
 
-// 读取比赛：优先从 Supabase（HTTPS/PostgREST）读；失败或为空则回退本地占位赛程，
-// 保证无论数据库是否就绪，页面都能渲染。
+// 读取比赛：优先从 Supabase（HTTPS/PostgREST）读；失败或为空则回退本地占位赛程。
 export async function getMatches(): Promise<FixtureMatch[]> {
   try {
     const { data, error } = await supabase
       .from("matches")
       .select(
-        "id, kickoff_at, stage, home:home_team_id(name, flag, grp), away:away_team_id(name, flag)"
+        "id, kickoff_at, stage, status, home_score, away_score, home:home_team_id(name, flag, grp), away:away_team_id(name, flag)"
       )
       .order("kickoff_at")
       .returns<Row[]>();
@@ -30,6 +32,9 @@ export async function getMatches(): Promise<FixtureMatch[]> {
       kickoffAt: r.kickoff_at,
       home: { name: r.home?.name ?? "?", flag: r.home?.flag ?? "⚽" },
       away: { name: r.away?.name ?? "?", flag: r.away?.flag ?? "⚽" },
+      status: r.status ?? "scheduled",
+      homeScore: r.home_score,
+      awayScore: r.away_score,
     }));
   } catch {
     return fallback();

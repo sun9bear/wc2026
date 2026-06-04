@@ -12,6 +12,9 @@ export interface FixtureMatch {
   kickoffAt: string; // ISO 8601
   home: FixtureTeam;
   away: FixtureTeam;
+  status?: string; // scheduled / settled ...
+  homeScore?: number | null;
+  awayScore?: number | null;
 }
 
 export const FIXTURES: FixtureMatch[] = [

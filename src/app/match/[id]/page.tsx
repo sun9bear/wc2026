@@ -3,6 +3,9 @@ import { notFound } from "next/navigation";
 import { getMatchDetail } from "@/lib/markets/getMatchDetail";
 import { MarketPicks } from "@/components/MarketPicks";
 import { Disclaimer } from "@/components/Disclaimer";
+import { result1x2 } from "@/lib/settlement/result";
+
+const RESULT_LABEL: Record<string, string> = { home: "主胜", draw: "平局", away: "客胜" };
 
 function fmt(iso: string): string {
   return new Date(iso).toLocaleString("zh-CN", {
@@ -17,7 +20,7 @@ function Team({ name, flag }: { name: string; flag: string | null }) {
   return (
     <div className="flex w-24 flex-col items-center gap-2">
       <span className="text-4xl leading-none">{flag}</span>
-      <span className="text-sm font-medium">{name}</span>
+      <span className="text-center text-sm font-medium">{name}</span>
     </div>
   );
 }
@@ -26,6 +29,10 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   const m = await getMatchDetail(id);
   if (!m) notFound();
+
+  const settled = m.status === "settled" && m.homeScore != null && m.awayScore != null;
+  const started = new Date(m.kickoffAt).getTime() <= Date.now();
+  const open = !settled && !started;
 
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-8">
@@ -39,17 +46,37 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
         </div>
         <div className="flex items-center justify-between">
           <Team name={m.home.name} flag={m.home.flag} />
-          <span className="font-head text-sm text-muted">VS</span>
+          <div className="text-center">
+            {settled ? (
+              <div className="font-head text-3xl font-bold">
+                {m.homeScore} : {m.awayScore}
+              </div>
+            ) : (
+              <span className="font-head text-sm text-muted">VS</span>
+            )}
+          </div>
           <Team name={m.away.name} flag={m.away.flag} />
         </div>
       </div>
 
       <section className="mt-5">
-        <h2 className="font-head mb-2 text-sm font-semibold">胜平负 · 实时倍率</h2>
-        {m.market ? (
-          <MarketPicks selections={m.market.selections} />
+        {settled ? (
+          <div className="rounded-md border border-border bg-surface-2 p-4 text-center text-sm">
+            <span className="text-muted">本场结果：</span>
+            <span className="font-head text-green">
+              {RESULT_LABEL[result1x2(m.homeScore as number, m.awayScore as number)]}
+            </span>
+            <span className="text-muted"> · 已结算派分</span>
+          </div>
+        ) : open && m.market ? (
+          <>
+            <h2 className="font-head mb-2 text-sm font-semibold">胜平负 · 实时倍率</h2>
+            <MarketPicks selections={m.market.selections} />
+          </>
         ) : (
-          <p className="text-sm text-muted">该场暂无可预测玩法。</p>
+          <p className="rounded-md border border-border bg-surface-2 p-4 text-center text-sm text-muted">
+            已封盘，等待比赛结果。
+          </p>
         )}
       </section>
 

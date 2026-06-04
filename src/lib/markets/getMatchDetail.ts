@@ -11,6 +11,9 @@ export interface MatchDetail {
   id: string;
   stage: string | null;
   kickoffAt: string;
+  status: string;
+  homeScore: number | null;
+  awayScore: number | null;
   home: { name: string; flag: string | null };
   away: { name: string; flag: string | null };
   market: { id: string; selections: SelectionView[] } | null;
@@ -20,6 +23,9 @@ interface MatchRow {
   id: string;
   stage: string | null;
   kickoff_at: string;
+  status: string | null;
+  home_score: number | null;
+  away_score: number | null;
   home: { name: string; flag: string | null } | null;
   away: { name: string; flag: string | null } | null;
 }
@@ -36,7 +42,7 @@ export async function getMatchDetail(matchId: string): Promise<MatchDetail | nul
   const { data: matchData } = await supabase
     .from("matches")
     .select(
-      "id, stage, kickoff_at, home:home_team_id(name, flag), away:away_team_id(name, flag)"
+      "id, stage, kickoff_at, status, home_score, away_score, home:home_team_id(name, flag), away:away_team_id(name, flag)"
     )
     .eq("id", matchId)
     .maybeSingle();
@@ -76,6 +82,9 @@ export async function getMatchDetail(matchId: string): Promise<MatchDetail | nul
     id: m.id,
     stage: m.stage,
     kickoffAt: m.kickoff_at,
+    status: m.status ?? "scheduled",
+    homeScore: m.home_score,
+    awayScore: m.away_score,
     home: { name: m.home?.name ?? "?", flag: m.home?.flag ?? "⚽" },
     away: { name: m.away?.name ?? "?", flag: m.away?.flag ?? "⚽" },
     market,
