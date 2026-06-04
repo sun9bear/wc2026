@@ -17,6 +17,7 @@ export interface MatchDetail {
   home: { name: string; flag: string | null };
   away: { name: string; flag: string | null };
   market: { id: string; selections: SelectionView[] } | null;
+  preview: string | null;
 }
 
 interface MatchRow {
@@ -78,6 +79,14 @@ export async function getMatchDetail(matchId: string): Promise<MatchDetail | nul
     };
   }
 
+  const { data: acRow } = await supabase
+    .from("ai_content")
+    .select("body")
+    .eq("match_id", matchId)
+    .eq("type", "preview")
+    .maybeSingle();
+  const preview = (acRow as { body: string } | null)?.body ?? null;
+
   return {
     id: m.id,
     stage: m.stage,
@@ -88,5 +97,6 @@ export async function getMatchDetail(matchId: string): Promise<MatchDetail | nul
     home: { name: m.home?.name ?? "?", flag: m.home?.flag ?? "⚽" },
     away: { name: m.away?.name ?? "?", flag: m.away?.flag ?? "⚽" },
     market,
+    preview,
   };
 }

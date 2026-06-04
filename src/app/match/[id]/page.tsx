@@ -51,6 +51,13 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
         </div>
       </div>
 
+      {m.preview && (
+        <div className="fade-up mt-4 rounded-lg border border-border bg-surface p-4">
+          <div className="mb-1 text-[11px] text-muted">📋 赛前前瞻 · AI 生成 · 仅供娱乐</div>
+          <p className="text-sm leading-relaxed">{m.preview}</p>
+        </div>
+      )}
+
       <section className="mt-5">
         {settled ? (
           <div className="rounded-md border border-border bg-surface-2 p-4 text-center text-sm">
