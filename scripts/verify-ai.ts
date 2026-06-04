@@ -33,6 +33,9 @@ async function main() {
     const sample = rows.find((r) => r.type === t);
     if (sample) console.log(`\n【${t} 样例】\n${sample.body}`);
   }
+
+  // 作为合规闸：有违规则以非零码退出，便于 CI / 发布前校验拦截。
+  process.exitCode = bad > 0 ? 1 : 0;
 }
 
 main().catch((e) => {

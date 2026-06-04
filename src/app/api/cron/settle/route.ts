@@ -42,7 +42,8 @@ export async function GET(req: NextRequest) {
   }
   const { matches } = (await res.json()) as { matches: FdMatch[] };
 
-  let settled = 0;
+  // 阶段一：先把所有比赛结算完（纯数据库、快、幂等）——结算绝不依赖任何 LLM 调用。
+  const newlySettled: { id: string; home: string; away: string; hs: number; as: number }[] = [];
   for (const m of matches) {
     const ft = m.score?.fullTime;
     if (ft?.home == null || ft?.away == null) continue;
@@ -59,20 +60,35 @@ export async function GET(req: NextRequest) {
     } | null;
     if (!match || match.status === "settled") continue;
     await settleMatch(sb, match.id, ft.home, ft.away);
-    // 赛后小结：DeepSeek 生成 + 入库，尽力而为，失败不影响结算
+    newlySettled.push({
+      id: match.id,
+      home: teamZh(match.home?.name ?? "?"),
+      away: teamZh(match.away?.name ?? "?"),
+      hs: ft.home,
+      as: ft.away,
+    });
+  }
+  const settled = newlySettled.length;
+
+  // 阶段二：结算已全部落库后，再尽力而为生成赛后小结。
+  // 限量 RECAP_CAP 条 + 每次调用 15s 超时（见 deepseek.ts），避免吃满 maxDuration；
+  // 超出部分留给 `scripts/gen-recaps.ts` 补录。任何失败都不影响已完成的结算。
+  const RECAP_CAP = 8;
+  let recaps = 0;
+  for (const s of newlySettled.slice(0, RECAP_CAP)) {
     try {
-      const body = await generateRecap(
-        teamZh(match.home?.name ?? "?"),
-        teamZh(match.away?.name ?? "?"),
-        ft.home,
-        ft.away
-      );
-      await upsertContent(sb, match.id, "recap", body);
+      const body = await generateRecap(s.home, s.away, s.hs, s.as);
+      await upsertContent(sb, s.id, "recap", body);
+      recaps++;
     } catch {
       /* 忽略 AI 失败 */
     }
-    settled++;
   }
 
-  return NextResponse.json({ ok: true, settled });
+  return NextResponse.json({
+    ok: true,
+    settled,
+    recaps,
+    recapsDeferred: Math.max(0, settled - recaps),
+  });
 }
