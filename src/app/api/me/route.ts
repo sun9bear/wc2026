@@ -3,6 +3,8 @@ import { createClient } from "@supabase/supabase-js";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { computeStats } from "@/lib/stats/playerStats";
 import { rankTier } from "@/lib/ranks/rankTier";
+import { computeStreak } from "@/lib/checkin/streak";
+import { computeAchievements } from "@/lib/achievements/achievements";
 
 // 返回当前用户的战绩（服务端用 secret key 读取，凭 access token 鉴别身份）。
 export async function GET(req: NextRequest) {
@@ -23,8 +25,34 @@ export async function GET(req: NextRequest) {
     .maybeSingle();
   const balance = (profRow as { points_balance: number } | null)?.points_balance ?? 1000;
 
-  const { data: betRows } = await db.from("bets").select("status").eq("user_id", user.id);
-  const stats = computeStats((betRows as { status: string }[] | null) ?? []);
+  const { data: betRows } = await db
+    .from("bets")
+    .select("status, payout")
+    .eq("user_id", user.id);
+  const bets = (betRows as { status: string; payout: number | null }[] | null) ?? [];
+  const stats = computeStats(bets);
+  const biggestPayout = bets.reduce((mx, b) => Math.max(mx, Number(b.payout ?? 0)), 0);
 
-  return NextResponse.json({ balance, tier: rankTier(balance).label, ...stats });
+  const { data: dailyRows } = await db
+    .from("points_ledger")
+    .select("created_at")
+    .eq("user_id", user.id)
+    .eq("reason", "daily")
+    .order("created_at", { ascending: false })
+    .limit(90);
+  const dailyDates = ((dailyRows as { created_at: string }[] | null) ?? []).map((r) =>
+    r.created_at.slice(0, 10)
+  );
+  const checkinStreak = computeStreak(dailyDates, new Date().toISOString().slice(0, 10));
+
+  const achievements = computeAchievements({
+    total: stats.total,
+    won: stats.won,
+    hitRate: stats.hitRate,
+    biggestPayout,
+    checkinStreak,
+    balance,
+  });
+
+  return NextResponse.json({ balance, tier: rankTier(balance).label, ...stats, achievements });
 }

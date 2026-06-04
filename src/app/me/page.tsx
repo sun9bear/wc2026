@@ -14,6 +14,7 @@ interface MeData {
   lost: number;
   pending: number;
   hitRate: number;
+  achievements: { id: string; icon: string; label: string; desc: string; earned: boolean }[];
 }
 
 function Tile({ value, label, color = "text-text" }: { value: string | number; label: string; color?: string }) {
@@ -91,6 +92,28 @@ export default function MePage() {
             <Tile value={data.total} label="预测场次" />
             <Tile value={data.pending} label="待结算" color="text-blue" />
           </div>
+
+          {data.achievements && (
+            <>
+              <h2 className="font-head mb-2 mt-6 text-sm font-semibold">
+                成就 · {data.achievements.filter((a) => a.earned).length}/{data.achievements.length}
+              </h2>
+              <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+                {data.achievements.map((a) => (
+                  <div
+                    key={a.id}
+                    className={`rounded-md border border-border bg-surface-2 p-3 text-center ${
+                      a.earned ? "" : "opacity-40 grayscale"
+                    }`}
+                  >
+                    <div className="text-2xl">{a.icon}</div>
+                    <div className="mt-1 text-[11px] font-medium">{a.label}</div>
+                    <div className="text-[9px] text-muted">{a.desc}</div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </>
       )}
 
