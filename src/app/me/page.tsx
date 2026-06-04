@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { Disclaimer } from "@/components/Disclaimer";
+import { CheckinCard } from "@/components/CheckinCard";
 
 interface MeData {
   balance: number;
@@ -54,6 +55,10 @@ export default function MePage() {
         <Link href="/" className="text-xs text-muted">
           ← 返回
         </Link>
+      </div>
+
+      <div className="mt-4">
+        <CheckinCard />
       </div>
 
       {state === "loading" && <p className="mt-10 text-center text-sm text-muted">加载中…</p>}
