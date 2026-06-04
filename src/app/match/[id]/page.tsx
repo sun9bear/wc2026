@@ -71,7 +71,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
         ) : open && m.market ? (
           <>
             <h2 className="font-head mb-2 text-sm font-semibold">胜平负 · 实时倍率</h2>
-            <MarketPicks selections={m.market.selections} />
+            <MarketPicks marketId={m.market.id} selections={m.market.selections} />
           </>
         ) : (
           <p className="rounded-md border border-border bg-surface-2 p-4 text-center text-sm text-muted">

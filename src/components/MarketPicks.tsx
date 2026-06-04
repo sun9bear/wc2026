@@ -5,7 +5,16 @@ import { supabase } from "@/lib/supabase/client";
 import { quotePayout } from "@/lib/bets/quote";
 import type { SelectionView } from "@/lib/markets/getMatchDetail";
 
-export function MarketPicks({ selections }: { selections: SelectionView[] }) {
+const ORDER: Record<string, number> = { home: 0, draw: 1, away: 2 };
+
+export function MarketPicks({
+  marketId,
+  selections: initial,
+}: {
+  marketId: string;
+  selections: SelectionView[];
+}) {
+  const [selections, setSelections] = useState<SelectionView[]>(initial);
   const [pickedId, setPickedId] = useState<string | null>(null);
   const [stake, setStake] = useState(100);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -14,12 +23,29 @@ export function MarketPicks({ selections }: { selections: SelectionView[] }) {
   const picked = selections.find((s) => s.id === pickedId) ?? null;
   const payout = picked ? quotePayout(stake, picked.multiplier) : 0;
 
+  async function refreshOdds() {
+    const { data } = await supabase
+      .from("selections")
+      .select("id, code, label, current_multiplier")
+      .eq("market_id", marketId);
+    if (data) {
+      const next = (data as { id: string; code: string; label: string; current_multiplier: number }[])
+        .map((s) => ({
+          id: s.id,
+          code: s.code,
+          label: s.label,
+          multiplier: Number(s.current_multiplier),
+        }))
+        .sort((a, b) => (ORDER[a.code] ?? 9) - (ORDER[b.code] ?? 9));
+      setSelections(next);
+    }
+  }
+
   async function submit() {
     if (!picked || busy) return;
     setBusy(true);
     setMsg(null);
     try {
-      // 游客即玩：没有会话则匿名登录
       let session = (await supabase.auth.getSession()).data.session;
       if (!session) {
         const { error } = await supabase.auth.signInAnonymously();
@@ -34,16 +60,14 @@ export function MarketPicks({ selections }: { selections: SelectionView[] }) {
         },
         body: JSON.stringify({ selectionId: picked.id, stake }),
       });
-      const json = (await res.json()) as {
-        error?: string;
-        balance?: number;
-        multiplier?: number;
-      };
+      const json = (await res.json()) as { error?: string; balance?: number; multiplier?: number };
       if (!res.ok) throw new Error(json.error ?? "提交失败");
       setMsg({
         ok: true,
         text: `预测成功！命中可派 ${quotePayout(stake, json.multiplier ?? picked.multiplier)} 积分 · 余额 ${json.balance}`,
       });
+      setPickedId(null);
+      await refreshOdds(); // 立刻反映"你的预测让倍率变了"
     } catch (e) {
       setMsg({ ok: false, text: e instanceof Error ? e.message : "提交失败" });
     } finally {
