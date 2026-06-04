@@ -39,11 +39,14 @@
   FOOTBALL_API_KEY=（你的 key）
   ```
 
-## ③ LLM API（Plan 5 内容自动化用 · 不急）
+## ③ LLM API（Plan 5 内容自动化）✅ 已接入 DeepSeek
 - **干什么**：AI 自动生成赛事前瞻、赛后小结、冷热门解说（纯娱乐内容，不是投注建议）。
-- **怎么申请**：Anthropic（Claude）或 OpenAI 控制台注册 → 拿 API key。
-- **密钥放哪**：`.env.local` 加 `LLM_API_KEY=...`。
-- **注意**：按用量计费，先充小额、设额度上限；内容会缓存复用以省成本。
+- **已完成**：用 DeepSeek（`DEEPSEEK_API_KEY` 已在 `.env.local`）。
+  - 赛前前瞻、冷热门看点：本地脚本批量生成入库（`scripts/gen-previews.ts` / `gen-sentiment.ts`），已生成 24 条，全部过雷词检查。
+  - 赛后小结：结算时由 cron 自动生成（`scripts/gen-recaps.ts` 可补录）。
+  - 所有公开输出都过 `bannedTerms` 雷词 lint，命中则改写/兜底，绝不外泄博彩字眼。
+- **⚠️ 待你做（生产环境）**：把 `DEEPSEEK_API_KEY` 加进 **Vercel → Settings → Environment Variables**（标 Sensitive），否则**赛后小结的 cron 自动生成**在线上不可用（前瞻/冷热门已入库，展示不需要密钥）。开赛（6/11）前办好即可，不急于今天。
+- **注意**：按用量计费，内容缓存复用省成本；想换更高质量模型只需改 `src/lib/ai/deepseek.ts` 的 endpoint/model。
 
 ## ④ Vercel（部署上线 · 你说先不部署，缓办）
 - **干什么**：把网站托管上线。

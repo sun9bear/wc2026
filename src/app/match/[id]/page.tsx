@@ -51,10 +51,24 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
         </div>
       </div>
 
+      {settled && m.recap && (
+        <div className="fade-up mt-4 rounded-lg border border-border bg-surface p-4">
+          <div className="mb-1 text-[11px] text-muted">📝 赛后小结 · AI 生成 · 仅供娱乐</div>
+          <p className="text-sm leading-relaxed">{m.recap}</p>
+        </div>
+      )}
+
       {m.preview && (
         <div className="fade-up mt-4 rounded-lg border border-border bg-surface p-4">
           <div className="mb-1 text-[11px] text-muted">📋 赛前前瞻 · AI 生成 · 仅供娱乐</div>
           <p className="text-sm leading-relaxed">{m.preview}</p>
+        </div>
+      )}
+
+      {!settled && m.sentiment && (
+        <div className="fade-up mt-4 rounded-lg border border-border bg-surface p-4">
+          <div className="mb-1 text-[11px] text-muted">🔥 冷热门看点 · AI 生成 · 仅供娱乐</div>
+          <p className="text-sm leading-relaxed">{m.sentiment}</p>
         </div>
       )}
 

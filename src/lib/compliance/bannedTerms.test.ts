@@ -8,6 +8,11 @@ describe("findBannedTerms", () => {
   it("flags zh terms even when negated (scanner ignores context)", () => {
     expect(findBannedTerms("仅供娱乐，非投注建议", "zh")).toContain("投注");
   });
+  it("flags advice/guarantee terms forbidden by AI prompts", () => {
+    for (const t of ["推荐", "必赢", "稳赢", "稳赚"]) {
+      expect(findBannedTerms(`这场${t}没跑`, "zh")).toContain(t);
+    }
+  });
   it("flags en gambling terms case-insensitively", () => {
     expect(findBannedTerms("Place your BET now", "en")).toContain("bet");
   });
