@@ -6,6 +6,7 @@ export interface SelectionView {
   code: string;
   label: string;
   multiplier: number;
+  pooledStake: number;
 }
 
 export interface MatchDetail {
@@ -38,6 +39,7 @@ interface SelRow {
   code: string;
   label: string;
   current_multiplier: number;
+  pooled_stake: number;
 }
 
 const ORDER: Record<string, number> = { home: 0, draw: 1, away: 2 };
@@ -66,7 +68,7 @@ export async function getMatchDetail(matchId: string): Promise<MatchDetail | nul
   if (mk) {
     const { data: selData } = await supabase
       .from("selections")
-      .select("id, code, label, current_multiplier")
+      .select("id, code, label, current_multiplier, pooled_stake")
       .eq("market_id", mk.id);
     const sels = (selData as unknown as SelRow[] | null) ?? [];
     market = {
@@ -77,6 +79,7 @@ export async function getMatchDetail(matchId: string): Promise<MatchDetail | nul
           code: s.code,
           label: s.label,
           multiplier: Number(s.current_multiplier),
+          pooledStake: Number(s.pooled_stake) || 0,
         }))
         .sort((a, b) => (ORDER[a.code] ?? 9) - (ORDER[b.code] ?? 9)),
     };

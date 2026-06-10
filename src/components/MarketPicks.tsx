@@ -27,15 +27,24 @@ export function MarketPicks({
   async function refreshOdds() {
     const { data } = await supabase
       .from("selections")
-      .select("id, code, label, current_multiplier")
+      .select("id, code, label, current_multiplier, pooled_stake")
       .eq("market_id", marketId);
     if (data) {
-      const next = (data as { id: string; code: string; label: string; current_multiplier: number }[])
+      const next = (
+        data as {
+          id: string;
+          code: string;
+          label: string;
+          current_multiplier: number;
+          pooled_stake: number;
+        }[]
+      )
         .map((s) => ({
           id: s.id,
           code: s.code,
           label: s.label,
           multiplier: Number(s.current_multiplier),
+          pooledStake: Number(s.pooled_stake) || 0,
         }))
         .sort((a, b) => (ORDER[a.code] ?? 9) - (ORDER[b.code] ?? 9));
       setSelections(next);

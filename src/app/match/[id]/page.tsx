@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getMatchDetail } from "@/lib/markets/getMatchDetail";
 import { MarketPicks } from "@/components/MarketPicks";
+import { SentimentBar } from "@/components/SentimentBar";
 import { Disclaimer } from "@/components/Disclaimer";
 import { TeamBadge } from "@/components/TeamBadge";
 import { result1x2 } from "@/lib/settlement/result";
@@ -83,7 +84,8 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
           </div>
         ) : open && m.market ? (
           <>
-            <h2 className="font-head mb-2 flex items-center gap-2 text-sm font-semibold">
+            <SentimentBar selections={m.market.selections} />
+            <h2 className="font-head mb-2 mt-5 flex items-center gap-2 text-sm font-semibold">
               <span className="live-dot" /> 胜平负 · 实时倍率
             </h2>
             <MarketPicks marketId={m.market.id} selections={m.market.selections} />
