@@ -58,10 +58,11 @@
 - **怎么做**：adsense.google.com 注册 → 站点内容审核通过后拿广告位代码 → 收款用电汇或 PayPal Hyperwallet。
 - **注意**：需科学上网管理；"竞猜"形态可能触发广告内容审查，建议同时备 Media.net 等备用网络。
 
-## ⑥ reCAPTCHA / Cloudflare Turnstile（Plan 5 反滥用 · 那时再办）
+## ⑥ Cloudflare Turnstile（反滥用）🟡 已拿 key，接入待 GitHub 恢复
 - **干什么**：人机验证，防小号刷榜、刷激励广告（保护 AdSense 账号不被封）。
-- **怎么做**：Google reCAPTCHA 或 Cloudflare Turnstile 注册 → 拿 `site key` + `secret key`。
-- **密钥放哪**：`.env.local`。
+- **已完成**：Turnstile widget 已建（hostname 含 `wc2026.cool` + `www.wc2026.cool`，Managed 模式）；key 存 `docs/secret/Cloudflare Turnstile.txt`，已填入 `.env.local`（`NEXT_PUBLIC_TURNSTILE_SITE_KEY` + `TURNSTILE_SECRET_KEY`）。服务端验票核心 `src/lib/security/turnstile.ts` + 单测已写（**无密钥即休眠**，不会误拦）。
+- **⚠️ 待你做（生产环境）**：把 `NEXT_PUBLIC_TURNSTILE_SITE_KEY` + `TURNSTILE_SECRET_KEY` 加进 **Vercel 环境变量**（后者标 Sensitive）。**但先别加**——等我把客户端组件 + 写操作拦截接好并**真机 QA** 后再启用，否则可能误拦正常下注。
+- **待接入（GitHub 恢复后，带真机验证）**：客户端 Turnstile 组件 + 在下注/串关/签到提交时取 token → 服务端 `verifyTurnstile()` 校验。
 
 ---
 
