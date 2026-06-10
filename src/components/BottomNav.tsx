@@ -2,21 +2,22 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { getDict, type Locale } from "@/i18n";
 
-const TABS = [
-  { href: "/", label: "预测", icon: "⚽" },
-  { href: "/parlay", label: "串关", icon: "🔗" },
-  { href: "/leaderboard", label: "排行", icon: "🏆" },
-  { href: "/me", label: "我的", icon: "👤" },
-];
-
-export function BottomNav() {
+export function BottomNav({ locale }: { locale: Locale }) {
   const pathname = usePathname();
+  const nav = getDict(locale).nav;
+  const tabs = [
+    { href: "/", label: nav.predict, icon: "⚽" },
+    { href: "/parlay", label: nav.parlay, icon: "🔗" },
+    { href: "/leaderboard", label: nav.ranking, icon: "🏆" },
+    { href: "/me", label: nav.me, icon: "👤" },
+  ];
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 h-14 border-t border-border bg-surface/95 backdrop-blur">
       <div className="mx-auto flex h-full max-w-xl">
-        {TABS.map((t) => {
+        {tabs.map((t) => {
           const active =
             t.href === "/"
               ? pathname === "/" || pathname.startsWith("/match")

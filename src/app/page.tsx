@@ -2,13 +2,14 @@ import Link from "next/link";
 import { getMatches } from "@/lib/matches/getMatches";
 import { MatchCard } from "@/components/MatchCard";
 import { Disclaimer } from "@/components/Disclaimer";
-import { zh } from "@/i18n/messages/zh";
+import { getDict } from "@/i18n";
+import { getLocale } from "@/i18n/server";
 import type { FixtureMatch } from "@/lib/fixtures/matches";
 
 export const dynamic = "force-dynamic";
 
-function dateKey(iso: string): string {
-  return new Date(iso).toLocaleDateString("zh-CN", {
+function dateKey(iso: string, locale: string): string {
+  return new Date(iso).toLocaleDateString(locale === "en" ? "en-US" : "zh-CN", {
     month: "long",
     day: "numeric",
     weekday: "short",
@@ -21,6 +22,8 @@ export default async function Home({
   searchParams: Promise<{ filter?: string }>;
 }) {
   const { filter = "all" } = await searchParams;
+  const locale = await getLocale();
+  const t = getDict(locale);
   const all = await getMatches();
   const now = Date.now();
   const matches = all.filter((m) => {
@@ -32,7 +35,7 @@ export default async function Home({
 
   const groups: { date: string; items: FixtureMatch[] }[] = [];
   for (const m of matches) {
-    const d = dateKey(m.kickoffAt);
+    const d = dateKey(m.kickoffAt, locale);
     let g = groups.find((x) => x.date === d);
     if (!g) {
       g = { date: d, items: [] };
@@ -45,17 +48,25 @@ export default async function Home({
     <main className="mx-auto w-full max-w-5xl px-4 py-8">
       <header className="mb-6">
         <h1 className="font-head text-2xl font-bold tracking-wide">
-          环球足球<span className="text-green">预测</span> · 2026
+          {locale === "en" ? (
+            <>
+              World Cup <span className="text-green">Predictor</span> · 2026
+            </>
+          ) : (
+            <>
+              环球足球<span className="text-green">预测</span> · 2026
+            </>
+          )}
         </h1>
-        <p className="mt-1 text-sm text-muted">{zh.tagline}</p>
+        <p className="mt-1 text-sm text-muted">{t.tagline}</p>
       </header>
 
       <div className="mb-5 flex gap-2 text-xs">
         {(
           [
-            ["all", "全部"],
-            ["upcoming", "未开赛"],
-            ["done", "已结束"],
+            ["all", t.filter.all],
+            ["upcoming", t.filter.upcoming],
+            ["done", t.filter.done],
           ] as const
         ).map(([k, label]) => (
           <Link
@@ -73,7 +84,7 @@ export default async function Home({
       {groups.length === 0 && (
         <div className="mt-16 text-center">
           <div className="text-5xl">📭</div>
-          <p className="mt-3 text-sm text-muted">该筛选下暂无比赛。</p>
+          <p className="mt-3 text-sm text-muted">{t.filter.empty}</p>
         </div>
       )}
 

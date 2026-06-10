@@ -5,6 +5,7 @@ import "./globals.css";
 import { BottomNav } from "@/components/BottomNav";
 import { Footer } from "@/components/Footer";
 import { ToastProvider } from "@/components/Toast";
+import { getLocale } from "@/i18n/server";
 
 const oswald = Oswald({
   variable: "--font-oswald",
@@ -40,21 +41,22 @@ export const metadata: Metadata = {
   other: { "google-adsense-account": "ca-pub-6993272715247473" },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
   return (
     <html
-      lang="zh"
+      lang={locale}
       className={`${oswald.variable} ${inter.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-bg text-text font-body pb-16">
         <ToastProvider>
           {children}
-          <Footer />
-          <BottomNav />
+          <Footer locale={locale} />
+          <BottomNav locale={locale} />
         </ToastProvider>
         <Script
           async
