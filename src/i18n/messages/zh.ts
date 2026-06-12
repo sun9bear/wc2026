@@ -7,6 +7,7 @@ export const zh = {
   nav: { predict: "预测", combo: "串关", ranking: "排行", me: "我的" },
   filter: { all: "全部", upcoming: "未开赛", done: "已结束", empty: "该筛选下暂无比赛。" },
   footer: {
+    watch: "在哪看比赛",
     about: "关于 & 玩法",
     privacy: "隐私政策",
     terms: "免责声明",

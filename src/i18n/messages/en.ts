@@ -6,6 +6,7 @@ export const en = {
   nav: { predict: "Predict", combo: "Combo", ranking: "Ranks", me: "Me" },
   filter: { all: "All", upcoming: "Upcoming", done: "Finished", empty: "No matches for this filter." },
   footer: {
+    watch: "Where to Watch",
     about: "About & How to play",
     privacy: "Privacy",
     terms: "Disclaimer",

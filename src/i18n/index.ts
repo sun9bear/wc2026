@@ -10,7 +10,7 @@ export interface Dict {
   disclaimer: string;
   nav: { predict: string; combo: string; ranking: string; me: string };
   filter: { all: string; upcoming: string; done: string; empty: string };
-  footer: { about: string; privacy: string; terms: string; note: string };
+  footer: { watch: string; about: string; privacy: string; terms: string; note: string };
   langLabel: string;
 }
 
