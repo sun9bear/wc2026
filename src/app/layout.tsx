@@ -18,28 +18,60 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL("https://wc2026.cool"),
-  title: "环球足球预测 · 2026",
-  description: "趣味足球预测游戏：用虚拟积分预测比赛、冲排行榜、解锁段位。仅供娱乐。",
-  applicationName: "环球足球预测",
-  // 分享卡片（微信/X 等）——标题+描述+站点名；后续可加品牌缩略图。
-  openGraph: {
-    type: "website",
-    locale: "zh_CN",
-    url: "/",
+const META = {
+  zh: {
+    title: "环球足球预测 · 2026",
+    description: "趣味足球预测游戏：用虚拟积分预测比赛、冲排行榜、解锁段位。仅供娱乐。",
+    ogDescription:
+      "用虚拟积分预测世界杯每场胜平负，冲排行榜、解锁段位，看 AI 趣味前瞻。免费 · 仅供娱乐。",
     siteName: "环球足球预测 · 2026",
-    title: "环球足球预测 · 2026",
-    description: "用虚拟积分预测世界杯每场胜平负，冲排行榜、解锁段位，看 AI 趣味前瞻。免费 · 仅供娱乐。",
+    appName: "环球足球预测",
+    ogLocale: "zh_CN",
+    altLocale: "en_US",
   },
-  twitter: {
-    card: "summary_large_image",
-    title: "环球足球预测 · 2026",
-    description: "用虚拟积分预测世界杯每场胜平负，冲排行榜、解锁段位。免费 · 仅供娱乐。",
+  en: {
+    title: "World Cup 2026 Prediction Game — Free, No Sign-up",
+    description:
+      "Predict every 2026 World Cup match with virtual points, climb the leaderboard and read AI previews. Free, bilingual, for fun only.",
+    ogDescription:
+      "Predict every 2026 World Cup match with virtual points, climb the leaderboard and read AI previews. Free, bilingual, for fun only.",
+    siteName: "WC2026.cool — World Cup 2026 Prediction Game",
+    appName: "WC2026 Predictor",
+    ogLocale: "en_US",
+    altLocale: "zh_CN",
   },
-  // Google AdSense 站点验证（元标记方式，SSR 渲染最可靠）
-  other: { "google-adsense-account": "ca-pub-6993272715247473" },
-};
+} as const;
+
+// 语言感知 metadata：canonical 统一到 www（与生产 308 跳转方向一致），分享卡带品牌图。
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const m = META[locale];
+  return {
+    metadataBase: new URL("https://www.wc2026.cool"),
+    title: m.title,
+    description: m.description,
+    applicationName: m.appName,
+    alternates: { canonical: "./" },
+    openGraph: {
+      type: "website",
+      locale: m.ogLocale,
+      alternateLocale: m.altLocale,
+      url: "./",
+      siteName: m.siteName,
+      title: m.title,
+      description: m.ogDescription,
+      images: [{ url: "/og.png", width: 1200, height: 630, alt: m.title }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: m.title,
+      description: m.description,
+      images: ["/og.png"],
+    },
+    // Google AdSense 站点验证（元标记方式，SSR 渲染最可靠）
+    other: { "google-adsense-account": "ca-pub-6993272715247473" },
+  };
+}
 
 export default async function RootLayout({
   children,
