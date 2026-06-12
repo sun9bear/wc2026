@@ -10,6 +10,7 @@ export function BottomNav({ locale }: { locale: Locale }) {
   const tabs = [
     { href: "/", label: nav.predict, icon: "⚽" },
     { href: "/combo", label: nav.combo, icon: "🔗" },
+    { href: "/forecast", label: nav.forecast, icon: "📊" },
     { href: "/leaderboard", label: nav.ranking, icon: "🏆" },
     { href: "/me", label: nav.me, icon: "👤" },
   ];

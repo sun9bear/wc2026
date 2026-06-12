@@ -8,6 +8,10 @@ export function Footer({ locale }: { locale: Locale }) {
   return (
     <footer className="mx-auto w-full max-w-xl px-4 pb-8 pt-12 text-center text-[11px] leading-relaxed text-muted">
       <nav className="mb-3 flex items-center justify-center gap-3">
+        <Link href="/calculator" className="transition-colors hover:text-text">
+          {t.footer.calculator}
+        </Link>
+        <span className="opacity-40">·</span>
         <Link href="/watch" className="transition-colors hover:text-text">
           {t.footer.watch}
         </Link>
