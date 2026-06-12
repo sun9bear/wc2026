@@ -5,6 +5,7 @@
 
 import { unstable_cache } from "next/cache";
 import { supabase } from "@/lib/supabase/client";
+import { getServerSupabase } from "@/lib/supabase/server";
 import { teamZh, flagUrl } from "@/lib/football/teams";
 import { chat } from "@/lib/ai/deepseek";
 import { findBannedTerms } from "@/lib/compliance/bannedTerms";
@@ -381,6 +382,39 @@ async function computeForecast(): Promise<ForecastData> {
       if (findBannedTerms(en, "en").length === 0) noteEn = en;
     } catch {
       /* 降级 */
+    }
+  }
+
+  // 9) 历史快照写入（表已建且有 service key 时生效；任何失败都不影响页面）
+  if (process.env.SUPABASE_SECRET_KEY && simOk) {
+    try {
+      const db = getServerSupabase();
+      await db.from("prob_team_snapshots").insert(
+        [...teamProbs.values()].map((t) => ({
+          team_id: t.teamId,
+          p_advance: t.pAdvance,
+          p_r16: t.pR16,
+          p_qf: t.pQF,
+          p_sf: t.pSF,
+          p_final: t.pFinal,
+          p_champion: t.pChampion,
+          runs: RUNS,
+        }))
+      );
+      await db.from("prob_match_snapshots").insert(
+        matchViews.map((m) => ({
+          match_id: m.id,
+          p_home: m.p.home,
+          p_draw: m.p.draw,
+          p_away: m.p.away,
+          market: m.market,
+          model: m.model,
+          books: m.books,
+          top_scores: m.topScores,
+        }))
+      );
+    } catch {
+      /* 表未建或瞬时故障：静默降级 */
     }
   }
 

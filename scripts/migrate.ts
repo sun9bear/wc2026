@@ -12,7 +12,7 @@ async function main(): Promise<void> {
   const connectionString = process.env.SUPABASE_DB_URL;
   if (!connectionString) throw new Error("缺少 SUPABASE_DB_URL（检查 .env.local）");
 
-  const file = path.resolve("supabase/migrations/0001_core.sql");
+  const file = path.resolve(process.argv[2] ?? "supabase/migrations/0001_core.sql");
   const sql = readFileSync(file, "utf8");
 
   const client = new Client({ connectionString, ssl: { rejectUnauthorized: false } });
