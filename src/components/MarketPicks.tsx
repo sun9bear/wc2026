@@ -61,13 +61,13 @@ export function MarketPicks({
         if (error) throw new Error("进入游戏失败：" + error.message);
         session = (await supabase.auth.getSession()).data.session;
       }
-      const res = await fetch("/api/bet", {
+      const res = await fetch("/api/predict", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session?.access_token ?? ""}`,
         },
-        body: JSON.stringify({ selectionId: picked.id, stake }),
+        body: JSON.stringify({ selectionId: picked.id, points: stake }),
       });
       const json = (await res.json()) as { error?: string; balance?: number; multiplier?: number };
       if (!res.ok) throw new Error(json.error ?? "提交失败");

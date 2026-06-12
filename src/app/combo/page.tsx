@@ -45,7 +45,7 @@ interface RawMatch {
 
 const ORDER: Record<string, number> = { home: 0, draw: 1, away: 2 };
 
-export default function ParlayPage() {
+export default function ComboPage() {
   const [matches, setMatches] = useState<Mt[]>([]);
   const [loading, setLoading] = useState(true);
   const [picked, setPicked] = useState<Record<string, string>>({});
@@ -120,13 +120,13 @@ export default function ParlayPage() {
         session = (await supabase.auth.getSession()).data.session;
       }
       const selectionIds = matches.map((m) => picked[m.id]).filter(Boolean);
-      const res = await fetch("/api/parlay", {
+      const res = await fetch("/api/combo", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session?.access_token ?? ""}`,
         },
-        body: JSON.stringify({ selectionIds, stake }),
+        body: JSON.stringify({ selectionIds, points: stake }),
       });
       const j = (await res.json()) as { error?: string; legs?: number; combined?: number; balance?: number };
       if (!res.ok) throw new Error(j.error ?? "提交失败");

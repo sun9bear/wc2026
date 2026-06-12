@@ -8,7 +8,7 @@ export interface Dict {
   appName: string;
   tagline: string;
   disclaimer: string;
-  nav: { predict: string; parlay: string; ranking: string; me: string };
+  nav: { predict: string; combo: string; ranking: string; me: string };
   filter: { all: string; upcoming: string; done: string; empty: string };
   footer: { about: string; privacy: string; terms: string; note: string };
   langLabel: string;

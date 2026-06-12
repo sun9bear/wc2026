@@ -16,6 +16,19 @@ describe("findBannedTerms", () => {
   it("flags en gambling terms case-insensitively", () => {
     expect(findBannedTerms("Place your BET now", "en")).toContain("bet");
   });
+  it("flags US sportsbook vocabulary (AdSense classifier features)", () => {
+    for (const t of ["parlay", "accumulator", "handicap", "tipster", "payout", "sportsbook"]) {
+      expect(findBannedTerms(`try this ${t} today`, "en")).toContain(t);
+    }
+  });
+  it("flags en plural forms", () => {
+    expect(findBannedTerms("Build winning parlays", "en")).toContain("parlay");
+    expect(findBannedTerms("compare payouts here", "en")).toContain("payout");
+    expect(findBannedTerms("place your bets", "en")).toContain("bet");
+  });
+  it("passes clean neutral en copy", () => {
+    expect(findBannedTerms("Combo picks: win probability 62% — for fun only", "en")).toEqual([]);
+  });
   it("passes clean neutral zh copy", () => {
     expect(findBannedTerms("仅供娱乐 · 积分无现实价值 · 不可兑换", "zh")).toEqual([]);
   });

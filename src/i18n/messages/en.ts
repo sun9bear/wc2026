@@ -3,7 +3,7 @@ export const en = {
   appName: "World Cup Predictor · 2026",
   tagline: "Predict · Climb the board · Unlock ranks",
   disclaimer: "For fun only · Points have no real value · Non-redeemable",
-  nav: { predict: "Predict", parlay: "Parlay", ranking: "Ranks", me: "Me" },
+  nav: { predict: "Predict", combo: "Combo", ranking: "Ranks", me: "Me" },
   filter: { all: "All", upcoming: "Upcoming", done: "Finished", empty: "No matches for this filter." },
   footer: {
     about: "About & How to play",

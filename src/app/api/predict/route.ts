@@ -20,9 +20,9 @@ export async function POST(req: NextRequest) {
   const user = userData.user;
   if (!user) return NextResponse.json({ error: "请先进入游戏（未登录）" }, { status: 401 });
 
-  const body = (await req.json()) as { selectionId?: string; stake?: number };
+  const body = (await req.json()) as { selectionId?: string; points?: number };
   const selectionId = body.selectionId;
-  const stake = body.stake;
+  const stake = body.points;
   if (!selectionId || typeof stake !== "number") {
     return NextResponse.json({ error: "参数不完整" }, { status: 400 });
   }

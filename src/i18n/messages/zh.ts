@@ -4,7 +4,7 @@ export const zh = {
   appName: "环球足球预测 · 2026",
   tagline: "趣味预测 · 冲榜 · 解锁段位",
   disclaimer: "仅供娱乐 · 积分无现实价值 · 不可兑换",
-  nav: { predict: "预测", parlay: "串关", ranking: "排行", me: "我的" },
+  nav: { predict: "预测", combo: "串关", ranking: "排行", me: "我的" },
   filter: { all: "全部", upcoming: "未开赛", done: "已结束", empty: "该筛选下暂无比赛。" },
   footer: {
     about: "关于 & 玩法",

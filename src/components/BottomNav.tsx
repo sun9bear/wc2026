@@ -9,7 +9,7 @@ export function BottomNav({ locale }: { locale: Locale }) {
   const nav = getDict(locale).nav;
   const tabs = [
     { href: "/", label: nav.predict, icon: "⚽" },
-    { href: "/parlay", label: nav.parlay, icon: "🔗" },
+    { href: "/combo", label: nav.combo, icon: "🔗" },
     { href: "/leaderboard", label: nav.ranking, icon: "🏆" },
     { href: "/me", label: nav.me, icon: "👤" },
   ];

@@ -19,9 +19,9 @@ export async function POST(req: NextRequest) {
   const user = userData.user;
   if (!user) return NextResponse.json({ error: "请先进入游戏（未登录）" }, { status: 401 });
 
-  const body = (await req.json()) as { selectionIds?: string[]; stake?: number };
+  const body = (await req.json()) as { selectionIds?: string[]; points?: number };
   const selectionIds = body.selectionIds ?? [];
-  const stake = body.stake;
+  const stake = body.points;
   if (!Array.isArray(selectionIds) || selectionIds.length < 2) {
     return NextResponse.json({ error: "串关至少选 2 场" }, { status: 400 });
   }

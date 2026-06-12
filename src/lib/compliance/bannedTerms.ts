@@ -8,14 +8,18 @@ const BANNED: Record<Locale, string[]> = {
     // 诱导/承诺类（AI 提示词明令禁止，lint 须强制对齐）
     "推荐", "必赢", "稳赢", "稳赚",
   ],
-  en: ["bet", "betting", "wager", "odds", "bookmaker", "gamble", "gambling", "casino", "stake"],
+  en: [
+    "bet", "betting", "wager", "odds", "bookmaker", "gamble", "gambling", "casino", "stake",
+    // 美式博彩词族（AdSense 分类器文本特征，2026-06 合规审查补充）
+    "parlay", "accumulator", "acca", "handicap", "tipster", "payout", "multiplier", "sportsbook",
+  ],
 };
 
-/** 返回文本中命中的雷词；无命中返回空数组。 */
+/** 返回文本中命中的雷词；无命中返回空数组。英文按整词匹配，含复数形式。 */
 export function findBannedTerms(text: string, locale: Locale): string[] {
   const hay = locale === "en" ? text.toLowerCase() : text;
   return BANNED[locale].filter((term) =>
-    locale === "en" ? new RegExp(`\\b${term}\\b`).test(hay) : hay.includes(term)
+    locale === "en" ? new RegExp(`\\b${term}s?\\b`).test(hay) : hay.includes(term)
   );
 }
 
