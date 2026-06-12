@@ -68,6 +68,8 @@ export async function generateMetadata(): Promise<Metadata> {
       description: m.description,
       images: ["/og.png"],
     },
+    // Google Search Console 所有权验证（删除会导致 GSC 失效，勿移除）
+    verification: { google: "sOWAw6DVwayeUBiVymgvXfePWJYhKRpg_TtwCQlAGb0" },
     // Google AdSense 站点验证（元标记方式，SSR 渲染最可靠）
     other: { "google-adsense-account": "ca-pub-6993272715247473" },
   };
