@@ -125,3 +125,23 @@ AI：DeepSeek 只写双语短评（夺冠 Top3 一句话），雷词 fail-closed
 - GSC：已验证 https://www.wc2026.cool/（HTML 标记法，meta 在 layout.tsx，勿删）
 - Impact/Fubo：账号 WC2026.Cool，申请 In Review；税表收款已配
 - Turnstile：`verifyTurnstile()` 已写未接线（src/lib/security/turnstile.ts），客户端组件未做——接线前生产侧勿启用强制校验
+
+## 八、账号清单、凭据与新会话冷启动
+
+**账号一览（值不落文档，登录方式备查）**
+| 服务 | 账号/状态 | 凭据所在 |
+|---|---|---|
+| Vercel | sun9bear，CLI 已登录（凭据在 Windows 用户目录，失效则 `npx vercel login` 设备码流程） | Token 备份：docs/secret/Vercel Token.txt；恢复码：docs/secret/vercel recovery-codes.txt |
+| Supabase | GitHub OAuth 绑定（**当前锁定**，等 GitHub 解封） | 项目密钥/DB 密码：docs/secret/supabase.txt |
+| GitHub | sun9bear（**封禁中**，申诉 support.github.com） | — |
+| Impact/Fubo | 账号名 WC2026.Cool，申请 In Review | 用户自设邮箱+密码 |
+| The Odds API | 免费档 | key 在 .env.local |
+| Google（AdSense/GSC） | 用户 Google 账号 | — |
+| 关联邮箱 | Supabase 通知走 sun9bear@126.com | — |
+
+**⚠️ 密钥轮换提醒**：2026-06-13/14 的开发会话中，DB 密码、service key、CRON_SECRET、Odds/DeepSeek key 的明文曾出现在 AI 会话记录里（本机）。实际风险低，但 GitHub 解封、拿回 Supabase 仪表盘后，建议把 **DB 密码和 service key 轮换一遍**（Dashboard → Settings → Database / API），并同步更新 docs/secret/、.env.local 和 Vercel 环境变量。
+
+**仓库备份**：GitHub 推不上去期间，每天用 `git bundle create D:\wc2026-backup.bundle --all` 做全量备份并拷到网盘/U 盘（bundle 含全部分支与历史，恢复用 `git clone D:\wc2026-backup.bundle`）。
+
+**新会话冷启动指令（建议开场白）**：
+> 读 docs/HANDOFF.md 接手 wc2026 项目，今天做：<具体任务，如"P0 第 1-2 项：代理隧道跑 0002 迁移 + 把 THE_ODDS_API_KEY 补进 Vercel 环境并重新部署">。生产部署我已授权，可自行确认。
