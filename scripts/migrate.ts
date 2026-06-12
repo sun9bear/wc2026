@@ -19,7 +19,7 @@ async function main(): Promise<void> {
   await client.connect();
   try {
     await client.query(sql);
-    console.log("✓ 已应用 migration: 0001_core.sql");
+    console.log(`✓ 已应用 migration: ${path.basename(file)}`);
   } finally {
     await client.end();
   }

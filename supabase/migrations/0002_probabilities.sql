@@ -47,3 +47,7 @@ create policy "public read prob_team_snapshots" on prob_team_snapshots for selec
 drop policy if exists "public read prob_meta" on prob_meta;
 create policy "public read prob_meta" on prob_meta for select using (true);
 -- 写入仅服务端（service key 绕过 RLS），不设公开写策略。
+
+-- 经 pooler 建表不会触发默认授权，需显式 GRANT（匿名只读，服务端全权）。
+grant select on prob_match_snapshots, prob_team_snapshots, prob_meta to anon, authenticated;
+grant all on prob_match_snapshots, prob_team_snapshots, prob_meta to service_role;
