@@ -8,6 +8,7 @@ import { CheckinCard } from "@/components/CheckinCard";
 import { fmtPoints } from "@/lib/format";
 import { copyText } from "@/lib/clipboard";
 import { Skeleton } from "@/components/Skeleton";
+import { defaultName } from "@/lib/identity/defaultName";
 import { getDict, type Locale } from "@/i18n";
 
 interface RecentBet {
@@ -17,6 +18,7 @@ interface RecentBet {
 
 interface MeData {
   balance: number;
+  nickname?: string | null;
   tier: string;
   tierCode?: string;
   total: number;
@@ -44,6 +46,10 @@ const TXT = {
     beat: (p: number) => `💪 击败 ${p}% 玩家`,
     site: "搜 wc2026.cool",
     league: "🛡 好友擂台 · 建房间拉朋友比一比 →",
+    nameLabel: "我的名字",
+    rename: "改名",
+    save: "保存",
+    nameErr: "名字不合法（2–20 字、无敏感词）",
   },
   en: {
     streakLine: (s: number, b: number) => `🔥 Current streak ${s} · best ${b}`,
@@ -54,6 +60,10 @@ const TXT = {
     beat: (p: number) => `💪 Better than ${p}% of players`,
     site: "wc2026.cool",
     league: "🛡 Friends league · challenge your friends →",
+    nameLabel: "My name",
+    rename: "Rename",
+    save: "Save",
+    nameErr: "Invalid name (2–20 chars, no banned words)",
   },
 } as const;
 
@@ -90,6 +100,42 @@ export function MeClient({ locale }: { locale: Locale }) {
   const [data, setData] = useState<MeData | null>(null);
   const [state, setState] = useState<"loading" | "none" | "ready">("loading");
   const [copied, setCopied] = useState(false);
+  const [uid, setUid] = useState<string | null>(null);
+  const [nickname, setNickname] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [nameErr, setNameErr] = useState<string | null>(null);
+  const effectiveName = nickname ?? (uid ? defaultName(uid, locale) : "");
+
+  async function saveName() {
+    const v = draft.trim();
+    if (!v) return;
+    setSaving(true);
+    setNameErr(null);
+    try {
+      const session = (await supabase.auth.getSession()).data.session;
+      if (!session) return;
+      const res = await fetch("/api/profile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ nickname: v }),
+      });
+      if (res.ok) {
+        setNickname(v);
+        setEditing(false);
+      } else {
+        setNameErr(tx.nameErr);
+      }
+    } catch {
+      setNameErr(tx.nameErr);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   function doCopyRecord() {
     if (!data) return;
@@ -107,11 +153,14 @@ export function MeClient({ locale }: { locale: Locale }) {
         setState("none");
         return;
       }
+      setUid(session.user.id);
       const res = await fetch("/api/me", {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
       if (res.ok) {
-        setData((await res.json()) as MeData);
+        const j = (await res.json()) as MeData;
+        setData(j);
+        setNickname(j.nickname ?? null);
         setState("ready");
       } else {
         setState("none");
@@ -168,6 +217,45 @@ export function MeClient({ locale }: { locale: Locale }) {
             </div>
             <div className="font-head text-3xl font-bold text-green">{fmtPoints(data.balance)}</div>
           </div>
+
+          <div className="mt-3 flex items-center justify-between rounded-md border border-border bg-surface-2 px-4 py-2.5 text-sm">
+            {editing ? (
+              <span className="flex w-full items-center gap-2">
+                <input
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  maxLength={20}
+                  autoFocus
+                  className="min-w-0 flex-1 rounded border border-border bg-surface px-2 py-1 text-text"
+                />
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={saveName}
+                  className="shrink-0 rounded-md bg-green px-3 py-1 text-xs font-bold text-[#06231a]"
+                >
+                  {tx.save}
+                </button>
+              </span>
+            ) : (
+              <>
+                <span className="min-w-0 truncate text-muted">
+                  {tx.nameLabel}：<span className="font-head text-text">{effectiveName}</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDraft(nickname ?? "");
+                    setEditing(true);
+                  }}
+                  className="ml-2 shrink-0 rounded-md border border-border bg-surface px-3 py-1 text-xs text-muted transition hover:border-green hover:text-green"
+                >
+                  {tx.rename}
+                </button>
+              </>
+            )}
+          </div>
+          {nameErr && <div className="mt-1 text-[11px] text-red">{nameErr}</div>}
 
           {((data.recent?.length ?? 0) > 0 || (data.bestStreak ?? 0) > 0) && (
             <div className="mt-3 flex items-center justify-between rounded-md border border-border bg-surface-2 px-4 py-2.5 text-sm">

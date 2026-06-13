@@ -16,11 +16,12 @@ export interface SwingShareParts {
   up: boolean; // 主角概率方向（涨/跌）
 }
 
-/** 摆动分享的标题/正文/展示字段。personal=true 时第一人称炫耀（本人押中）。 */
+/** 摆动分享的标题/正文/展示字段。personal=true 时第一人称炫耀（本人押中）；by 为分享者署名（已合规校验）。 */
 export function swingShareParts(
   swing: MatchSwing,
   locale: "zh" | "en",
-  personal: boolean
+  personal: boolean,
+  by?: string
 ): SwingShareParts {
   const heroName = locale === "zh" ? swing.hero.zh : swing.hero.name;
   const before = Math.round(swing.hero.before * 100);
@@ -40,5 +41,6 @@ export function swingShareParts(
       : personal
         ? `🎯 I called this upset! ${score} — ${heroName}'s chance to advance ${before}%→${after}%`
         : `🔥 ${score}! ${heroName}'s chance to advance ${before}%→${after}%`;
-  return { title, text, heroName, before, after, score, up };
+  const signed = by ? `${text}${locale === "zh" ? ` —— ${by}` : ` — ${by}`}` : text;
+  return { title, text: signed, heroName, before, after, score, up };
 }

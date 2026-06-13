@@ -60,12 +60,18 @@ export async function GET(req: Request) {
       findBannedTerms(rawResult, "en").length === 0 && findBannedTerms(rawResult, "zh").length === 0
         ? rawResult
         : "";
+    // 分享者署名（用户可控 → 同 result 一样双语雷词闸 fail-closed + 限长）。
+    const rawBy = (searchParams.get("by") ?? "").slice(0, 16);
+    const by =
+      rawBy && findBannedTerms(rawBy, "en").length === 0 && findBannedTerms(rawBy, "zh").length === 0
+        ? rawBy
+        : "";
     if (before !== null && after !== null) {
       const t = hit.team;
       let fonts: { name: string; data: ArrayBuffer; weight: 700 }[] = [];
       if (locale === "zh") {
         const f = await loadZhFont(
-          `${t.zh}${result}出线概率万次蒙特卡洛模拟更新于0123456789.%→·若胜平负 `
+          `${t.zh}${result}${by}出线概率万次蒙特卡洛模拟更新于0123456789.%→·若胜平负 by`
         );
         if (f) fonts = [{ name: "NotoSansSC", data: f, weight: 700 }];
         else locale = "en";
@@ -138,6 +144,11 @@ export async function GET(req: Request) {
               {result && (
                 <div style={{ display: "flex", fontSize: 36, color: "#e6edf3", marginTop: 8 }}>
                   {result}
+                </div>
+              )}
+              {by && (
+                <div style={{ display: "flex", fontSize: 26, color: "#8b949e", marginTop: 6 }}>
+                  —— {by}
                 </div>
               )}
             </div>

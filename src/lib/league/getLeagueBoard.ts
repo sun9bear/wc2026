@@ -1,4 +1,5 @@
 import { getServerSupabase } from "@/lib/supabase/server";
+import { defaultName } from "@/lib/identity/defaultName";
 
 // 擂台榜单查询（任务 5）：service key 服务端读取，客户端绝不直读 leagues/league_members。
 // 供 /league/[code] 页面（服务端直调）与 GET /api/league/[code] 共用。
@@ -75,7 +76,7 @@ export async function getLeagueBoard(code: string): Promise<LeagueBoard | null> 
       const p = profs.get(uid);
       const a = agg.get(uid) ?? { won: 0, total: 0 };
       return {
-        nickname: p?.nickname || `Player-${uid.slice(0, 4)}`,
+        nickname: p?.nickname || defaultName(uid, "zh"),
         points: Number(p?.points_balance ?? 0),
         won: a.won,
         total: a.total,

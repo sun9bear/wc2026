@@ -61,10 +61,12 @@ export async function GET(req: NextRequest) {
   const db = getServerSupabase();
   const { data: profRow } = await db
     .from("profiles")
-    .select("points_balance")
+    .select("points_balance, nickname")
     .eq("user_id", user.id)
     .maybeSingle();
-  const balance = (profRow as { points_balance: number } | null)?.points_balance ?? 1000;
+  const prof = profRow as { points_balance: number; nickname: string | null } | null;
+  const balance = prof?.points_balance ?? 1000;
+  const nickname = prof?.nickname ?? null;
 
   const { data: betRows } = await db
     .from("bets")
@@ -161,6 +163,7 @@ export async function GET(req: NextRequest) {
   // tierCode 供前端按语言渲染段位名（label 仅中文，保留兼容旧客户端）
   return NextResponse.json({
     balance,
+    nickname,
     tier: tier.label,
     tierCode: tier.code,
     ...stats,

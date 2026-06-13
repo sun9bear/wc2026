@@ -5,11 +5,12 @@ import { supabase } from "@/lib/supabase/client";
 import { copyText } from "@/lib/clipboard";
 import { track } from "@/lib/track";
 import { swingShareParts, matchUrl } from "@/lib/share/swingShare";
+import { defaultName } from "@/lib/identity/defaultName";
 import type { MatchSwing } from "@/lib/prob/getMatchSwing";
 
-// 「爆冷瞬间」分享模块（摆动 OG 图卡前端入口）：页内还原摆动视觉 + 原生分享 + 个人押中炫耀。
-// 分享 url = 本场比赛页（其 og:image 已设为摆动卡，链接展开即震撼图）；降级复制+toast；
-// 「保存图片卡」直链 /api/og PNG（微信场景长按另存）。挂载拉 /api/me 检测是否本人押中。
+// 「爆冷瞬间」分享模块（摆动 OG 图卡前端入口）：页内还原摆动视觉 + 原生分享 + 个人押中炫耀 + 署名。
+// 分享 url = 本场比赛页（og:image 为通用摆动卡）；「保存图片卡」直链带 ?by=<署名> 的 OG PNG
+// （微信主路径：存图再发，图上有名字）。署名 = 昵称 ?? 趣味默认名，可就地改名（零注册）。
 
 export function MatchSwingShare({
   swing,
@@ -24,8 +25,12 @@ export function MatchSwingShare({
 }) {
   const [personalWin, setPersonalWin] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [nickname, setNickname] = useState<string | null>(null);
+  const [uid, setUid] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  // 个性化：本人是否在这场押中（按队名匹配 /api/me 已结算注单）。失败静默。
   useEffect(() => {
     track("swing_card_view", { matchId });
     let alive = true;
@@ -33,17 +38,22 @@ export function MatchSwingShare({
       try {
         const session = (await supabase.auth.getSession()).data.session;
         if (!session) return;
+        if (alive) setUid(session.user.id);
         const res = await fetch("/api/me", {
           headers: { Authorization: `Bearer ${session.access_token}` },
         });
         if (!res.ok) return;
-        const j = (await res.json()) as { recent?: { home: string; away: string; won: boolean }[] };
+        const j = (await res.json()) as {
+          nickname?: string | null;
+          recent?: { home: string; away: string; won: boolean }[];
+        };
+        if (alive && j.nickname) setNickname(j.nickname);
         const won = (j.recent ?? []).some(
-          (b) => b.won && b.home === swing.homeName && b.away === swing.awayName
+          (x) => x.won && x.home === swing.homeName && x.away === swing.awayName
         );
         if (alive && won) setPersonalWin(true);
       } catch {
-        /* 个性化失败不影响主功能 */
+        /* 个性化/署名失败不影响主功能 */
       }
     })();
     return () => {
@@ -51,9 +61,11 @@ export function MatchSwingShare({
     };
   }, [matchId, swing.homeName, swing.awayName]);
 
-  const parts = swingShareParts(swing, locale, personalWin);
+  const effectiveName = nickname ?? (uid ? defaultName(uid, locale) : null);
+  const parts = swingShareParts(swing, locale, personalWin, effectiveName ?? undefined);
   const { heroName, before: b, after: a, score, up } = parts;
   const heroColor = up ? "#1be27f" : "#ff5436";
+  const ogWithBy = effectiveName ? `${ogPath}&by=${encodeURIComponent(effectiveName)}` : ogPath;
 
   const c =
     locale === "zh"
@@ -63,6 +75,10 @@ export function MatchSwingShare({
           saveImg: "保存图片卡",
           copied: "已复制，去粘贴分享 👍",
           copyFail: "复制失败，可截图分享",
+          as: "署名",
+          rename: "✎ 改名",
+          save: "保存",
+          saveErr: "名字不合法（2–20 字、无敏感词）",
         }
       : {
           headline: personalWin ? "🎯 You called this upset" : "🔥 Upset moment",
@@ -70,6 +86,10 @@ export function MatchSwingShare({
           saveImg: "Save image card",
           copied: "Copied — paste to share 👍",
           copyFail: "Copy failed — screenshot to share",
+          as: "as",
+          rename: "✎ Rename",
+          save: "Save",
+          saveErr: "Invalid name (2–20 chars, no banned words)",
         };
 
   const shareUrl = matchUrl(matchId);
@@ -80,7 +100,6 @@ export function MatchSwingShare({
         await navigator.share({ title: parts.title, text: parts.text, url: shareUrl });
         track("swing_share_click", { matchId, method: "native", personalized: personalWin });
       } catch {
-        // 用户取消/分享失败：不强行降级复制（避免打扰），仅记一次
         track("swing_share_click", { matchId, method: "native_dismiss", personalized: personalWin });
       }
       return;
@@ -89,6 +108,36 @@ export function MatchSwingShare({
     setToast(ok ? c.copied : c.copyFail);
     track("swing_share_click", { matchId, method: ok ? "copy" : "copy_fail", personalized: personalWin });
     window.setTimeout(() => setToast(null), 2500);
+  }
+
+  async function saveName() {
+    const v = draft.trim();
+    if (!v) return;
+    setSaving(true);
+    try {
+      const session = (await supabase.auth.getSession()).data.session;
+      if (!session) return;
+      const res = await fetch("/api/profile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ nickname: v }),
+      });
+      if (res.ok) {
+        setNickname(v);
+        setEditing(false);
+        track("nickname_set", { source: "swing_share" });
+      } else {
+        setToast(c.saveErr);
+        window.setTimeout(() => setToast(null), 2500);
+      }
+    } catch {
+      /* 忽略 */
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -118,7 +167,7 @@ export function MatchSwingShare({
           {c.shareBtn}
         </button>
         <a
-          href={ogPath}
+          href={ogWithBy}
           target="_blank"
           rel="noopener noreferrer"
           className="text-xs text-muted underline-offset-2 hover:underline"
@@ -126,6 +175,37 @@ export function MatchSwingShare({
           {c.saveImg}
         </a>
       </div>
+
+      <div className="mt-2 text-[11px] text-muted">
+        {editing ? (
+          <span className="flex items-center gap-1.5">
+            <input
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              maxLength={20}
+              autoFocus
+              className="w-32 rounded border border-border bg-surface-2 px-1.5 py-0.5 text-text"
+            />
+            <button type="button" disabled={saving} onClick={saveName} className="font-semibold text-green">
+              {c.save}
+            </button>
+          </span>
+        ) : (
+          effectiveName && (
+            <button
+              type="button"
+              onClick={() => {
+                setDraft(nickname ?? "");
+                setEditing(true);
+              }}
+            >
+              {c.as} <span className="text-text">{effectiveName}</span> ·{" "}
+              <span className="text-green">{c.rename}</span>
+            </button>
+          )
+        )}
+      </div>
+
       {toast && <div className="mt-2 text-[11px] text-green">{toast}</div>}
     </section>
   );

@@ -8,6 +8,7 @@ import { fmtPoints } from "@/lib/format";
 import { copyText } from "@/lib/clipboard";
 import { track } from "@/lib/track";
 import { swingShareParts, matchUrl } from "@/lib/share/swingShare";
+import { defaultName } from "@/lib/identity/defaultName";
 import type { MatchSwing } from "@/lib/prob/getMatchSwing";
 import type { Locale } from "@/i18n";
 
@@ -83,6 +84,8 @@ export function SettleDrawer({ locale }: { locale: Locale }) {
   const [open, setOpen] = useState(false);
   const [swings, setSwings] = useState<Record<string, MatchSwing>>({});
   const [toast, setToast] = useState<string | null>(null);
+  const [nickname, setNickname] = useState<string | null>(null);
+  const [uid, setUid] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -90,11 +93,13 @@ export function SettleDrawer({ locale }: { locale: Locale }) {
       try {
         const session = (await supabase.auth.getSession()).data.session;
         if (!session) return;
+        if (alive) setUid(session.user.id);
         const res = await fetch("/api/me", {
           headers: { Authorization: `Bearer ${session.access_token}` },
         });
         if (!res.ok) return;
-        const j = (await res.json()) as { recent?: RecentBet[] };
+        const j = (await res.json()) as { nickname?: string | null; recent?: RecentBet[] };
+        if (alive && j.nickname) setNickname(j.nickname);
         const recent = (j.recent ?? []).filter((b) => b.settledAt);
         if (recent.length === 0) return;
 
@@ -166,7 +171,8 @@ export function SettleDrawer({ locale }: { locale: Locale }) {
   }
 
   async function shareUpset(swing: MatchSwing, mid: string) {
-    const parts = swingShareParts(swing, locale, true); // 抽屉里都是本人押中 → 第一人称
+    const by = nickname ?? (uid ? defaultName(uid, locale) : undefined);
+    const parts = swingShareParts(swing, locale, true, by); // 抽屉里都是本人押中 → 第一人称 + 署名
     const url = matchUrl(mid);
     if (typeof navigator !== "undefined" && navigator.share) {
       try {

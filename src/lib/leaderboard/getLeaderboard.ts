@@ -1,5 +1,6 @@
 import { getServerSupabase } from "@/lib/supabase/server";
 import { rankTier } from "@/lib/ranks/rankTier";
+import { defaultName } from "@/lib/identity/defaultName";
 
 export interface LeaderRow {
   rank: number;
@@ -28,7 +29,7 @@ export async function getLeaderboard(limit = 50): Promise<LeaderRow[]> {
     const t = rankTier(Number(r.points_balance));
     return {
       rank: i + 1,
-      name: r.nickname ?? `玩家${r.user_id.slice(0, 4)}`,
+      name: r.nickname ?? defaultName(r.user_id, "zh"),
       points: Number(r.points_balance),
       tierCode: t.code,
       tierLabel: t.label,
