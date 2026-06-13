@@ -30,6 +30,7 @@ const COPY = {
     swingSub: "近期模型出线概率变化最大的球队",
     swingEmpty: "概率快照追踪中，攒够 2–3 天数据后显示走势。",
     predict: "预测 →",
+    likely: "最可能比分",
   },
   en: {
     title: "World Cup 2026 Advancement & Title Probabilities (Live Model)",
@@ -52,6 +53,7 @@ const COPY = {
     swingSub: "Teams whose chance to advance moved most recently",
     swingEmpty: "Tracking snapshots — trends appear once 2–3 days of data build up.",
     predict: "Predict →",
+    likely: "Likely scores",
   },
 } as const;
 
@@ -235,11 +237,22 @@ export default async function ForecastPage() {
                 <span className="text-green">{pct(m.p.home)}</span>
                 <span>
                   {c.draw} {pct(m.p.draw)}
-                  {m.topScores[0] &&
-                    ` · ${m.topScores[0].h}-${m.topScores[0].a} (${pct(m.topScores[0].p)})`}
                 </span>
                 <span className="text-[#f97316]">{pct(m.p.away)}</span>
               </div>
+              {m.topScores.length > 0 && (
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-muted">
+                  <span className="opacity-70">{c.likely}</span>
+                  {m.topScores.slice(0, 3).map((s) => (
+                    <span key={`${s.h}-${s.a}`} className="tabular-nums">
+                      <span className="font-head text-green">
+                        {s.h}-{s.a}
+                      </span>{" "}
+                      {pct(s.p)}
+                    </span>
+                  ))}
+                </div>
+              )}
               <div className="mt-1.5 text-right text-[11px] font-semibold text-green">
                 {c.predict}
               </div>

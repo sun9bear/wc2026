@@ -5,6 +5,7 @@ import { after } from "next/server";
 import { getMatchDetail } from "@/lib/markets/getMatchDetail";
 import { MarketPicks } from "@/components/MarketPicks";
 import { MatchProbTrend } from "@/components/MatchProbTrend";
+import { ScoreProbs } from "@/components/ScoreProbs";
 import { MatchSwingShare } from "@/components/MatchSwingShare";
 import { SentimentBar } from "@/components/SentimentBar";
 import { Disclaimer } from "@/components/Disclaimer";
@@ -13,6 +14,7 @@ import { LocalTime } from "@/components/LocalTime";
 import { result1x2 } from "@/lib/settlement/result";
 import { stageName } from "@/lib/football/teams";
 import { getMatchSwing, swingOgPath } from "@/lib/prob/getMatchSwing";
+import { getMatchScoreline } from "@/lib/prob/getMatchScoreline";
 import { getDict } from "@/i18n";
 import { getLocale } from "@/i18n/server";
 import { maybeAutoSettle } from "@/lib/settlement/autoSettle";
@@ -70,6 +72,8 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
   const open = !settled && !started;
   // 「爆冷瞬间」摆动卡：仅已结算且出线概率大摆动时返回非 null（缓存读快照，失败降级 null）。
   const swing = settled ? await getMatchSwing(id).catch(() => null) : null;
+  // 比分分布：仅未开赛(open)时展示赛前 Top-5 比分概率；进行中暂不展示赛前分布以免误导（待 Phase B 实时版接入）。
+  const scoreline = open ? await getMatchScoreline(id).catch(() => null) : null;
   const resultLabel: Record<string, string> = {
     home: t.match.home,
     draw: t.match.draw,
@@ -167,6 +171,9 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
               <span className="live-dot" /> {t.match.livePicks}
             </h2>
             <MarketPicks marketId={m.market.id} selections={m.market.selections} locale={locale} />
+            {scoreline && (
+              <ScoreProbs data={scoreline} locale={locale} home={m.home} away={m.away} />
+            )}
             <MatchProbTrend matchId={id} locale={locale} />
           </>
         ) : (

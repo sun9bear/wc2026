@@ -91,3 +91,67 @@ export function calibrateToTarget(
   }
   return { home: best.home, away: best.away, matrix: best.matrix };
 }
+
+const REMAIN_MAX = 7; // 剩余时间内单队再进球数上限（覆盖 >99.9% 质量）
+
+/**
+ * 进行中比赛的「最终比分」分布（in-play 重算）。
+ * 思路：剩余时间内双方各自再进球数 ~ 泊松(λ_全场 × 剩余比例 r)，叠加 Dixon-Coles 低比分修正，
+ * 再加上当前比分 (hNow, aNow) 得到最终比分分布。lh0/la0 为校准后的全场期望进球（与赛前同源，
+ * 故开赛即时(0-0,0')的 in-play 分布与赛前分布自洽）。minutesPlayed 达 90 则 r→0、最终比分锁定当前比分。
+ * 返回最可能的最终比分 Top N 与聚合胜平负——比分前端与 1X2 复用同一分布，保持自洽。
+ */
+export function liveScoreline(
+  lh0: number,
+  la0: number,
+  hNow: number,
+  aNow: number,
+  minutesPlayed: number,
+  rho = RHO
+): { top: { h: number; a: number; p: number }[]; p: Probs1x2 } {
+  const r = Math.max(0, Math.min(1, (90 - minutesPlayed) / 90));
+  // 终场/补时尾声：剩余进球期望→0，最终比分确定为当前比分。
+  if (r <= 0) {
+    return {
+      top: [{ h: hNow, a: aNow, p: 1 }],
+      p: { home: hNow > aNow ? 1 : 0, draw: hNow === aNow ? 1 : 0, away: hNow < aNow ? 1 : 0 },
+    };
+  }
+  const lh = lh0 * r;
+  const la = la0 * r;
+
+  // 剩余进球矩阵（Dixon-Coles 修正后归一化）。
+  const rm: number[][] = [];
+  let sum = 0;
+  for (let i = 0; i <= REMAIN_MAX; i++) {
+    rm[i] = [];
+    for (let j = 0; j <= REMAIN_MAX; j++) {
+      let p = poissonPmf(i, lh) * poissonPmf(j, la);
+      if (i === 0 && j === 0) p *= 1 - lh * la * rho;
+      else if (i === 0 && j === 1) p *= 1 + lh * rho;
+      else if (i === 1 && j === 0) p *= 1 + la * rho;
+      else if (i === 1 && j === 1) p *= 1 - rho;
+      rm[i][j] = p;
+      sum += p;
+    }
+  }
+
+  // 叠加当前比分 → 最终比分分布；同步聚合胜平负。
+  const cells: { h: number; a: number; p: number }[] = [];
+  let home = 0;
+  let draw = 0;
+  let away = 0;
+  for (let i = 0; i <= REMAIN_MAX; i++) {
+    for (let j = 0; j <= REMAIN_MAX; j++) {
+      const p = rm[i][j] / sum;
+      const fh = hNow + i;
+      const fa = aNow + j;
+      cells.push({ h: fh, a: fa, p });
+      if (fh > fa) home += p;
+      else if (fh === fa) draw += p;
+      else away += p;
+    }
+  }
+  cells.sort((x, y) => y.p - x.p);
+  return { top: cells.slice(0, 5), p: { home, draw, away } };
+}
