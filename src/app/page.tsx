@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { after } from "next/server";
 import { getMatches } from "@/lib/matches/getMatches";
@@ -11,6 +12,11 @@ import { getLocale } from "@/i18n/server";
 import { maybeAutoSettle } from "@/lib/settlement/autoSettle";
 
 export const dynamic = "force-dynamic";
+
+// 显式绝对自指 canonical（根 layout 不再设相对 canonical；?filter= 变体统一归并到首页）。
+export const metadata: Metadata = {
+  alternates: { canonical: "https://www.wc2026.cool/" },
+};
 
 export default async function Home({
   searchParams,

@@ -17,7 +17,7 @@ const META = {
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
-  return META[locale];
+  return { ...META[locale], alternates: { canonical: "https://www.wc2026.cool/about" } };
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

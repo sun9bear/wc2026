@@ -1,0 +1,15 @@
+# wc2026.cool — World Cup 2026 prediction game
+
+> Free, no sign-up. Bilingual (English / 中文). Public forecasting data + a 10,000-run Monte Carlo model, refreshed hourly. For entertainment only — virtual points, nothing redeemable.
+
+## Key pages
+- https://www.wc2026.cool/ — home: today's matches and predictions
+- https://www.wc2026.cool/forecast — advancement and title probabilities (live model)
+- https://www.wc2026.cool/calculator — third-place qualification scenario calculator
+- https://www.wc2026.cool/calculator/group/a — Group A: who advances (groups a through l)
+- https://www.wc2026.cool/watch — official broadcast guide
+- https://www.wc2026.cool/sitemap.xml — full index of every team and match page (48 teams + all fixtures, with per-team chance to advance/win and per-match prediction + most likely scores)
+
+## Notes
+- All numbers are model estimates for entertainment, not advice.
+- Method: team strength ratings + public forecasting data, Poisson score model, 10,000 Monte Carlo runs, 2026 official tie-breakers.

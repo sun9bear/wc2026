@@ -110,7 +110,11 @@ const COPY = {
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   const c = COPY[locale];
-  return { title: c.title, description: c.description };
+  return {
+    title: c.title,
+    description: c.description,
+    alternates: { canonical: "https://www.wc2026.cool/watch" },
+  };
 }
 
 export default async function WatchPage() {

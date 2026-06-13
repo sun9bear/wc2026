@@ -26,22 +26,56 @@ import { maybeAutoSettle } from "@/lib/settlement/autoSettle";
 
 const SITE = "https://www.wc2026.cool";
 
-// 已结算且出现"爆冷"（出线概率大摆动）时，把本场链接的 og:image 设为摆动卡——
-// 分享到 X/微信/Telegram 即自动展开成震撼图卡。非爆冷场次继承默认 metadata。
+// 每场都给真实默认标题 + 显式绝对自指 canonical（经 CodeX 外审：非爆冷场次原返回 {}，
+// 既无标题又会继承根 layout 的相对 canonical 解析错误，伤收录）。
+// 已结算且出现"爆冷"（出线概率大摆动）时，再把 og:image 设为摆动卡 + 改标题（覆盖默认）。
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
+  const locale = await getLocale();
+  const canonical = `${SITE}/match/${id}`;
+
+  const m = await getMatchDetail(id).catch(() => null);
+  let base: Metadata = { alternates: { canonical } };
+  if (m) {
+    const home = teamName(m.home.name, locale);
+    const away = teamName(m.away.name, locale);
+    const title =
+      locale === "zh"
+        ? `${home} vs ${away} — 2026 世界杯预测与最可能比分`
+        : `${home} vs ${away} — World Cup 2026 prediction & likely scores`;
+    const description =
+      locale === "zh"
+        ? `${home} vs ${away} 的 2026 世界杯模型胜平负概率与最可能比分。免费，无需注册。`
+        : `Model win, draw and loss probabilities and the most likely scorelines for ${home} vs ${away} at the 2026 World Cup. Free, no sign-up.`;
+    base = {
+      title,
+      description,
+      alternates: { canonical },
+      // 完整 openGraph（CodeX 外审 MAJOR：page 的 openGraph 整体替换 layout 的、不深合并；
+      // 非爆冷场次原先丢了默认 og.png/type/url，伤分享卡）。默认 /og.png，爆冷场次下方覆盖为摆动卡。
+      openGraph: {
+        type: "website",
+        url: canonical,
+        siteName: "wc2026.cool",
+        title,
+        description,
+        images: [{ url: "/og.png", width: 1200, height: 630 }],
+      },
+      twitter: { card: "summary_large_image", title, description, images: ["/og.png"] },
+    };
+  }
+
   let swing = null;
   try {
     swing = await getMatchSwing(id);
   } catch {
     swing = null;
   }
-  if (!swing) return {};
-  const locale = await getLocale();
+  if (!swing) return base;
   const ogUrl = `${SITE}${swingOgPath(swing, locale)}`;
   const heroName = locale === "zh" ? swing.hero.zh : swing.hero.name;
   const bp = Math.round(swing.hero.before * 100);
@@ -55,9 +89,17 @@ export async function generateMetadata({
       ? `${heroName}出线概率 ${bp}% → ${ap}%。世界杯 2026 实时模型，免费无需注册。`
       : `${heroName}'s chance to advance ${bp}% → ${ap}%. Live World Cup 2026 model, free, no sign-up.`;
   return {
+    ...base,
     title,
     description,
-    openGraph: { title, description, images: [{ url: ogUrl, width: 1200, height: 630 }] },
+    openGraph: {
+      type: "website",
+      url: canonical,
+      siteName: "wc2026.cool",
+      title,
+      description,
+      images: [{ url: ogUrl, width: 1200, height: 630 }],
+    },
     twitter: { card: "summary_large_image", title, description, images: [ogUrl] },
   };
 }
@@ -166,6 +208,12 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
 
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-8">
+      {/* 语义 h1（视觉隐藏，不改版式；给爬虫/AI 明确实体标题）。 */}
+      <h1 className="sr-only">
+        {locale === "zh"
+          ? `${teamName(m.home.name, locale)} vs ${teamName(m.away.name, locale)} — 2026 世界杯预测`
+          : `${teamName(m.home.name, locale)} vs ${teamName(m.away.name, locale)} — World Cup 2026 prediction`}
+      </h1>
       <div className="flex items-center justify-between">
         <Link href="/" className="text-xs text-muted">
           {t.common.back}

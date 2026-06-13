@@ -70,6 +70,8 @@ export async function generateMetadata({
         return {
           title: c.teamTitle(nm),
           description: c.teamDesc(nm),
+          // ?team= 变体合并到 /calculator（同一工具、不入 sitemap，避免近重复页）。
+          alternates: { canonical: `${SITE}/calculator` },
           openGraph: { images: [{ url: og, width: 1200, height: 630 }] },
           twitter: { card: "summary_large_image", images: [og] },
         };
@@ -78,7 +80,11 @@ export async function generateMetadata({
       /* 降级为通用 meta */
     }
   }
-  return { title: c.title, description: c.description };
+  return {
+    title: c.title,
+    description: c.description,
+    alternates: { canonical: `${SITE}/calculator` },
+  };
 }
 
 export default async function CalculatorPage({

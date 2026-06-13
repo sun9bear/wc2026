@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLocale } from "@/i18n/server";
 import { getTeamDetail, type TeamResult } from "@/lib/prob/getTeamDetail";
+import { getSettledIndex } from "@/lib/seo/freshness";
 import { HeaderShare } from "@/components/HeaderShare";
 import { SetMyTeamButton } from "@/components/SetMyTeamButton";
 import { LocalTime } from "@/components/LocalTime";
@@ -41,7 +42,10 @@ const COPY = {
     D: "平",
     L: "负",
     calc: (nm: string) => `🧮 ${nm}还能怎样出线？打开计算器 →`,
-    sims: "万次蒙特卡洛模拟（市场共识 + Elo 融合），每小时更新",
+    sims: "万次蒙特卡洛模拟（公开预测数据 + Elo 融合），每小时更新",
+    latest: "最新赛果",
+    lead: (nm: string, adv: string, champ: string, x: string) =>
+      `2026 世界杯：${nm} 从 ${x} 组出线概率 ${adv}%、夺冠概率 ${champ}%（万次蒙特卡洛模拟）。`,
     shareText: (nm: string, adv: string) => `${nm} 出线概率 ${adv}%（2026 世界杯模型）`,
   },
   en: {
@@ -64,7 +68,10 @@ const COPY = {
     D: "D",
     L: "L",
     calc: (nm: string) => `🧮 How can ${nm} still advance? Open the calculator →`,
-    sims: "10,000 Monte Carlo simulations (market consensus + Elo), refreshed hourly",
+    sims: "10,000 Monte Carlo simulations (public forecasting data + Elo), refreshed hourly",
+    latest: "Latest result",
+    lead: (nm: string, adv: string, champ: string, x: string) =>
+      `At the 2026 World Cup, ${nm} has a ${adv}% chance to advance from Group ${x} and a ${champ}% chance to win the title, per a 10,000-run simulation.`,
     shareText: (nm: string, adv: string) => `${nm} has a ${adv}% chance to advance (World Cup 2026 model)`,
   },
 } as const;
@@ -127,6 +134,8 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
   const locale = await getLocale();
   const d = await getTeamDetail(slug);
   if (!d) notFound();
+  const idx = await getSettledIndex().catch(() => null);
+  const lastResult = idx?.byTeam[d.id] ?? null; // 真实 settled_at，非伪新鲜
   const c = COPY[locale];
   const nm = locale === "zh" ? d.zh : d.name;
   const adv = fmtP(d.pAdvance);
@@ -163,6 +172,14 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
           <div className="text-xs text-muted">{c.group(d.letter, d.rank)}</div>
         </div>
       </div>
+
+      {/* 前置可提取答案（GEO：答案前置 + 统计数字 + 年份；EN-first）+ 最新赛果（真实 settled_at）。 */}
+      <p className="mt-3 text-sm leading-relaxed">{c.lead(nm, adv, champ, d.letter)}</p>
+      {lastResult && (
+        <p className="mt-1 text-[11px] text-muted">
+          {c.latest} · {new Date(lastResult).toLocaleDateString(locale === "zh" ? "zh-CN" : "en-US")}
+        </p>
+      )}
 
       {/* 概率 + 实力评分 */}
       <div className="mt-3 grid grid-cols-3 gap-3">

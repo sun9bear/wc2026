@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "免责声明 · 环球足球预测",
   description: "环球足球预测免责声明：纯娱乐产品，虚拟积分无现实价值、不可兑换，与任何官方组织无关。",
+  alternates: { canonical: "https://www.wc2026.cool/disclaimer" },
 };
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

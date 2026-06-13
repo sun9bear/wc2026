@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "隐私政策 · 环球足球预测",
   description: "环球足球预测的隐私政策：我们收集哪些信息、如何使用 Cookie、以及第三方广告（Google AdSense）说明。",
+  alternates: { canonical: "https://www.wc2026.cool/privacy" },
 };
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

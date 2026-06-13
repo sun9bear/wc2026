@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { getLeaderboard } from "@/lib/leaderboard/getLeaderboard";
 import { Disclaimer } from "@/components/Disclaimer";
@@ -6,6 +7,11 @@ import { getDict } from "@/i18n";
 import { getLocale } from "@/i18n/server";
 
 export const dynamic = "force-dynamic";
+
+// 显式绝对自指 canonical（CodeX 外审 M2）。
+export const metadata: Metadata = {
+  alternates: { canonical: "https://www.wc2026.cool/leaderboard" },
+};
 
 const TIER_COLOR: Record<string, string> = {
   legend: "text-gold",

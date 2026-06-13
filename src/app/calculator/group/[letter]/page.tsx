@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLocale } from "@/i18n/server";
 import { getForecast } from "@/lib/prob/pipeline";
+import { getSettledIndex } from "@/lib/seo/freshness";
 import { teamSlug } from "@/lib/prob/findTeam";
 import { LocalTime } from "@/components/LocalTime";
 import { Disclaimer } from "@/components/Disclaimer";
@@ -25,7 +26,10 @@ const COPY = {
     fixtures: "剩余赛程",
     cta: (zh: string) => `${zh}怎样才能出线？去算 →`,
     tool: "🧮 打开出线计算器（改任意赛果实时重算）",
-    note: "出线概率来自万次蒙特卡洛模拟（市场共识 + Elo 融合），每小时更新。",
+    note: "出线概率来自万次蒙特卡洛模拟（公开预测数据 + Elo 融合），每小时更新。",
+    latest: "最新赛果",
+    lead: (x: string, leader: string, p: string) =>
+      `2026 世界杯 ${x} 组：${leader} 以 ${p} 出线概率领跑；改动下方任意未赛赛果，即可看 ${x} 组与最佳第三名形势如何变化。`,
     back: "← 返回",
   },
   en: {
@@ -38,7 +42,10 @@ const COPY = {
     fixtures: "Remaining fixtures",
     cta: (name: string) => `Can ${name} still advance? Find out →`,
     tool: "🧮 Open the scenario calculator (flip any result, live recompute)",
-    note: "Advance chances come from 10,000 Monte Carlo simulations (market consensus + Elo blend), refreshed hourly.",
+    note: "Advance chances come from 10,000 Monte Carlo simulations (public forecasting data + Elo blend), refreshed hourly.",
+    latest: "Latest result",
+    lead: (x: string, leader: string, p: string) =>
+      `As of the 2026 World Cup, ${leader} leads Group ${x} with a ${p} chance to advance to the Round of 32; flip any remaining result below to see how the group and best-third race change.`,
     back: "← Back",
   },
 } as const;
@@ -78,6 +85,8 @@ export default async function GroupPage({
 
   const group = data.groups.find((g) => g.letter === X);
   if (!group) notFound();
+  const idx = await getSettledIndex().catch(() => null);
+  const lastResult = idx?.byGroup[X] ?? null; // 真实 settled_at（该组最近一场结算），非伪新鲜
   const ids = new Set(group.table.map((t) => t.id));
   const fixtures = data.matches.filter((m) => ids.has(m.homeId) && ids.has(m.awayId));
   const name = (t: { name: string; zh: string }) => (locale === "zh" ? t.zh : t.name);
@@ -91,7 +100,18 @@ export default async function GroupPage({
         </Link>
       </div>
       <h1 className="font-head mb-1 mt-3 text-2xl font-bold">🧮 {c.h1(X)}</h1>
-      <p className="mb-4 text-xs text-muted">{c.note}</p>
+      {/* 前置可提取答案（GEO：答案前置 + 统计数字 + 年份；EN-first）。 */}
+      {group.table[0] && (
+        <p className="mt-1 text-sm leading-relaxed">
+          {c.lead(X, name(group.table[0]), pct(group.table[0].pAdvance))}
+        </p>
+      )}
+      {lastResult && (
+        <p className="mt-1 text-[11px] text-muted">
+          {c.latest} · {new Date(lastResult).toLocaleDateString(locale === "zh" ? "zh-CN" : "en-US")}
+        </p>
+      )}
+      <p className="mb-4 mt-2 text-xs text-muted">{c.note}</p>
 
       <h2 className="font-head mb-2 text-sm font-semibold">{c.table}</h2>
       <div className="overflow-hidden rounded-lg border border-border bg-surface">

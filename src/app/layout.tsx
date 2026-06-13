@@ -52,7 +52,8 @@ export async function generateMetadata(): Promise<Metadata> {
     title: m.title,
     description: m.description,
     applicationName: m.appName,
-    alternates: { canonical: "./" },
+    // canonical 不在根 layout 设相对 "./"（经 CodeX 外审：相对值在内页会解析到错误目标，
+    // 把 /forecast、/match/[id] 等 canonical 到首页/不存在页，伤收录）。改为各可索引路由显式绝对自指。
     openGraph: {
       type: "website",
       locale: m.ogLocale,

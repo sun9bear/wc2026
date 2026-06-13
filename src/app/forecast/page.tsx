@@ -23,7 +23,7 @@ const COPY = {
     draw: "平局",
     calculatorCta: "🧮 自己动手算：第三名出线计算器 →",
     method:
-      "方法：多源公开数据（队伍实力评分、公开预测市场共识）融合 + 泊松比分模型 + 10,000 次蒙特卡洛模拟；排名判据按 2026 官方新规（相互战绩优先），不含公平竞赛分（无红黄牌数据，以实力评分近似末位判据）。",
+      "方法：多源公开数据（队伍实力评分、公开预测数据共识）融合 + 泊松比分模型 + 10,000 次蒙特卡洛模拟；排名判据按 2026 官方新规（相互战绩优先），不含公平竞赛分（无红黄牌数据，以实力评分近似末位判据）。",
     fun: "全部概率仅供娱乐参考，不构成任何建议。",
     aiTag: "AI 短评 · 仅供娱乐",
     swing: "📈 出线概率异动",
@@ -59,7 +59,11 @@ const COPY = {
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
-  return { title: COPY[locale].title, description: COPY[locale].description };
+  return {
+    title: COPY[locale].title,
+    description: COPY[locale].description,
+    alternates: { canonical: "https://www.wc2026.cool/forecast" },
+  };
 }
 
 function pct(p: number, digits = 0): string {
@@ -141,6 +145,22 @@ export default async function ForecastPage() {
       <p className="mt-1 text-[11px] text-muted">
         {c.updated} {new Date(data.updatedAt).toLocaleString(zhFirst ? "zh-CN" : "en-US")}
       </p>
+
+      {/* 前置可提取答案（GEO：答案前置 + 统计数字 + 年份信号；EN-first，爬虫见英文）。 */}
+      {data.simOk && data.champions[0] && (() => {
+        const top = data.champions[0];
+        const topName = zhFirst ? top.zh : top.name;
+        const nAdv = data.groups
+          .flatMap((g) => g.table)
+          .filter((t) => (t.pAdvance > 1 ? t.pAdvance : t.pAdvance * 100) >= 50).length;
+        return (
+          <p className="mt-3 text-sm leading-relaxed">
+            {zhFirst
+              ? `2026 世界杯小组赛阶段：万次蒙特卡洛模拟显示 ${topName} 以 ${pct(top.p, 1)} 夺冠概率领跑，目前 ${nAdv} 支球队出线（晋级 32 强）概率超过 50%。`
+              : `At the 2026 World Cup group stage, a 10,000-run Monte Carlo simulation puts ${topName} on top with a ${pct(top.p, 1)} chance to win the title; ${nAdv} teams currently have a 50%+ chance to reach the Round of 32.`}
+          </p>
+        );
+      })()}
 
       {note && (
         <div className="fade-up mt-3 rounded-lg border border-border bg-surface p-3">
