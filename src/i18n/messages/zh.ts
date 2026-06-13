@@ -12,7 +12,7 @@ export const zh = {
     about: "关于 & 玩法",
     privacy: "隐私政策",
     terms: "免责声明",
-    note: "仅供娱乐 · 积分无现实价值 · 不可兑换 · 与 FIFA／世界杯等官方组织无关",
+    note: "仅供娱乐 · 积分无现实价值 · 不可兑换",
   },
   langLabel: "EN",
   hero: {

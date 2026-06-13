@@ -13,7 +13,7 @@ export const en = {
     about: "About & How to play",
     privacy: "Privacy",
     terms: "Disclaimer",
-    note: "For fun only · No real-money value · Non-redeemable · Not affiliated with FIFA or the World Cup",
+    note: "For fun only · No real-money value · Non-redeemable",
   },
   langLabel: "中文",
   hero: {

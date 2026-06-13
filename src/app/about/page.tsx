@@ -78,7 +78,7 @@ export default async function AboutPage() {
               Points are <strong>virtual items with no real-world value</strong>. They cannot be
               purchased, redeemed, withdrawn or transferred — this is fan entertainment, nothing more.
             </p>
-            <p>This is a fan-made site, not affiliated with FIFA, the World Cup or any official body or sponsor.</p>
+            <p>This is an independent, fan-made site for entertainment.</p>
           </Section>
         </div>
 
@@ -138,7 +138,7 @@ export default async function AboutPage() {
             本站的积分为<strong>虚拟道具</strong>，<strong>无任何现实价值</strong>，
             无法购买、兑换、提现或转让，纯属球迷娱乐。
           </p>
-          <p>本站为球迷自制，与 FIFA、世界杯及任何官方组织、赞助商均无关联。</p>
+          <p>本站为独立运营的球迷自制娱乐产品。</p>
         </Section>
       </div>
 
