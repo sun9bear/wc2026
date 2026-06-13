@@ -18,7 +18,14 @@ export async function GET(req: NextRequest) {
   if (!secret) {
     return NextResponse.json({ error: "CRON_SECRET 未配置" }, { status: 500 });
   }
-  if (req.headers.get("authorization") !== `Bearer ${secret}`) {
+  // 接受三种等价写法（cron-job.org 等外部服务配哪种都行）：
+  //   Authorization: Bearer <secret> ｜ CRON_SECRET: <secret> ｜ x-cron-secret: <secret>
+  // 注意：部分代理会丢弃带下划线的头，外部服务优先配 Authorization 或 x-cron-secret。
+  const bearer = req.headers.get("authorization") === `Bearer ${secret}`;
+  const plain =
+    req.headers.get("cron_secret") === secret ||
+    req.headers.get("x-cron-secret") === secret;
+  if (!bearer && !plain) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
