@@ -248,13 +248,18 @@ export async function GET(req: Request) {
               <div style={{ display: "flex", fontSize: 30, fontWeight: 700, color: "#1BE27F" }}>wc2026.cool</div>
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              {team(home, hflag)}
-              <div style={{ display: "flex", fontSize: 44, fontWeight: 700, color: "#3a4654" }}>VS</div>
-              {team(away, aflag)}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                {team(home, hflag)}
+                <div style={{ display: "flex", fontSize: 44, fontWeight: 700, color: "#3a4654" }}>VS</div>
+                {team(away, aflag)}
+              </div>
+              {kickoff ? (
+                <div style={{ display: "flex", fontSize: 28, color: "#8A97A6" }}>{kickoff}</div>
+              ) : (
+                <div style={{ display: "flex" }} />
+              )}
             </div>
-
-            <div style={{ display: "flex", justifyContent: "center", fontSize: 28, color: "#8A97A6" }}>{kickoff || " "}</div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
               <div style={{ display: "flex", fontSize: 28, color: "#8A97A6" }}>{ML.hdr}</div>

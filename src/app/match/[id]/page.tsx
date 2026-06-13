@@ -16,6 +16,8 @@ import { TeamBadge } from "@/components/TeamBadge";
 import { LocalTime } from "@/components/LocalTime";
 import { result1x2 } from "@/lib/settlement/result";
 import { stageName, teamName } from "@/lib/football/teams";
+import { getForecast } from "@/lib/prob/pipeline";
+import { findTeam, teamSlug } from "@/lib/prob/findTeam";
 import { getMatchSwing, swingOgPath } from "@/lib/prob/getMatchSwing";
 import { getMatchScoreline } from "@/lib/prob/getMatchScoreline";
 import { getDict } from "@/i18n";
@@ -66,6 +68,11 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
   const t = getDict(locale);
   const m = await getMatchDetail(id);
   if (!m) notFound();
+
+  // 队旗从概率数据取（与球队卡同源 flagcdn；matches 表的 flag 对部分队缺失/非 flagcdn → 之前渲染成空占位）。
+  const fdata = await getForecast().catch(() => null);
+  const homeFlag = fdata ? findTeam(fdata, teamSlug(m.home.name))?.team.flag ?? null : null;
+  const awayFlag = fdata ? findTeam(fdata, teamSlug(m.away.name))?.team.flag ?? null : null;
 
   // 流量自驱动结算（响应后执行；详情页是赛后回访的高频落点）
   after(() => maybeAutoSettle());
@@ -215,8 +222,8 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
                 ap={impliedSplit.ap}
                 locale={locale}
                 kickoff={m.kickoffAt}
-                homeFlag={m.home.flag}
-                awayFlag={m.away.flag}
+                homeFlag={homeFlag}
+                awayFlag={awayFlag}
                 aiTake={locale === "zh" ? m.sentiment : m.sentimentEn}
               />
             )}
