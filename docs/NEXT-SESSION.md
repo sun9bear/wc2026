@@ -16,13 +16,19 @@
 - **GateGuard hook**：每个文件首次 Write/Edit 会被拦，消息里列 4 项事实后原样重试即过（每文件一次）。
 - PS 5.1：git commit 消息别用双引号；部署唯一路径 `npx vercel deploy --prod --yes`（已授权免确认）。
 
-## 任务 2：AI 内容英文生成
+## 任务 2：AI 内容英文生成（英文用 Gemini Flash，中文继续 DeepSeek）
 
-1. `src/lib/ai/content.ts`：为 preview/recap/sentiment 各加 EN system prompt（风格：r/soccer 评论区轻松梗味，80-120 词；**严禁 odds/bet/betting/wager/stake/payout/multiplier/bookmaker/parlay**，概率措辞用 chances/likely/crowd favorite/dark horse；不写免责声明）。`safeGen` 复制一个 `safeGenEn`：`findBannedTerms(body, "en")` fail-closed，违规重试一次，仍违规用英文兜底句。
+**2026-06-13 决策**：EN 内容改用 **Gemini 最新 flash 模型**（英文口语梗味显著优于 deepseek-chat 的"翻译腔"，flash 档价格相当、速度快，还对冲 deepseek-chat 别名 7/24 退役风险）。中文管线不动。
+- **GEMINI_API_KEY 已加入 Vercel 生产环境**（原件在 docs/secret/Gemini AI studio API Key.txt，新版 AQ. 前缀格式，请求头 `x-goog-api-key`）。
+- **网络注意**：本机经 154 代理调 Gemini 被拒（"User location is not supported"）——所以 EN 生成**只在 Vercel 端跑**：settle 路由生成 recap_en + 新建一个 CRON_SECRET 保护的 `/api/cron/gen-content` 路由（幂等、每次处理 ≤8 场未开赛比赛的 preview_en/sentiment_en，可由 cron-job.org 每小时触发或手动 curl）。**不要写本地回填脚本**。
+- 模型选择：在 Vercel 端先调 `GET /v1beta/models`（ListModels）选最新 flash（如 gemini-flash-latest / gemini-2.5-flash 或更新的 3 系 flash），勿凭记忆写死旧版本号。
+- 新建 `src/lib/ai/gemini.ts`（对齐 deepseek.ts 的 chat(system,user,timeoutMs) 签名，REST: POST /v1beta/models/<model>:generateContent，systemInstruction + contents）。
+
+1. `src/lib/ai/content.ts`：为 preview/recap/sentiment 各加 EN system prompt（风格：r/soccer 评论区轻松梗味，80-120 词；**严禁 odds/bet/betting/wager/stake/payout/multiplier/bookmaker/parlay**，概率措辞用 chances/likely/crowd favorite/dark horse；不写免责声明）。`safeGen` 复制一个 `safeGenEn`（底层走 gemini.ts）：`findBannedTerms(body, "en")` fail-closed，违规重试一次，仍违规用英文兜底句。
 2. 存储零 DDL：复用 ai_content，type 用 `preview_en` / `recap_en` / `sentiment_en`。
 3. `getMatchDetail` 增 previewEn/recapEn/sentimentEn 字段；match 页 EN 视图优先英文版（有则直接平铺展示，无则维持现状折叠中文）。
 4. settle 路由阶段二：每场生成 zh+en 两份 recap（RECAP_CAP 从 8 降到 4，防超 60s）。
-5. 回填脚本 `scripts/gen-content-en.ts`：对全部未开赛场次生成 preview_en + sentiment_en（本地跑，DEEPSEEK_API_KEY 已在 .env.local；sentiment 的 hot/cold 短语按各 selection pooled_stake 取最高/最低）。
+5. 回填走 `/api/cron/gen-content` 路由（见上，Vercel 端跑，本机网络调不通 Gemini）：对未开赛场次生成 preview_en + sentiment_en（sentiment 的 hot/cold 短语按各 selection pooled_stake 取最高/最低）；幂等（已存在该 type 则跳过），多 curl 几次即可全量回填。
 6. 部署门禁：对生成产物抽样 grep `odds|bet|wager|parlay|stake|payout|multiplier|bookmaker`。
 
 ## 任务 3：留存三件（顺序做）
