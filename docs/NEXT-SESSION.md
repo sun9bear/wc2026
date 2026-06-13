@@ -1,102 +1,51 @@
-# 下一会话执行清单（2026-06-13 移交，配合 HANDOFF.md）
+# 下一会话执行清单（2026-06-13 晚 移交，配合 HANDOFF.md）
 
-> 上一会话已完成：结算自驱动+外部 cron、全站双语（含成就/段位/About）、本地时区、加载页、
-> hero 改版、69 场倍率种子、OG 出线概率卡、/calculator?team= 传播化、12 组 SEO 着陆页。
-> 本文件 = 剩余任务 2-6 的实施规格（已经过代码勘察，照做即可）。
-
-## 已验证事实（勿重查）
-
-- **0002 已应用**：prob_team/match_snapshots 表存在，快照随 cron-job.org 每小时预热 /forecast 自动累积（最新 2026-06-13T00:27Z）。prob_meta 空属正常。
-- **cron-job.org 已生效**：settle 每 15 分钟（请求头 `CRON_SECRET: <密钥>`，路由已兼容此写法）+ /forecast 整点预热。
-- **ai_content 表**：unique(match_id, type)；`getMatchDetail` 用 byType("preview"/"recap"/"sentiment") 读取（src/lib/markets/getMatchDetail.ts:109-111）。
-- **DDL 隧道用法**：先启动 D:\daili 的 154 代理（本地 SOCKS5 端口 11080，**不能用 10808，会黑洞 5432**），再
-  `node scripts/socks5-forward.mjs 15432 aws-1-us-west-1.pooler.supabase.com 5432 127.0.0.1 11080`，
-  然后用 `postgresql://postgres.hbcwszrvmohsyirqopfk:<密码>@127.0.0.1:15432/postgres`（密码=.env.local 的 SUPABASE_DB_URL 里那个）+ pg Client `ssl:{rejectUnauthorized:false}` 执行 SQL。
-  **新表必须显式 GRANT**（pooler 建表不触发默认授权），模式照抄 0002 尾部。
-- **GateGuard hook**：每个文件首次 Write/Edit 会被拦，消息里列 4 项事实后原样重试即过（每文件一次）。
-- PS 5.1：git commit 消息别用双引号；部署唯一路径 `npx vercel deploy --prod --yes`（已授权免确认）。
-
-## 任务 2：AI 内容英文生成（英文用 Gemini Flash，中文继续 DeepSeek）
-
-**2026-06-13 决策**：EN 内容改用 **Gemini 最新 flash 模型**（英文口语梗味显著优于 deepseek-chat 的"翻译腔"，flash 档价格相当、速度快，还对冲 deepseek-chat 别名 7/24 退役风险）。中文管线不动。
-- **GEMINI_API_KEY 已加入 Vercel 生产环境**（原件在 docs/secret/Gemini AI studio API Key.txt，新版 AQ. 前缀格式，请求头 `x-goog-api-key`）。
-- **网络注意**：本机经 154 代理调 Gemini 被拒（"User location is not supported"）——所以 EN 生成**只在 Vercel 端跑**：settle 路由生成 recap_en + 新建一个 CRON_SECRET 保护的 `/api/cron/gen-content` 路由（幂等、每次处理 ≤8 场未开赛比赛的 preview_en/sentiment_en，可由 cron-job.org 每小时触发或手动 curl）。**不要写本地回填脚本**。
-- 模型选择：在 Vercel 端先调 `GET /v1beta/models`（ListModels）选最新 flash（如 gemini-flash-latest / gemini-2.5-flash 或更新的 3 系 flash），勿凭记忆写死旧版本号。
-- 新建 `src/lib/ai/gemini.ts`（对齐 deepseek.ts 的 chat(system,user,timeoutMs) 签名，REST: POST /v1beta/models/<model>:generateContent，systemInstruction + contents）。
-
-1. `src/lib/ai/content.ts`：为 preview/recap/sentiment 各加 EN system prompt（风格：r/soccer 评论区轻松梗味，80-120 词；**严禁 odds/bet/betting/wager/stake/payout/multiplier/bookmaker/parlay**，概率措辞用 chances/likely/crowd favorite/dark horse；不写免责声明）。`safeGen` 复制一个 `safeGenEn`（底层走 gemini.ts）：`findBannedTerms(body, "en")` fail-closed，违规重试一次，仍违规用英文兜底句。
-2. 存储零 DDL：复用 ai_content，type 用 `preview_en` / `recap_en` / `sentiment_en`。
-3. `getMatchDetail` 增 previewEn/recapEn/sentimentEn 字段；match 页 EN 视图优先英文版（有则直接平铺展示，无则维持现状折叠中文）。
-4. settle 路由阶段二：每场生成 zh+en 两份 recap（RECAP_CAP 从 8 降到 4，防超 60s）。
-5. 回填走 `/api/cron/gen-content` 路由（见上，Vercel 端跑，本机网络调不通 Gemini）：对未开赛场次生成 preview_en + sentiment_en（sentiment 的 hot/cold 短语按各 selection pooled_stake 取最高/最低）；幂等（已存在该 type 则跳过），多 curl 几次即可全量回填。
-6. 部署门禁：对生成产物抽样 grep `odds|bet|wager|parlay|stake|payout|multiplier|bookmaker`。
-
-## 任务 3：留存三件（顺序做）
-
-1. `/api/me` 扩展：返回 `recent`（最近 20 笔已结算 bet：{won:boolean, kickoff:string}，按 kickoff 升序）、`streak`/`bestStreak`（按 kickoff 排序计算连胜，**不要按 settled_at**——批量补结算时间相同）。
-2. **结算揭晓抽屉**：客户端组件挂 /（首页）与 /me；localStorage 存 `last_seen_settled_at`；有新结算→底部抽屉 + Me tab 红点。文案双语（中文禁"开奖/派彩/注单"）：命中「🎉 猜中了！瑞士 2-1，你的竞猜 ×3.00，+540 积分入账」/ "Spot on! Your pick earned ×3.00, +540 points"；全错「这场没猜中 -100，明天还有 N 场翻盘机会 →」。MVP 不做动画。
-3. **emoji 战绩格**：/me 加"复制战绩"按钮（clipboard 需 execCommand 降级，参考 CalculatorFocus.copy）。模板：`⚽ WC2026 竞猜战绩 · 第N比赛日\n🟩🟩🟥 (2/3)\n🔥 连中X场\n搜 wc2026.cool`（EN 版 "WC2026 picks · Matchday N"）。按用户本地日期分组；"击败 N% 玩家"仅全站结算样本≥50 时显示；⚡冷门徽章冷启动期禁用。
-4. **连胜展示**：/me 头部「🔥 当前 X 连中 · 历史最佳 Y」，纯派生零存储。
-
-## 任务 4：最小埋点
-
-1. `supabase/migrations/0003_events.sql`（走隧道执行）：
-   ```sql
-   create table if not exists events (
-     id bigint generated always as identity primary key,
-     name text not null,
-     anon_id text,
-     props jsonb,
-     created_at timestamptz not null default now()
-   );
-   create index if not exists events_name_time on events (name, created_at desc);
-   alter table events enable row level security;
-   grant all on events to service_role;
-   ```
-2. `POST /api/track`：{name, props}；anon_id 取 supabase session uid，无 session 用 localStorage 随机 id；量小无需限流。
-3. 客户端埋 5 个事件：home_calc_cta_click（hero 计算器入口，需把该 Link 包成小客户端组件）、calculator_team_selected（CalculatorFocus chip/select）、calculator_share_copy（doCopy 成功）、prediction_submitted（MarketPicks submit 成功）、watch_link_clicked（首页 watch 链接）。fire-and-forget。
-4. `npm i @vercel/analytics` + layout 加 `<Analytics />`；**提醒用户**在 Vercel Dashboard → wc2026 → Analytics 点 Enable（免费档，看地理分布，决定小语种）。
-
-## 任务 5：昵称 + 私人擂台 MVP（6/22 前上不了就砍）
-
-1. `supabase/migrations/0004_leagues.sql`（同一次隧道执行）：
-   ```sql
-   create table if not exists leagues (
-     id uuid primary key default gen_random_uuid(),
-     code text not null unique,
-     name text not null,
-     owner_id uuid not null,
-     created_at timestamptz not null default now()
-   );
-   create table if not exists league_members (
-     league_id uuid not null references leagues(id) on delete cascade,
-     user_id uuid not null,
-     joined_at timestamptz not null default now(),
-     primary key (league_id, user_id)
-   );
-   create index if not exists league_members_user on league_members (user_id);
-   alter table leagues enable row level security;
-   alter table league_members enable row level security;
-   grant all on leagues, league_members to service_role;
-   ```
-2. 昵称：`POST /api/profile` 设 profiles.nickname（bannedTerms zh+en 校验，2-20 字符）；/me 加"起个名字"入口。
-3. 擂台 API（全部 service key 查询，客户端不直读表）：POST /api/league（创建，code 形如 `WC-8K2F`）、POST /api/league/join {code}、GET /api/league/[code]（成员昵称+积分+命中率）。**入擂台必须先有昵称**（无昵称满屏"玩家e4b1"，社交前提崩塌）。
-4. 页面：/league（创建+输码加入，双语）+ /league/[code]（榜单 + 一键复制邀请文案：「建了个世界杯竞猜擂台，口令 WC-8K2F，看看谁是懂球帝 → 搜 wc2026.cool」/EN 用 League/Challenge，避开 pool）。入口：首页 hero 次级链接行 + /me。
-5. 合规：擂台仅微信/私域分发，**绝不出现在 Reddit**；英文 UI 禁词照旧。
-
-## 任务 6：爆冷摆动卡
-
-1. `/api/og` 加 swing 模板：`?mode=swing&team=<slug>&before=93&after=41&result=<一句话情景>` → 大字「出线概率 93% → 41%」卡（前值灰色删除线，后值大号红/绿，附 result 一句话与万次模拟标注；EN 同构）。before/after 由调用方传入，路由不算数。
-2. `scripts/swing-bake.ts`（本地预烘焙）：输入 `--match "Japan vs Sweden"`：
-   - baseline：读 prob_team_snapshots 最新一期两队 pAdvance（数据已在自动累积）；
-   - 条件值：强制注入该场 胜/平/负 三种结果（比分约定 1-0/1-1/0-1），用已导出的 rankGroup/rankThirds + simulate.ts 跑缩减版蒙特卡洛（RUNS=2000）得三种情景的 pAdvance；Elo 构造参考 pipeline.ts 内部 parseWorldTsv/eloFor（不导出，复制 ~20 行）；
-   - 输出：三种结局各一条完整 /api/og swing URL（中英各一），运营终场哨响后 15 分钟内打开对应 URL 另存图发布。
-3. 发卡前自查：/forecast 已吸收最新赛果（结算链路正常即可信）。
-
-## 全部完成后
-
-构建 `npm run build` + `npx vitest run` + 部署 + 无头浏览器抽查（EN 视角 match 页英文 AI 内容、/league 流程、swing 卡渲染）+ commit + `git bundle create D:/wc2026-backup.bundle --all` + 更新 HANDOFF 已交付表。
+> 上一批已全部完成并部署：任务 2-6（AI英文内容/留存/埋点/擂台/摆动卡）+ 分享按钮 v1 + 中文队名 + FIFA 撇清全站清理 + 比赛分享卡 3:4 网站风格重做 + 国旗&时间修复。git: `feat/legal-pages` 顶 `b1f645e`。
+> 本文件 = **新一批待做功能**的实施规格 + 数据源/版权结论。已勘察代码，照做即可。
 
 ## 冷启动开场白（复制给新会话）
+> 读 docs/HANDOFF.md 和 docs/NEXT-SESSION.md 接手 wc2026，按本清单做任务 A–E：构建、部署、线上验证、提交、刷新 `D:/wc2026-backup.bundle`。当前在 `feat/legal-pages`（真正主干），部署唯一路径 `npx vercel deploy --prod --yes`（已授权）。GateGuard：每文件首次编辑前在消息里列 4 事实后重试。
 
-> 读 docs/HANDOFF.md 和 docs/NEXT-SESSION.md 接手 wc2026 项目，按 NEXT-SESSION 清单依次执行任务 2-6，一口气做完：构建、测试、部署、线上验证、提交、备份。生产部署我已授权可自行确认，不要中途换模型。
+## 现有分享架构（勿重查，直接在此基础上改）
+- **OG 图卡** `src/app/api/og/route.tsx`：默认=球队出线/夺冠卡(1200×630)；`mode=swing`=爆冷摆动卡；`mode=match`=比赛胜平负卡（已重做：`fmt=portrait`(1080×1440)/`fmt=square`(1080×1080)；队旗 `hf/af` **仅 flagcdn.com**(防 SSRF)；开球时间 `t`；AI 短评 `q`；DESIGN.md 配色 绿`#1BE27F`/琥珀`#FFB02E`/红`#FF5436`；底注「预测仅供娱乐」；所有用户可控参数过雷词 fail-closed）。中文字体按传入文本子集 `loadZhFont`。
+- **比赛页分享** `src/components/MatchPreviewShare.tsx`（未开赛卡：🔗分享 + 🖼保存图片卡；ogUrl 带 fmt/hf/af/t/q；kickoff 用浏览器本地时区+缩写格式化）；`MatchSwingShare.tsx`（已结算大爆冷）；页眉右上 `ShareIconButton.tsx`（**当前过简、无图片按钮 → 见任务 A**）。
+- **比赛页** `src/app/match/[id]/page.tsx`：国旗从 `getForecast()+teamSlug()+findTeam()` 取（flagcdn，与球队卡同源）；AI 短评 = `locale==="zh" ? m.sentiment : m.sentimentEn`（中文 DeepSeek / 其他 Gemini，已是现有内容管线，无需改）。
+- **计算器分享** `src/components/CalculatorFocus.tsx`（🔗分享 + 🖼分享图卡 + 复制；用默认 team OG 卡）。
+- 队名翻译 `teamName(name, locale)`（@/lib/football/teams）；队旗源 = forecast `team.flag`（flagcdn `/w80/`）。
+
+## 任务 A：分享按钮移到右上角 + 重做样式（用户精确规格）
+现状：右上角 `ShareIconButton` 过简、且无图片分享；绿色"分享"+"保存图片卡"埋在页面中部 `MatchPreviewShare` 卡内。
+要做：
+1. 把**分享图片** + **分享链接**两个动作从页面中部**移到页眉右上角**（替换现 `ShareIconButton`）。
+2. **分享链接按钮弱化**（ghost/次要：仅描边或纯文字、灰色 muted）。
+3. **分享图片按钮醒目**：绿色 `#1BE27F` 发光边框 + **呼吸动画**（box-shadow 脉冲；参考 DESIGN.md §6「LIVE 圆点脉冲 1.6s 循环」+ §4「绿色微光 `0 0 18px rgba(27,226,127,.15)`」；**必须尊重 `prefers-reduced-motion`** 关闭动画）。
+4. 行为：图片按钮 = 打开 `mode=match&fmt=portrait` 的 OG（保存图片卡）或原生 `navigator.share`（带图需 fetch+File，可选）；链接按钮 = `navigator.share({url,text})` 或复制降级。
+5. 把分享动作抽成可复用组件/hook（`onShareImage`/`onShareLink`），比赛页与计算器页眉复用；计算器右上已有「看模型概率版」链接，注意排版（图标化或并排）。
+6. `MatchPreviewShare` 卡内可保留概率展示，分享按钮以页眉为主入口。
+
+## 任务 B：队伍详情页 `/team/[slug]`
+- 新建 `src/app/team/[slug]/page.tsx`，展示：**出线概率 + 夺冠概率**（forecast 已有 `pAdvance`/`pChampion`）、**实力评分**（用现有 Elo `rating`，标注「模型实力评分」——**不要写「官方 FIFA 排名」**，见数据源结论）、**最近战绩**（football-data 已有 FINISHED 比分，按队过滤近 5 场）。
+- `generateMetadata` 出问题式标题 + 该队 OG 卡（复用现有 team 卡）；进 `sitemap`（48 队 = 48 个着陆页，强 SEO）。
+- 交叉链接 → 该队计算器（`/calculator?team=slug`）、→ 该队下一场比赛页。
+- **队名/国旗全站可点 → 详情页**：改 `TeamBadge` 组件包成 `<Link href="/team/[slug]">`，一处改全站生效。
+- 页内醒目「设为主队」按钮（见任务 C）。
+
+## 任务 C：设为主队 + /me 主队 + 主队分享图
+- 存储：localStorage `my_team`(slug) 起步（零 DDL）；或 `profiles.fav_team` 列（走 HANDOFF 的隧道 DDL，模式照抄 0004 尾部 GRANT）。
+- 详情页「设为主队」按钮；`/me` 顶部展示主队卡（出线/夺冠概率 + 实力评分 + 下一场）。
+- 主队分享图：复用 OG team 卡 + 署名（「XX 的主队」），`/me` 一键生成。
+
+## 任务 D：二维码（仅 zh 卡）
+- 结论：微信/小红书长按识别 QR 是标配，**华人面价值高**；西方平台（X/Reddit/IG）App **不扫** feed 图里的 QR（iOS 相册实况文本 / Android Lens 能识别但非通用手势）→ **en 卡不加**。
+- 实现：加 `qrcode` 库服务端生成（data URL / SVG）嵌入 OG；仅 `locale=zh`（或加 `qr=1` 参数）时渲染，角落小 QR + 「扫码自己算」。
+
+## 任务 E：比分概率上卡（Top-3）
+- `mode=match` 卡加一行「最可能比分 1-0 17% · 2-0 12% · 0-0 8%」（Top-3）。数据来自 `getMatchScoreline`（已有 Top-5）；比赛页传给 `MatchPreviewShare` → og 新 param（过雷词、截断）。这是独家数据，提升分享性与信息密度。
+
+## 数据源 / 版权结论（用户问，已查证 2026-06-13）
+- **FIFA 世界排名**：排名数字是「事实」，**不受版权保护**，引用单个排名作为信息点一般 OK。注意 ① 别用 FIFA **logo**/暗示官方授权（商标问题）；② 别整表照搬 **CC-BY-NC（仅非商用）** 数据集（如 jfjelstul/worldcup，商用违约）；③ 欧盟「数据库权」——整库复制有风险，引用单点没事。无官方公开 API；可用源：**openfootball（公共领域、商用 OK）**、抓 FIFA 公开排名页（注意 ToS）、或确认已有 key 的 API-Football / Sportmonks 是否含 ranking。
+- **球员身价**：单个数字非典型版权，但**唯一权威源 Transfermarkt 明禁抓取/商用**（ToS + 数据库权）；第三方「Transfermarkt API」（Apify/BrightData/开源 wrapper）本质都是抓 Transfermarkt，同样 ToS 风险 + 不稳定，**无干净免费授权源**。→ 这是真正的风险点。
+- **建议（重要）**：详情页**别声称「官方 FIFA 排名 / 身价」**，改用**自己已有的 Elo 实力评分**（本就是模型概率的真实输入因子，零版权风险、零成本）+ 出线/夺冠概率 + 最近战绩。要「排名感」就标「模型实力评分」。身价/官方排名等找到**付费授权**源再加。
+
+## 完成后
+`npm run build` + 部署 + 线上验证（详情页渲染 / 设主队 / 主队分享图 / 卡片 QR 与比分行 / 右上角呼吸按钮）+ `git add -A && git commit` + `git bundle create D:/wc2026-backup.bundle --all` + 更新 HANDOFF「已交付」表。
