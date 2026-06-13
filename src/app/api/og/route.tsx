@@ -173,83 +173,122 @@ export async function GET(req: Request) {
     }
   }
 
-  // 比赛预览卡（mode=match）：两队 + 模型胜/平/胜概率。概率由调用方（比赛页）按池倍率反推后
-  // 以 hp/dp/ap 传入（0-100），本路由只渲染、不算数（与 swing 同哲学）。队名 h/a 过雷词闸 fail-closed；
-  // 不接受外部旗帜 URL（避免任意 <img src> 的 SSRF），故本卡无旗、纯文字+概率条。
+  // 比赛预览卡（mode=match）：对阵 + 模型胜/平/胜概率 + 开球时间 + AI 短评。3:4 竖版(默认)/1:1 方版。
+  // 概率/时间/短评全由调用方（比赛页客户端）传入——路由只渲染、不算数、不取当前时区（静态图无法逐观看者本地化）。
+  // 安全：队名/时间/短评过雷词闸 fail-closed；队旗仅接受 flagcdn.com（防任意 <img src> 的 SSRF）。
   if (searchParams.get("mode") === "match") {
     const clampPct = (s: string | null) => {
       const v = parseFloat(s ?? "");
       return Number.isFinite(v) ? Math.round(Math.min(100, Math.max(0, v))) : null;
     };
-    const cleanName = (s: string | null) => {
-      const n = (s ?? "").slice(0, 40).trim();
-      return n && findBannedTerms(n, "en").length === 0 && findBannedTerms(n, "zh").length === 0
-        ? n
-        : "";
+    const clean = (s: string | null, max: number) => {
+      const v = (s ?? "").replace(/\s+/g, " ").slice(0, max).trim();
+      return v && findBannedTerms(v, "en").length === 0 && findBannedTerms(v, "zh").length === 0 ? v : "";
     };
-    const home = cleanName(searchParams.get("h"));
-    const away = cleanName(searchParams.get("a"));
+    const flagOk = (s: string | null) =>
+      s && /^https:\/\/flagcdn\.com\//i.test(s) ? s.replace("/w80/", "/w160/") : null;
+    const home = clean(searchParams.get("h"), 40);
+    const away = clean(searchParams.get("a"), 40);
     const hp = clampPct(searchParams.get("hp"));
     const dp = clampPct(searchParams.get("dp"));
     const ap = clampPct(searchParams.get("ap"));
+    const hflag = flagOk(searchParams.get("hf"));
+    const aflag = flagOk(searchParams.get("af"));
+    const kickoff = clean(searchParams.get("t"), 48);
+    const aitake = clean(searchParams.get("q"), 90);
+    const square = searchParams.get("fmt") === "square";
     if (home && away && hp !== null && dp !== null && ap !== null) {
       let mfonts: { name: string; data: ArrayBuffer; weight: 700 }[] = [];
       if (locale === "zh") {
         const f = await loadZhFont(
-          `${home}${away}主胜平局客胜模型胜负概率万次蒙特卡洛模拟更新于0123456789%· `
+          `${home}${away}${kickoff}${aitake}模型胜平局客胜概率万次蒙特卡洛模拟更新于预测仅供娱乐改一剩余比分自己算出线世界杯小组赛0123456789%·：、，。- `
         );
         if (f) mfonts = [{ name: "NotoSansSC", data: f, weight: 700 }];
         else locale = "en";
       }
       const ML =
         locale === "zh"
-          ? { hdr: "模型 胜 / 平 / 胜 概率", draw: "平局", sims: "10,000 次蒙特卡洛模拟", updated: `更新于 ${updated} UTC` }
-          : { hdr: "Model win / draw / win chance", draw: "Draw", sims: "10,000 Monte Carlo simulations", updated: `Updated ${updated} UTC` };
-      const rows = [
-        { label: home, pct: hp, color: "#3fb950" },
-        { label: ML.draw, pct: dp, color: "#8b949e" },
-        { label: away, pct: ap, color: "#d29922" },
+          ? { kicker: "世界杯 2026 · 小组赛", hdr: "模型 胜 / 平 / 胜 概率", draw: "平局", sims: "10,000 次蒙特卡洛模拟", updated: `更新于 ${updated} UTC`, cta: "改一改剩余比分，自己算出线 →", disc: "预测仅供娱乐" }
+          : { kicker: "World Cup 2026 · Group stage", hdr: "Model win / draw / win chance", draw: "Draw", sims: "10,000 Monte Carlo simulations", updated: `Updated ${updated} UTC`, cta: "Flip any remaining result yourself →", disc: "For entertainment only" };
+      const cols = [
+        { name: home, pct: hp, color: "#1BE27F", align: "flex-start" as const },
+        { name: ML.draw, pct: dp, color: "#FFB02E", align: "center" as const },
+        { name: away, pct: ap, color: "#FF5436", align: "flex-end" as const },
       ];
-      const mbase: React.CSSProperties = {
+      const team = (name: string, flag: string | null) => (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, width: 360 }}>
+          {flag ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={flag} width={150} height={100} style={{ borderRadius: 10, objectFit: "cover" }} />
+          ) : (
+            <div style={{ display: "flex", width: 150, height: 100, borderRadius: 10, backgroundColor: "#1B232D" }} />
+          )}
+          <div style={{ display: "flex", fontSize: 48, fontWeight: 700, color: "#E8EDF2" }}>{name}</div>
+        </div>
+      );
+      const base: React.CSSProperties = {
         width: "100%",
         height: "100%",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        backgroundColor: "#0c1116",
-        color: "#e6edf3",
-        padding: 64,
+        backgroundColor: "#0A0E13",
+        color: "#E8EDF2",
+        padding: square ? 72 : 84,
         fontFamily: mfonts.length ? "NotoSansSC" : "sans-serif",
       };
       return new ImageResponse(
         (
-          <div style={mbase}>
+          <div style={base}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div style={{ display: "flex", fontSize: 38, color: "#8b949e" }}>{ML.hdr}</div>
-              <div style={{ display: "flex", fontSize: 32, color: "#3fb950" }}>wc2026.cool</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{ display: "flex", width: 14, height: 14, borderRadius: 7, backgroundColor: "#1BE27F" }} />
+                <div style={{ display: "flex", fontSize: 28, color: "#8A97A6" }}>{ML.kicker}</div>
+              </div>
+              <div style={{ display: "flex", fontSize: 30, fontWeight: 700, color: "#1BE27F" }}>wc2026.cool</div>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-              {rows.map((r, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 24 }}>
-                  <div style={{ display: "flex", width: 320, fontSize: 40, fontWeight: 700, overflow: "hidden" }}>
-                    {r.label}
-                  </div>
-                  <div style={{ display: "flex", flex: 1, height: 48, backgroundColor: "#1f2630", borderRadius: 8 }}>
-                    <div style={{ display: "flex", width: `${r.pct}%`, height: 48, backgroundColor: r.color, borderRadius: 8 }} />
-                  </div>
-                  <div style={{ display: "flex", width: 130, justifyContent: "flex-end", fontSize: 52, fontWeight: 700, color: r.color }}>
-                    {r.pct}%
-                  </div>
-                </div>
-              ))}
+
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              {team(home, hflag)}
+              <div style={{ display: "flex", fontSize: 44, fontWeight: 700, color: "#3a4654" }}>VS</div>
+              {team(away, aflag)}
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 24, color: "#8b949e" }}>
-              <div style={{ display: "flex" }}>{ML.sims}</div>
-              <div style={{ display: "flex" }}>{ML.updated}</div>
+
+            <div style={{ display: "flex", justifyContent: "center", fontSize: 28, color: "#8A97A6" }}>{kickoff || " "}</div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+              <div style={{ display: "flex", fontSize: 28, color: "#8A97A6" }}>{ML.hdr}</div>
+              <div style={{ display: "flex", width: "100%", height: 56, gap: 6 }}>
+                <div style={{ display: "flex", flexGrow: hp, flexBasis: 0, borderRadius: 10, backgroundColor: "#1BE27F" }} />
+                <div style={{ display: "flex", flexGrow: dp, flexBasis: 0, borderRadius: 10, backgroundColor: "#FFB02E" }} />
+                <div style={{ display: "flex", flexGrow: ap, flexBasis: 0, borderRadius: 10, backgroundColor: "#FF5436" }} />
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                {cols.map((c, i) => (
+                  <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: c.align, width: 280 }}>
+                    <div style={{ display: "flex", fontSize: 90, fontWeight: 700, color: c.color, lineHeight: 1 }}>{c.pct}%</div>
+                    <div style={{ display: "flex", fontSize: 26, color: "#8A97A6", marginTop: 8 }}>{c.name}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: "flex", fontSize: 30, color: "#C9D2DC", lineHeight: 1.35 }}>{aitake ? `“${aitake}”` : " "}</div>
+
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 80, borderRadius: 14, border: "2px solid #1BE27F", backgroundColor: "#0F2018" }}>
+              <div style={{ display: "flex", fontSize: 30, fontWeight: 700, color: "#1BE27F" }}>{ML.cta}</div>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 23, color: "#5a6472" }}>
+                <div style={{ display: "flex" }}>{ML.sims}</div>
+                <div style={{ display: "flex" }}>{ML.updated}</div>
+              </div>
+              <div style={{ display: "flex", fontSize: 22, color: "#5a6472" }}>{`wc2026.cool · ${ML.disc}`}</div>
             </div>
           </div>
         ),
-        { width: 1200, height: 630, fonts: mfonts.length ? mfonts : undefined }
+        { width: 1080, height: square ? 1080 : 1440, fonts: mfonts.length ? mfonts : undefined }
       );
     }
   }

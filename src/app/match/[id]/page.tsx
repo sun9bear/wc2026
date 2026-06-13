@@ -9,6 +9,7 @@ import { ScoreProbs } from "@/components/ScoreProbs";
 import { LiveScoreProbs } from "@/components/LiveScoreProbs";
 import { MatchSwingShare } from "@/components/MatchSwingShare";
 import { MatchPreviewShare } from "@/components/MatchPreviewShare";
+import { ShareIconButton } from "@/components/ShareIconButton";
 import { SentimentBar } from "@/components/SentimentBar";
 import { Disclaimer } from "@/components/Disclaimer";
 import { TeamBadge } from "@/components/TeamBadge";
@@ -138,9 +139,16 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
 
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-8">
-      <Link href="/" className="text-xs text-muted">
-        {t.common.back}
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link href="/" className="text-xs text-muted">
+          {t.common.back}
+        </Link>
+        <ShareIconButton
+          url={`${SITE}/match/${id}`}
+          text={`${teamName(m.home.name, locale)} vs ${teamName(m.away.name, locale)}`}
+          locale={locale}
+        />
+      </div>
 
       <div className="mt-3 rounded-lg border border-border bg-surface p-5">
         <div className="mb-4 text-[11px] text-muted">
@@ -206,6 +214,10 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
                 dp={impliedSplit.dp}
                 ap={impliedSplit.ap}
                 locale={locale}
+                kickoff={m.kickoffAt}
+                homeFlag={m.home.flag}
+                awayFlag={m.away.flag}
+                aiTake={locale === "zh" ? m.sentiment : m.sentimentEn}
               />
             )}
           </>

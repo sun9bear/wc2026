@@ -19,6 +19,10 @@ export function MatchPreviewShare({
   dp,
   ap,
   locale,
+  kickoff,
+  homeFlag,
+  awayFlag,
+  aiTake,
 }: {
   matchId: string;
   home: string;
@@ -27,12 +31,38 @@ export function MatchPreviewShare({
   dp: number;
   ap: number;
   locale: "zh" | "en";
+  kickoff?: string | null;
+  homeFlag?: string | null;
+  awayFlag?: string | null;
+  aiTake?: string | null;
 }) {
   const [toast, setToast] = useState<string | null>(null);
 
-  const ogUrl = `${SITE}/api/og?mode=match&h=${encodeURIComponent(home)}&a=${encodeURIComponent(
-    away
-  )}&hp=${hp}&dp=${dp}&ap=${ap}&locale=${locale}`;
+  // 开球时间：用浏览器本地时区格式化（含时区缩写）。静态图烤的是「分享者本地时间」——
+  // 无法逐观看者本地化，时区缩写让别的时区也能换算。
+  const kickStr = (() => {
+    if (!kickoff) return "";
+    try {
+      return new Intl.DateTimeFormat(locale === "zh" ? "zh-CN" : "en-US", {
+        month: "numeric",
+        day: "numeric",
+        weekday: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZoneName: "short",
+      }).format(new Date(kickoff));
+    } catch {
+      return "";
+    }
+  })();
+  const enc = encodeURIComponent;
+  // AI 短评按页面语言传入（中文=DeepSeek 的 sentiment，其他=Gemini 的 sentimentEn）；路由会截断+过雷词。
+  const ogUrl =
+    `${SITE}/api/og?mode=match&fmt=portrait&h=${enc(home)}&a=${enc(away)}&hp=${hp}&dp=${dp}&ap=${ap}&locale=${locale}` +
+    (homeFlag && homeFlag.startsWith("http") ? `&hf=${enc(homeFlag)}` : "") +
+    (awayFlag && awayFlag.startsWith("http") ? `&af=${enc(awayFlag)}` : "") +
+    (kickStr ? `&t=${enc(kickStr)}` : "") +
+    (aiTake ? `&q=${enc(aiTake)}` : "");
   const shareUrl = `${SITE}/match/${matchId}`;
 
   const c =
@@ -74,7 +104,10 @@ export function MatchPreviewShare({
 
   return (
     <section className="fade-up mt-4 rounded-lg border border-border bg-surface p-4">
-      <div className="mb-1 text-[11px] text-muted">{c.headline}</div>
+      <div className="mb-1 text-[11px] text-muted">
+        {c.headline}
+        {kickStr ? ` · ${kickStr}` : ""}
+      </div>
       <div className="mb-3 text-sm">{c.line}</div>
       <div className="flex items-center gap-3">
         <button
