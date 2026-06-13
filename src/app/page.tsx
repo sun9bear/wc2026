@@ -4,6 +4,8 @@ import { getMatches } from "@/lib/matches/getMatches";
 import { MatchList } from "@/components/MatchList";
 import { MatchCard } from "@/components/MatchCard";
 import { Disclaimer } from "@/components/Disclaimer";
+import { SettleDrawer } from "@/components/SettleDrawer";
+import { TrackedLink } from "@/components/TrackedLink";
 import { getDict } from "@/i18n";
 import { getLocale } from "@/i18n/server";
 import { maybeAutoSettle } from "@/lib/settlement/autoSettle";
@@ -48,8 +50,9 @@ export default async function Home({
       </header>
 
       {/* 主入口：第三名出线计算器（独家资产，纯链接，与概率侧分屏隔离不冲突) */}
-      <Link
+      <TrackedLink
         href="/calculator"
+        event="home_calc_cta_click"
         className="mb-4 block rounded-lg border border-green/40 bg-surface p-4 transition hover:border-green"
       >
         <div className="flex items-center justify-between gap-3">
@@ -61,7 +64,7 @@ export default async function Home({
             {t.hero.calcCta}
           </span>
         </div>
-      </Link>
+      </TrackedLink>
 
       {/* 次入口：今晚焦点战，直达预测 */}
       {focus && (
@@ -82,8 +85,11 @@ export default async function Home({
         <Link href="/combo" className="text-muted hover:text-green">
           {t.hero.comboLink}
         </Link>
-        <Link href="/watch" className="text-muted hover:text-green">
+        <TrackedLink href="/watch" event="watch_link_clicked" className="text-muted hover:text-green">
           {t.hero.watchLink}
+        </TrackedLink>
+        <Link href="/league" className="text-muted hover:text-green">
+          {t.hero.leagueLink}
         </Link>
       </div>
 
@@ -113,6 +119,9 @@ export default async function Home({
       <footer className="mt-8 text-center">
         <Disclaimer />
       </footer>
+
+      {/* 结算揭晓抽屉：检测到新结算结果时从底部弹出（任务 3） */}
+      <SettleDrawer locale={locale} />
     </main>
   );
 }

@@ -1,0 +1,89 @@
+// Gemini（REST v1beta）聊天补全，仅服务端使用——本机网络调不通（geo 拦截），生产 Vercel 端可用。
+// 签名对齐 deepseek.ts 的 chat(system, user, timeoutMs)，供英文内容管线替换底层模型。
+// 模型：默认 gemini-3.1-flash（2026-06-13 决策）；若该名失效（404），自动 ListModels 选最新 flash 重试。
+
+const BASE = "https://generativelanguage.googleapis.com/v1beta";
+
+let resolvedModel: string | null = null;
+
+function preferredModel(): string {
+  return resolvedModel ?? process.env.GEMINI_MODEL ?? "gemini-3.1-flash";
+}
+
+// ListModels 里挑"纯 flash"主线模型（排除 lite/8b/image/live/tts/audio 变体），按版本号取最新。
+async function resolveFlashModel(key: string, signal: AbortSignal): Promise<string | null> {
+  const res = await fetch(`${BASE}/models?pageSize=200`, {
+    headers: { "x-goog-api-key": key },
+    signal,
+  });
+  if (!res.ok) return null;
+  const j = (await res.json()) as { models?: { name: string; supportedGenerationMethods?: string[] }[] };
+  const candidates = (j.models ?? [])
+    .map((m) => ({ ...m, short: m.name.replace(/^models\//, "") }))
+    .filter(
+      (m) =>
+        /^gemini-[\d.]+-flash(-preview.*)?$/.test(m.short) &&
+        (m.supportedGenerationMethods?.includes("generateContent") ?? true)
+    )
+    .sort((a, b) => {
+      const v = (s: string) => parseFloat(s.match(/gemini-([\d.]+)/)?.[1] ?? "0");
+      const stable = (s: string) => (s.includes("preview") ? 0 : 1);
+      return v(b.short) - v(a.short) || stable(b.short) - stable(a.short);
+    });
+  return candidates[0]?.short ?? null;
+}
+
+interface GenResponse {
+  candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] } }[];
+}
+
+async function callGenerate(
+  key: string,
+  model: string,
+  system: string,
+  user: string,
+  signal: AbortSignal
+): Promise<Response> {
+  return fetch(`${BASE}/models/${model}:generateContent`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: system }] },
+      contents: [{ role: "user", parts: [{ text: user }] }],
+      generationConfig: { temperature: 0.9 },
+    }),
+    signal,
+  });
+}
+
+export async function chat(system: string, user: string, timeoutMs = 15000): Promise<string> {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) throw new Error("缺少 GEMINI_API_KEY");
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    let model = preferredModel();
+    let res = await callGenerate(key, model, system, user, controller.signal);
+    if (res.status === 404) {
+      // 写死的模型名过期——动态解析一次并缓存（每个实例最多发生一次）。
+      const found = await resolveFlashModel(key, controller.signal);
+      if (found && found !== model) {
+        resolvedModel = found;
+        model = found;
+        res = await callGenerate(key, model, system, user, controller.signal);
+      }
+    }
+    if (!res.ok) throw new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 300)}`);
+    const j = (await res.json()) as GenResponse;
+    const text = (j.candidates?.[0]?.content?.parts ?? [])
+      .filter((p) => p.text && !p.thought)
+      .map((p) => p.text)
+      .join("")
+      .trim();
+    if (!text) throw new Error("Gemini 空响应");
+    return text;
+  } finally {
+    clearTimeout(timer);
+  }
+}

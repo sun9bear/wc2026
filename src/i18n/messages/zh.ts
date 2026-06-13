@@ -25,6 +25,7 @@ export const zh = {
     pointsBanner: "🪙 新玩家自动获得 1,000 积分，首次预测即到账",
     watchLink: "📺 比赛在哪看",
     comboLink: "🔗 串关玩法",
+    leagueLink: "🛡 好友擂台",
     todaySchedule: "赛程",
   },
   status: { finished: "已结束", live: "进行中" },

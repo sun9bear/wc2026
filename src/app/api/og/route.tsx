@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 import { getForecast } from "@/lib/prob/pipeline";
 import { findTeam } from "@/lib/prob/findTeam";
+import { findBannedTerms } from "@/lib/compliance/bannedTerms";
 
 export const maxDuration = 60;
 
@@ -42,6 +43,115 @@ export async function GET(req: Request) {
   const hit = q ? findTeam(data, q) : null;
 
   const updated = new Date(data.updatedAt).toISOString().slice(0, 16).replace("T", " ");
+
+  // 摆动卡（任务 6）：?mode=swing&team=<slug>&before=93&after=41&result=<一句话>
+  // 数值全由调用方（scripts/swing-bake.ts）传入——本路由只渲染，不算数。
+  if (searchParams.get("mode") === "swing" && hit) {
+    const clamp = (s: string | null) => {
+      const v = parseFloat(s ?? "");
+      return Number.isFinite(v) ? Math.min(100, Math.max(0, v)) : null;
+    };
+    const before = clamp(searchParams.get("before"));
+    const after = clamp(searchParams.get("after"));
+    // 路由公开无鉴权——result 任意可控，必须过雷词闸（双语都查，参数不分语言地接受 ASCII/中文）。
+    // 命中则整段丢弃（fail-closed），绝不让品牌图卡渲染博彩词（与全站 §9.1 纵深防御一致）。
+    const rawResult = (searchParams.get("result") ?? "").slice(0, 60);
+    const result =
+      findBannedTerms(rawResult, "en").length === 0 && findBannedTerms(rawResult, "zh").length === 0
+        ? rawResult
+        : "";
+    if (before !== null && after !== null) {
+      const t = hit.team;
+      let fonts: { name: string; data: ArrayBuffer; weight: 700 }[] = [];
+      if (locale === "zh") {
+        const f = await loadZhFont(
+          `${t.zh}${result}出线概率万次蒙特卡洛模拟更新于0123456789.%→·若胜平负 `
+        );
+        if (f) fonts = [{ name: "NotoSansSC", data: f, weight: 700 }];
+        else locale = "en";
+      }
+      const L =
+        locale === "zh"
+          ? { label: "出线概率", sims: "10,000 次蒙特卡洛模拟", updated: `更新于 ${updated} UTC` }
+          : {
+              label: "Chance to advance",
+              sims: "10,000 Monte Carlo simulations",
+              updated: `Updated ${updated} UTC`,
+            };
+      const name = locale === "zh" ? t.zh : t.name;
+      const up = after >= before;
+      const fmtPct = (v: number) => (v >= 10 ? v.toFixed(0) : v.toFixed(1));
+      const base: React.CSSProperties = {
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        backgroundColor: "#0c1116",
+        color: "#e6edf3",
+        padding: 64,
+        fontFamily: fonts.length ? "NotoSansSC" : "sans-serif",
+      };
+      return new ImageResponse(
+        (
+          <div style={base}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+                {t.flag ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={t.flag.replace("/w80/", "/w160/")} width={120} height={84} style={{ borderRadius: 8, objectFit: "cover" }} />
+                ) : (
+                  <div style={{ display: "flex", fontSize: 84 }}>⚽</div>
+                )}
+                <div style={{ display: "flex", fontSize: 64, fontWeight: 700 }}>{name}</div>
+              </div>
+              <div style={{ display: "flex", fontSize: 32, color: "#3fb950" }}>wc2026.cool</div>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ display: "flex", fontSize: 34, color: "#8b949e" }}>{L.label}</div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 32 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    fontSize: 96,
+                    fontWeight: 700,
+                    color: "#8b949e",
+                    textDecoration: "line-through",
+                  }}
+                >
+                  {fmtPct(before)}%
+                </div>
+                <div style={{ display: "flex", fontSize: 72, color: "#8b949e" }}>→</div>
+                <div
+                  style={{
+                    display: "flex",
+                    fontSize: 170,
+                    fontWeight: 700,
+                    lineHeight: 1,
+                    color: up ? "#3fb950" : "#f85149",
+                  }}
+                >
+                  {fmtPct(after)}%
+                </div>
+              </div>
+              {result && (
+                <div style={{ display: "flex", fontSize: 36, color: "#e6edf3", marginTop: 8 }}>
+                  {result}
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 24, color: "#8b949e" }}>
+              <div style={{ display: "flex" }}>{L.sims}</div>
+              <div style={{ display: "flex" }}>{L.updated}</div>
+            </div>
+          </div>
+        ),
+        { width: 1200, height: 630, fonts: fonts.length ? fonts : undefined }
+      );
+    }
+  }
 
   // 文案
   let fonts: { name: string; data: ArrayBuffer; weight: 700 }[] = [];

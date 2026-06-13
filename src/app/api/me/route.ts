@@ -2,9 +2,48 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { computeStats } from "@/lib/stats/playerStats";
+import { computeWinStreaks } from "@/lib/stats/winStreak";
 import { rankTier } from "@/lib/ranks/rankTier";
 import { computeStreak } from "@/lib/checkin/streak";
 import { computeAchievements } from "@/lib/achievements/achievements";
+
+// 已结算注单的嵌套行（bet → legs → selection → market → match）
+interface SettledBetRow {
+  id: string;
+  status: string;
+  payout: number | null;
+  total_stake: number;
+  total_multiplier: number;
+  type: string;
+  bet_selections: {
+    selection: {
+      market: {
+        match: {
+          kickoff_at: string;
+          settled_at: string | null;
+          home_score: number | null;
+          away_score: number | null;
+          home: { name: string } | null;
+          away: { name: string } | null;
+        } | null;
+      } | null;
+    } | null;
+  }[];
+}
+
+export interface RecentBet {
+  won: boolean;
+  kickoff: string;
+  settledAt: string | null;
+  home: string;
+  away: string;
+  homeScore: number | null;
+  awayScore: number | null;
+  multiplier: number;
+  payout: number;
+  stake: number;
+  legs: number;
+}
 
 // 返回当前用户的战绩（服务端用 secret key 读取，凭 access token 鉴别身份）。
 export async function GET(req: NextRequest) {
@@ -54,7 +93,79 @@ export async function GET(req: NextRequest) {
     balance,
   });
 
+  // 任务 3：最近已结算注单 + 连胜（按 kickoff 排序——批量补结算时 settled_at 相同，不可作序）
+  const { data: settledRaw } = await db
+    .from("bets")
+    .select(
+      "id, status, payout, total_stake, total_multiplier, type, bet_selections(selection:selections(market:markets(match:matches(kickoff_at, settled_at, home_score, away_score, home:home_team_id(name), away:away_team_id(name)))))"
+    )
+    .eq("user_id", user.id)
+    .in("status", ["won", "lost"]);
+  const settledBets = (settledRaw as unknown as SettledBetRow[] | null) ?? [];
+
+  const enriched = settledBets
+    .map((b) => {
+      const matchesOfBet = b.bet_selections
+        .map((l) => l.selection?.market?.match ?? null)
+        .filter((m): m is NonNullable<typeof m> => m !== null);
+      if (matchesOfBet.length === 0) return null;
+      // 串关：以最晚一腿的开球时间为该注单的"结果时刻"
+      const last = matchesOfBet.reduce((a, m) => (m.kickoff_at > a.kickoff_at ? m : a));
+      const settledAt = matchesOfBet.reduce<string | null>(
+        (a, m) => (m.settled_at && (!a || m.settled_at > a) ? m.settled_at : a),
+        null
+      );
+      return {
+        won: b.status === "won",
+        kickoff: last.kickoff_at,
+        settledAt,
+        home: last.home?.name ?? "?",
+        away: last.away?.name ?? "?",
+        homeScore: last.home_score,
+        awayScore: last.away_score,
+        multiplier: Number(b.total_multiplier) || 0,
+        payout: Number(b.payout ?? 0),
+        stake: Number(b.total_stake) || 0,
+        legs: matchesOfBet.length,
+      } satisfies RecentBet;
+    })
+    .filter((x): x is RecentBet => x !== null)
+    .sort((a, b) => a.kickoff.localeCompare(b.kickoff));
+
+  const { streak, bestStreak } = computeWinStreaks(enriched.map((b) => b.won));
+  const recent = enriched.slice(-20);
+
+  // emoji 战绩格"击败 N%"：仅全站结算样本 ≥50 时给值（按积分排名近似，两个 head count 查询）
+  let beatPct: number | null = null;
+  const { count: globalSettled } = await db
+    .from("bets")
+    .select("id", { count: "exact", head: true })
+    .in("status", ["won", "lost"]);
+  if ((globalSettled ?? 0) >= 50) {
+    const { count: totalPlayers } = await db
+      .from("profiles")
+      .select("user_id", { count: "exact", head: true });
+    const { count: below } = await db
+      .from("profiles")
+      .select("user_id", { count: "exact", head: true })
+      .lt("points_balance", balance);
+    if (totalPlayers && totalPlayers > 1) {
+      beatPct = Math.floor(((below ?? 0) / totalPlayers) * 100);
+    }
+  }
+
   const tier = rankTier(balance);
   // tierCode 供前端按语言渲染段位名（label 仅中文，保留兼容旧客户端）
-  return NextResponse.json({ balance, tier: tier.label, tierCode: tier.code, ...stats, achievements });
+  return NextResponse.json({
+    balance,
+    tier: tier.label,
+    tierCode: tier.code,
+    ...stats,
+    achievements,
+    recent,
+    streak,
+    bestStreak,
+    globalSettled: globalSettled ?? 0,
+    beatPct,
+  });
 }

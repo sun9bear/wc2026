@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { copyText } from "@/lib/clipboard";
+import { track } from "@/lib/track";
 import type { Locale } from "@/i18n";
 
 // 计算器"先选我的队"入口 + 结论条 + 一键复制（CodeX 建议吸收版）。
@@ -43,31 +45,6 @@ const TXT = {
   },
 } as const;
 
-function copy(text: string): boolean {
-  try {
-    if (navigator.clipboard?.writeText) {
-      void navigator.clipboard.writeText(text);
-      return true;
-    }
-  } catch {
-    /* 走降级 */
-  }
-  // 微信内置浏览器 clipboard API 不稳定——execCommand 降级
-  try {
-    const ta = document.createElement("textarea");
-    ta.value = text;
-    ta.style.position = "fixed";
-    ta.style.opacity = "0";
-    document.body.appendChild(ta);
-    ta.select();
-    const ok = document.execCommand("copy");
-    document.body.removeChild(ta);
-    return ok;
-  } catch {
-    return false;
-  }
-}
-
 export function CalculatorFocus({
   locale,
   hot,
@@ -88,8 +65,9 @@ export function CalculatorFocus({
 
   function doCopy(kind: "text" | "link") {
     if (!focus) return;
-    const ok = copy(kind === "link" ? url : t.share(focus, adv, url));
+    const ok = copyText(kind === "link" ? url : t.share(focus, adv, url));
     if (ok) {
+      track("calculator_share_copy", { kind, team: focus.slug });
       setDone(kind);
       setTimeout(() => setDone(null), 1600);
     }
@@ -103,6 +81,7 @@ export function CalculatorFocus({
           <a
             key={x.slug}
             href={`/calculator?team=${x.slug}`}
+            onClick={() => track("calculator_team_selected", { team: x.slug, via: "chip" })}
             className={`shrink-0 rounded-pill border px-2.5 py-1 ${
               focus?.slug === x.slug ? "border-green text-green" : "border-border text-muted"
             }`}
@@ -114,7 +93,10 @@ export function CalculatorFocus({
           className="shrink-0 rounded-sm border border-border bg-surface-2 px-2 py-1 text-muted"
           value={focus && !hot.some((x) => x.slug === focus.slug) ? focus.slug : ""}
           onChange={(e) => {
-            if (e.target.value) window.location.href = `/calculator?team=${e.target.value}`;
+            if (e.target.value) {
+              track("calculator_team_selected", { team: e.target.value, via: "select" });
+              window.location.href = `/calculator?team=${e.target.value}`;
+            }
           }}
         >
           <option value="">{t.all}</option>

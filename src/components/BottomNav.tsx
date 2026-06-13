@@ -1,12 +1,33 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { getDict, type Locale } from "@/i18n";
+import { SETTLE_NEW_EVENT, SETTLE_SEEN_EVENT } from "@/components/SettleDrawer";
 
 export function BottomNav({ locale }: { locale: Locale }) {
   const pathname = usePathname();
   const nav = getDict(locale).nav;
+
+  // 新结算红点：SettleDrawer 发现新结果时写 localStorage + 派发事件，关闭抽屉即清除。
+  const [dot, setDot] = useState(false);
+  useEffect(() => {
+    const sync = () => {
+      try {
+        setDot(localStorage.getItem("wc_unseen_settled") === "1");
+      } catch {
+        /* 隐私模式 */
+      }
+    };
+    sync();
+    window.addEventListener(SETTLE_NEW_EVENT, sync);
+    window.addEventListener(SETTLE_SEEN_EVENT, sync);
+    return () => {
+      window.removeEventListener(SETTLE_NEW_EVENT, sync);
+      window.removeEventListener(SETTLE_SEEN_EVENT, sync);
+    };
+  }, []);
   // 小组赛期间"出线计算器"占主导航位（独家传播资产）；串关入口在首页与 /me。
   // 淘汰赛阶段（6/28+）视数据评估是否换回 combo。
   const tabs = [
@@ -33,7 +54,12 @@ export function BottomNav({ locale }: { locale: Locale }) {
                 active ? "text-green" : "text-muted"
               }`}
             >
-              <span className="text-lg leading-none">{t.icon}</span>
+              <span className="relative text-lg leading-none">
+                {t.icon}
+                {t.href === "/me" && dot && (
+                  <span className="absolute -right-1.5 -top-0.5 h-2 w-2 rounded-full bg-red" />
+                )}
+              </span>
               {t.label}
             </Link>
           );

@@ -22,6 +22,9 @@ export interface MatchDetail {
   preview: string | null;
   recap: string | null;
   sentiment: string | null;
+  previewEn: string | null;
+  recapEn: string | null;
+  sentimentEn: string | null;
 }
 
 interface MatchRow {
@@ -95,6 +98,11 @@ export async function getMatchDetail(matchId: string): Promise<MatchDetail | nul
     const body = ac.find((r) => r.type === t)?.body ?? null;
     return body && findBannedTerms(body, "zh").length === 0 ? body : null;
   };
+  // 英文内容（type 带 _en 后缀）走英文雷词表——双语各自 fail-closed。
+  const byTypeEn = (t: string) => {
+    const body = ac.find((r) => r.type === t)?.body ?? null;
+    return body && findBannedTerms(body, "en").length === 0 ? body : null;
+  };
 
   return {
     id: m.id,
@@ -109,5 +117,8 @@ export async function getMatchDetail(matchId: string): Promise<MatchDetail | nul
     preview: byType("preview"),
     recap: byType("recap"),
     sentiment: byType("sentiment"),
+    previewEn: byTypeEn("preview_en"),
+    recapEn: byTypeEn("recap_en"),
+    sentimentEn: byTypeEn("sentiment_en"),
   };
 }

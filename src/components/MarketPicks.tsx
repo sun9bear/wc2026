@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { quotePayout } from "@/lib/bets/quote";
+import { track } from "@/lib/track";
 import { useToast } from "@/components/Toast";
 import { getDict, type Locale } from "@/i18n";
 import type { SelectionView } from "@/lib/markets/getMatchDetail";
@@ -98,6 +99,7 @@ export function MarketPicks({
       });
       const json = (await res.json()) as { error?: string; balance?: number; multiplier?: number };
       if (!res.ok) throw new Error(json.error ?? t.match.submitFail);
+      track("prediction_submitted", { marketId, stake });
       toast(
         `${t.match.successA} ${quotePayout(stake, json.multiplier ?? picked.multiplier)} · ${t.match.balanceWord} ${json.balance}`,
         "ok"

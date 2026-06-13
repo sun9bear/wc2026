@@ -32,17 +32,28 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
     away: t.match.away,
   };
 
-  // AI 内容目前仅中文——EN 视图折叠展示，避免英文用户满屏中文破相。
+  // AI 内容：EN 视图优先英文版（Gemini 生成，平铺展示）；无英文版则折叠中文，避免满屏中文破相。
   const AiBlock = ({
     tag,
     foldTag,
     body,
+    bodyEn,
   }: {
     tag: string;
     foldTag: string;
-    body: string;
-  }) =>
-    locale === "en" ? (
+    body: string | null;
+    bodyEn: string | null;
+  }) => {
+    if (locale === "en" && bodyEn) {
+      return (
+        <div className="fade-up mt-4 rounded-lg border border-border bg-surface p-4">
+          <div className="mb-1 text-[11px] text-muted">{tag}</div>
+          <p className="text-sm leading-relaxed">{bodyEn}</p>
+        </div>
+      );
+    }
+    if (!body) return null;
+    return locale === "en" ? (
       <details className="fade-up mt-4 rounded-lg border border-border bg-surface p-4">
         <summary className="cursor-pointer text-[11px] text-muted">{foldTag}</summary>
         <p className="mt-2 text-sm leading-relaxed">{body}</p>
@@ -53,6 +64,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
         <p className="text-sm leading-relaxed">{body}</p>
       </div>
     );
+  };
 
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-8">
@@ -80,16 +92,16 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
         </div>
       </div>
 
-      {settled && m.recap && (
-        <AiBlock tag={t.match.recapTag} foldTag={t.match.recapTag} body={m.recap} />
+      {settled && (m.recap || m.recapEn) && (
+        <AiBlock tag={t.match.recapTag} foldTag={t.match.recapTag} body={m.recap} bodyEn={m.recapEn} />
       )}
 
-      {m.preview && (
-        <AiBlock tag={t.match.previewTag} foldTag={t.match.previewFold} body={m.preview} />
+      {(m.preview || m.previewEn) && (
+        <AiBlock tag={t.match.previewTag} foldTag={t.match.previewFold} body={m.preview} bodyEn={m.previewEn} />
       )}
 
-      {!settled && m.sentiment && (
-        <AiBlock tag={t.match.hotTakeTag} foldTag={t.match.hotTakeFold} body={m.sentiment} />
+      {!settled && (m.sentiment || m.sentimentEn) && (
+        <AiBlock tag={t.match.hotTakeTag} foldTag={t.match.hotTakeFold} body={m.sentiment} bodyEn={m.sentimentEn} />
       )}
 
       <section className="mt-5">

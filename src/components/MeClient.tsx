@@ -6,8 +6,14 @@ import { supabase } from "@/lib/supabase/client";
 import { Disclaimer } from "@/components/Disclaimer";
 import { CheckinCard } from "@/components/CheckinCard";
 import { fmtPoints } from "@/lib/format";
+import { copyText } from "@/lib/clipboard";
 import { Skeleton } from "@/components/Skeleton";
 import { getDict, type Locale } from "@/i18n";
+
+interface RecentBet {
+  won: boolean;
+  kickoff: string;
+}
 
 interface MeData {
   balance: number;
@@ -19,6 +25,54 @@ interface MeData {
   pending: number;
   hitRate: number;
   achievements: { id: string; icon: string; label: string; desc: string; earned: boolean }[];
+  recent?: RecentBet[];
+  streak?: number;
+  bestStreak?: number;
+  beatPct?: number | null;
+}
+
+// 世界杯开幕日（matchday 计数锚点，按用户本地日期算）
+const DAY1 = "2026-06-11";
+
+const TXT = {
+  zh: {
+    streakLine: (s: number, b: number) => `🔥 当前 ${s} 连中 · 历史最佳 ${b}`,
+    copyRecord: "📋 复制战绩",
+    copied: "已复制 ✓",
+    shareTitle: (n: number) => `⚽ WC2026 竞猜战绩 · 第${n}比赛日`,
+    streakTag: (s: number) => `🔥 连中${s}场`,
+    beat: (p: number) => `💪 击败 ${p}% 玩家`,
+    site: "搜 wc2026.cool",
+    league: "🛡 好友擂台 · 建房间拉朋友比一比 →",
+  },
+  en: {
+    streakLine: (s: number, b: number) => `🔥 Current streak ${s} · best ${b}`,
+    copyRecord: "📋 Copy my record",
+    copied: "Copied ✓",
+    shareTitle: (n: number) => `⚽ WC2026 picks · Matchday ${n}`,
+    streakTag: (s: number) => `🔥 ${s}-win streak`,
+    beat: (p: number) => `💪 Better than ${p}% of players`,
+    site: "wc2026.cool",
+    league: "🛡 Friends league · challenge your friends →",
+  },
+} as const;
+
+// emoji 战绩格（任务 3）：按用户本地日期取最近一个比赛日的已结算注单。
+function buildRecordCard(recent: RecentBet[], streak: number, beatPct: number | null | undefined, locale: Locale): string | null {
+  if (recent.length === 0) return null;
+  const t = TXT[locale];
+  const localDate = (iso: string) => new Date(iso).toLocaleDateString("en-CA"); // YYYY-MM-DD
+  const latestDay = recent.map((b) => localDate(b.kickoff)).sort().at(-1)!;
+  const day = recent.filter((b) => localDate(b.kickoff) === latestDay);
+  const squares = day.map((b) => (b.won ? "🟩" : "🟥")).join("");
+  const wonN = day.filter((b) => b.won).length;
+  const matchday =
+    Math.max(0, Math.round((Date.parse(latestDay) - Date.parse(DAY1)) / 86400000)) + 1;
+  const lines = [t.shareTitle(matchday), `${squares} (${wonN}/${day.length})`];
+  if (streak >= 2) lines.push(t.streakTag(streak));
+  if (beatPct != null && beatPct > 0) lines.push(t.beat(beatPct));
+  lines.push(t.site);
+  return lines.join("\n");
 }
 
 function Tile({ value, label, color = "text-text" }: { value: string | number; label: string; color?: string }) {
@@ -32,8 +86,19 @@ function Tile({ value, label, color = "text-text" }: { value: string | number; l
 
 export function MeClient({ locale }: { locale: Locale }) {
   const t = getDict(locale);
+  const tx = TXT[locale];
   const [data, setData] = useState<MeData | null>(null);
   const [state, setState] = useState<"loading" | "none" | "ready">("loading");
+  const [copied, setCopied] = useState(false);
+
+  function doCopyRecord() {
+    if (!data) return;
+    const card = buildRecordCard(data.recent ?? [], data.streak ?? 0, data.beatPct, locale);
+    if (card && copyText(card)) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    }
+  }
 
   useEffect(() => {
     (async () => {
@@ -103,6 +168,32 @@ export function MeClient({ locale }: { locale: Locale }) {
             </div>
             <div className="font-head text-3xl font-bold text-green">{fmtPoints(data.balance)}</div>
           </div>
+
+          {((data.recent?.length ?? 0) > 0 || (data.bestStreak ?? 0) > 0) && (
+            <div className="mt-3 flex items-center justify-between rounded-md border border-border bg-surface-2 px-4 py-2.5 text-sm">
+              <span className="text-gold">
+                {(data.bestStreak ?? 0) > 0
+                  ? tx.streakLine(data.streak ?? 0, data.bestStreak ?? 0)
+                  : `${t.me.hitRate} ${data.hitRate}%`}
+              </span>
+              {(data.recent?.length ?? 0) > 0 && (
+                <button
+                  type="button"
+                  onClick={doCopyRecord}
+                  className="rounded-md border border-border bg-surface px-3 py-1 text-xs text-muted transition hover:border-green hover:text-green"
+                >
+                  {copied ? tx.copied : tx.copyRecord}
+                </button>
+              )}
+            </div>
+          )}
+
+          <Link
+            href="/league"
+            className="mt-3 block rounded-md border border-border bg-surface-2 px-4 py-2.5 text-sm text-muted transition hover:border-green hover:text-green"
+          >
+            {tx.league}
+          </Link>
 
           <div className="mt-4 grid grid-cols-2 gap-3">
             <Tile value={`${data.hitRate}%`} label={t.me.hitRate} color="text-green" />

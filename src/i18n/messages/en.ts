@@ -26,6 +26,7 @@ export const en = {
     pointsBanner: "🪙 New players start with 1,000 points — granted on your first prediction",
     watchLink: "📺 Where to watch",
     comboLink: "🔗 Combo picks",
+    leagueLink: "🛡 Friends league",
     todaySchedule: "Schedule",
   },
   status: { finished: "FT", live: "Live" },

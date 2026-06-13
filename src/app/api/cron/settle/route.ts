@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { runSettlement } from "@/lib/settlement/runSettlement";
-import { generateRecap } from "@/lib/ai/content";
+import { generateRecap, generateRecapEn } from "@/lib/ai/content";
 import { upsertContent } from "@/lib/ai/store";
 import { teamZh } from "@/lib/football/teams";
 
@@ -50,14 +50,16 @@ export async function GET(req: NextRequest) {
   }
   const settled = newlySettled.length;
 
-  // 阶段二：结算已全部落库后，再尽力而为生成赛后小结。
+  // 阶段二：结算已全部落库后，再尽力而为生成赛后小结（中文 DeepSeek + 英文 Gemini 各一份）。
   // 用「整体时间预算(相对 t0) + 更短单次超时」严格约束在 maxDuration(60s) 内返回：
-  //   最坏 = 预算 40s 内停止启动新调用，最后一次 ≤ 8s×2(可能重试) → ≈56s < 60s。
-  //   未完成的（被预算/上限/失败卡住）一律留给 `scripts/gen-recaps.ts` 补录，绝不影响已落库的结算。
-  const RECAP_CAP = 8;
+  //   每场最多 2 次生成调用（zh+en，各自可重试一次）——CAP 从 8 降到 4 保持最坏耗时不超预算。
+  //   未完成的（被预算/上限/失败卡住）由 /api/cron/gen-content 与 scripts/gen-recaps.ts 补录，
+  //   绝不影响已落库的结算。
+  const RECAP_CAP = 4;
   const RECAP_DEADLINE_MS = 40000;
   const RECAP_CALL_TIMEOUT_MS = 8000;
   let recaps = 0;
+  let recapsEn = 0;
   for (const s of newlySettled.slice(0, RECAP_CAP)) {
     if (Date.now() - t0 > RECAP_DEADLINE_MS) break;
     try {
@@ -67,12 +69,21 @@ export async function GET(req: NextRequest) {
     } catch {
       /* 忽略 AI 失败/超时 */
     }
+    if (Date.now() - t0 > RECAP_DEADLINE_MS) break;
+    try {
+      const bodyEn = await generateRecapEn(s.home, s.away, s.hs, s.as, RECAP_CALL_TIMEOUT_MS);
+      await upsertContent(sb, s.id, "recap_en", bodyEn);
+      recapsEn++;
+    } catch {
+      /* 忽略 AI 失败/超时（GEMINI_API_KEY 缺失同样静默，结算不受影响） */
+    }
   }
 
   return NextResponse.json({
     ok: true,
     settled,
     recaps,
+    recapsEn,
     recapsDeferred: Math.max(0, settled - recaps),
   });
 }

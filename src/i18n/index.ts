@@ -29,6 +29,7 @@ export interface Dict {
     pointsBanner: string;
     watchLink: string;
     comboLink: string;
+    leagueLink: string;
     todaySchedule: string;
   };
   status: { finished: string; live: string };
