@@ -155,3 +155,13 @@ export function liveScoreline(
   cells.sort((x, y) => y.p - x.p);
   return { top: cells.slice(0, 5), p: { home, draw, away } };
 }
+
+/**
+ * 从已持久化的赛前胜平负概率反推全场期望进球 λ（in-play 重算用）。
+ * 复用 calibrateToTarget：以总进球 2.6（1.3/1.3）为先验、搜索 λ 差使矩阵胜平负贴合 target——
+ * 即引擎赛前所用的同一套校准，故无需重抓 Elo/盘口，也无需新增 λ 持久化字段。
+ */
+export function lambdasFrom1x2(target: Probs1x2): { home: number; away: number } {
+  const c = calibrateToTarget(1.3, 1.3, target);
+  return { home: c.home, away: c.away };
+}

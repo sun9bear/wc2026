@@ -6,6 +6,7 @@ import { getMatchDetail } from "@/lib/markets/getMatchDetail";
 import { MarketPicks } from "@/components/MarketPicks";
 import { MatchProbTrend } from "@/components/MatchProbTrend";
 import { ScoreProbs } from "@/components/ScoreProbs";
+import { LiveScoreProbs } from "@/components/LiveScoreProbs";
 import { MatchSwingShare } from "@/components/MatchSwingShare";
 import { SentimentBar } from "@/components/SentimentBar";
 import { Disclaimer } from "@/components/Disclaimer";
@@ -70,10 +71,11 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
   const settled = m.status === "settled" && m.homeScore != null && m.awayScore != null;
   const started = new Date(m.kickoffAt).getTime() <= Date.now();
   const open = !settled && !started;
+  const inPlay = !settled && started; // 已开赛未结算 = 进行中
   // 「爆冷瞬间」摆动卡：仅已结算且出线概率大摆动时返回非 null（缓存读快照，失败降级 null）。
   const swing = settled ? await getMatchSwing(id).catch(() => null) : null;
-  // 比分分布：仅未开赛(open)时展示赛前 Top-5 比分概率；进行中暂不展示赛前分布以免误导（待 Phase B 实时版接入）。
-  const scoreline = open ? await getMatchScoreline(id).catch(() => null) : null;
+  // 比分分布：未结算即取赛前 Top-5（open 分支直接展示；进行中作为 LiveScoreProbs 实时未命中时的兜底）。
+  const scoreline = !settled ? await getMatchScoreline(id).catch(() => null) : null;
   const resultLabel: Record<string, string> = {
     home: t.match.home,
     draw: t.match.draw,
@@ -176,6 +178,14 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
             )}
             <MatchProbTrend matchId={id} locale={locale} />
           </>
+        ) : inPlay ? (
+          <LiveScoreProbs
+            matchId={id}
+            home={m.home}
+            away={m.away}
+            locale={locale}
+            fallback={scoreline}
+          />
         ) : (
           <p className="rounded-md border border-border bg-surface-2 p-4 text-center text-sm text-muted">
             {t.match.locked}
