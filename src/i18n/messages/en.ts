@@ -89,4 +89,21 @@ export const en = {
     checkinFail: "Check-in failed",
   },
   leaderboard: { title: "🏆 Leaderboard", empty: "No one on the board yet — predict a match to earn points!" },
+  tiers: {
+    bronze: "Bronze",
+    silver: "Silver",
+    gold: "Gold",
+    platinum: "Platinum",
+    diamond: "Diamond",
+    legend: "Legend",
+  },
+  ach: {
+    first_bet: { label: "First Steps", desc: "Make your first prediction" },
+    first_win: { label: "Off the Mark", desc: "First correct pick" },
+    sharp: { label: "Sharpshooter", desc: "Hit rate ≥60% (10+ picks)" },
+    underdog: { label: "Upset Hunter", desc: "Single reward ≥500 points" },
+    checkin7: { label: "Daily Devotee", desc: "Check in 7 days in a row" },
+    veteran: { label: "Veteran", desc: "50+ predictions" },
+    gold: { label: "Rank Up", desc: "Reach Gold tier (≥2,500 points)" },
+  },
 } as const;

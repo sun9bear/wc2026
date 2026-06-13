@@ -92,6 +92,8 @@ export interface Dict {
     checkinFail: string;
   };
   leaderboard: { title: string; empty: string };
+  tiers: Record<string, string>;
+  ach: Record<string, { label: string; desc: string }>;
 }
 
 // Record<Locale, Dict> 强制 zh / en 两套文案结构完整一致（缺键即编译报错）。

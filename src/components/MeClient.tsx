@@ -12,6 +12,7 @@ import { getDict, type Locale } from "@/i18n";
 interface MeData {
   balance: number;
   tier: string;
+  tierCode?: string;
   total: number;
   won: number;
   lost: number;
@@ -94,7 +95,9 @@ export function MeClient({ locale }: { locale: Locale }) {
             <span className="text-4xl">🎯</span>
             <div className="flex-1">
               <div className="font-head text-lg font-bold">
-                <span className="text-gold">🛡 {data.tier}</span>
+                <span className="text-gold">
+                  🛡 {(data.tierCode && t.tiers[data.tierCode]) || data.tier}
+                </span>
               </div>
               <div className="text-xs text-muted">{t.me.balanceLabel}</div>
             </div>
@@ -122,8 +125,8 @@ export function MeClient({ locale }: { locale: Locale }) {
                     }`}
                   >
                     <div className="text-2xl">{a.icon}</div>
-                    <div className="mt-1 text-[11px] font-medium">{a.label}</div>
-                    <div className="text-[9px] text-muted">{a.desc}</div>
+                    <div className="mt-1 text-[11px] font-medium">{t.ach[a.id]?.label ?? a.label}</div>
+                    <div className="text-[9px] text-muted">{t.ach[a.id]?.desc ?? a.desc}</div>
                   </div>
                 ))}
               </div>

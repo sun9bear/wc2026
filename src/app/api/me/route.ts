@@ -54,5 +54,7 @@ export async function GET(req: NextRequest) {
     balance,
   });
 
-  return NextResponse.json({ balance, tier: rankTier(balance).label, ...stats, achievements });
+  const tier = rankTier(balance);
+  // tierCode 供前端按语言渲染段位名（label 仅中文，保留兼容旧客户端）
+  return NextResponse.json({ balance, tier: tier.label, tierCode: tier.code, ...stats, achievements });
 }

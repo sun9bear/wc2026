@@ -45,9 +45,11 @@ export default async function LeaderboardPage() {
               <span className="font-head w-6 text-center text-lg font-bold text-muted">
                 {r.rank}
               </span>
-              <span className="flex-1 truncate text-sm font-medium">{r.name}</span>
+              <span className="flex-1 truncate text-sm font-medium">
+                {locale === "en" ? r.name.replace(/^玩家/, "Player ") : r.name}
+              </span>
               <span className={`text-[10px] ${TIER_COLOR[r.tierCode] ?? "text-muted"}`}>
-                {r.tierLabel}
+                {t.tiers[r.tierCode] ?? r.tierLabel}
               </span>
               <span className="font-head text-base font-bold">{fmtPoints(r.points)}</span>
             </li>

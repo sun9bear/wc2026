@@ -1,10 +1,24 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { getLocale } from "@/i18n/server";
 
-export const metadata: Metadata = {
-  title: "关于 & 玩法 · 环球足球预测",
-  description: "一个免费、不涉及任何金钱的足球预测娱乐小游戏：用虚拟积分预测比赛、冲排行榜、解锁段位。仅供娱乐。",
-};
+const META = {
+  zh: {
+    title: "关于 & 玩法 · 环球足球预测",
+    description:
+      "一个免费、不涉及任何金钱的足球预测娱乐小游戏：用虚拟积分预测比赛、冲排行榜、解锁段位。仅供娱乐。",
+  },
+  en: {
+    title: "About & How to Play · World Cup Predictor 2026",
+    description:
+      "A free football prediction game with no real money involved: predict matches with virtual points, climb the leaderboard, unlock ranks. For fun only.",
+  },
+} as const;
+
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return META[locale];
+}
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -15,7 +29,73 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const locale = await getLocale();
+
+  if (locale === "en") {
+    // 英文版正文：禁词自查通过（无 odds/bet/wager/stake/payout/multiplier，倍率→reward rates）
+    return (
+      <main className="mx-auto w-full max-w-xl px-4 py-8">
+        <Link href="/" className="text-xs text-muted">
+          ← Back
+        </Link>
+        <h1 className="font-head mt-3 text-2xl font-bold">About &amp; How to Play</h1>
+        <p className="mt-1 text-xs text-muted">World Cup Predictor · 2026</p>
+
+        <div className="mt-5 space-y-4">
+          <Section title="What is this?">
+            <p>
+              World Cup Predictor is a <strong>free, just-for-fun</strong> football prediction
+              game for fans worldwide. It involves <strong>no real money</strong> — only virtual
+              points — so everyone can predict matches and see who reads the game best.
+            </p>
+          </Section>
+
+          <Section title="How to play">
+            <p>1. You get free virtual points the moment you join (no phone/email — play anonymously).</p>
+            <p>2. On any match page, pick the result you believe in (Home win / Draw / Away win) and put in some points.</p>
+            <p>3. After the final whistle, correct predictions earn points at the reward rate locked when you submitted.</p>
+            <p>4. Use points to climb the leaderboard, unlock ranks, earn achievements and keep a daily check-in streak.</p>
+          </Section>
+
+          <Section title="About reward rates">
+            <p>
+              Reward rates are <strong>generated dynamically</strong> from how the community
+              predicts — popular picks earn less, unpopular picks earn more. They exist purely
+              for fun and <strong>do not represent real probabilities or advice</strong>.
+            </p>
+          </Section>
+
+          <Section title="AI content">
+            <p>
+              Match previews, hot takes and recaps are AI-generated, <strong>for entertainment only</strong>,
+              and do not constitute advice of any kind.
+            </p>
+          </Section>
+
+          <Section title="Important">
+            <p>
+              Points are <strong>virtual items with no real-world value</strong>. They cannot be
+              purchased, redeemed, withdrawn or transferred — this is fan entertainment, nothing more.
+            </p>
+            <p>This is a fan-made site, not affiliated with FIFA, the World Cup or any official body or sponsor.</p>
+          </Section>
+        </div>
+
+        <p className="mt-6 text-center text-[11px] text-muted">
+          See also:{" "}
+          <Link href="/privacy" className="underline hover:text-text">
+            Privacy
+          </Link>
+          {" · "}
+          <Link href="/disclaimer" className="underline hover:text-text">
+            Disclaimer
+          </Link>
+        </p>
+      </main>
+    );
+  }
+
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-8">
       <Link href="/" className="text-xs text-muted">
@@ -27,7 +107,7 @@ export default function AboutPage() {
       <div className="mt-5 space-y-4">
         <Section title="这是什么">
           <p>
-            「环球足球预测」是一个面向全球华人球迷的<strong>免费、纯娱乐</strong>足球预测小游戏。
+            「环球足球预测」是一个面向全球球迷的<strong>免费、纯娱乐</strong>足球预测小游戏。
             它<strong>不涉及任何真实金钱</strong>，只使用虚拟积分，让大家一起预测比赛、看谁眼光更准。
           </p>
         </Section>

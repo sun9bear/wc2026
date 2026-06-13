@@ -88,6 +88,23 @@ export const zh = {
     checkinFail: "签到失败",
   },
   leaderboard: { title: "🏆 排行榜", empty: "还没有人上榜，快去预测拿积分吧！" },
+  tiers: {
+    bronze: "青铜",
+    silver: "白银",
+    gold: "黄金",
+    platinum: "铂金",
+    diamond: "钻石",
+    legend: "王者",
+  },
+  ach: {
+    first_bet: { label: "初出茅庐", desc: "完成首次预测" },
+    first_win: { label: "旗开得胜", desc: "首次命中" },
+    sharp: { label: "神准", desc: "命中率≥60%（≥10场）" },
+    underdog: { label: "冷门猎手", desc: "单笔派分≥500" },
+    checkin7: { label: "签到达人", desc: "连续签到≥7天" },
+    veteran: { label: "百战之身", desc: "预测≥50场" },
+    gold: { label: "段位跃迁", desc: "积分达黄金段（≥2500）" },
+  },
 } as const;
 
 export type ZhMessages = typeof zh;
