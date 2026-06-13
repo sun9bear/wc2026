@@ -28,6 +28,8 @@ const TXT = {
       `${t.zh}：${t.letter} 组当前第 ${t.rank} · 模型出线概率 ${adv}%`,
     copyText: "📋 复制结论",
     copyLink: "🔗 复制链接",
+    shareNow: "🔗 分享",
+    shareImg: "🖼 分享图卡",
     copied: "已复制 ✓",
     share: (t: FocusTeam, adv: string, url: string) =>
       `${t.zh}目前出线概率 ${adv}%（万次模拟）——自己改一版剩余赛果看走势：${url}`,
@@ -39,6 +41,8 @@ const TXT = {
       `${t.name}: ${t.rank}${["st", "nd", "rd"][t.rank - 1] ?? "th"} in Group ${t.letter} · ${adv}% chance to advance`,
     copyText: "📋 Copy result",
     copyLink: "🔗 Copy link",
+    shareNow: "🔗 Share",
+    shareImg: "🖼 Share image",
     copied: "Copied ✓",
     share: (t: FocusTeam, adv: string, url: string) =>
       `${t.name} has a ${adv}% chance to advance (10,000 sims) — flip any remaining result yourself: ${url}`,
@@ -62,6 +66,7 @@ export function CalculatorFocus({
 
   const adv = focus ? ((focus.pAdvance > 1 ? focus.pAdvance : focus.pAdvance * 100)).toFixed(0) : "";
   const url = focus ? `https://www.wc2026.cool/calculator?team=${focus.slug}` : "";
+  const ogUrl = focus ? `https://www.wc2026.cool/api/og?team=${focus.slug}&locale=${locale}` : "";
 
   function doCopy(kind: "text" | "link") {
     if (!focus) return;
@@ -71,6 +76,20 @@ export function CalculatorFocus({
       setDone(kind);
       setTimeout(() => setDone(null), 1600);
     }
+  }
+
+  async function doShare() {
+    if (!focus) return;
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ title: "wc2026.cool", text: t.share(focus, adv, url), url });
+        track("calculator_share_copy", { kind: "native", team: focus.slug });
+      } catch {
+        /* 用户取消，忽略 */
+      }
+      return;
+    }
+    doCopy("text"); // 不支持原生分享则退化为复制
   }
 
   return (
@@ -117,7 +136,7 @@ export function CalculatorFocus({
             )}
             <span className="font-medium">{t.conclusion(focus, adv)}</span>
           </div>
-          <div className="mt-2 flex gap-2 text-xs">
+          <div className="mt-2 flex flex-wrap gap-2 text-xs">
             <button
               type="button"
               onClick={() => doCopy("text")}
@@ -132,6 +151,22 @@ export function CalculatorFocus({
             >
               {done === "link" ? t.copied : t.copyLink}
             </button>
+            <button
+              type="button"
+              onClick={doShare}
+              className="rounded-md border border-border bg-surface-2 px-3 py-1.5 text-muted transition hover:border-green hover:text-green"
+            >
+              {t.shareNow}
+            </button>
+            <a
+              href={ogUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => track("calculator_share_image", { team: focus.slug })}
+              className="rounded-md border border-border bg-surface-2 px-3 py-1.5 text-muted transition hover:border-green hover:text-green"
+            >
+              {t.shareImg}
+            </a>
           </div>
         </div>
       )}

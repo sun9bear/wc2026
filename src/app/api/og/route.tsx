@@ -173,6 +173,87 @@ export async function GET(req: Request) {
     }
   }
 
+  // 比赛预览卡（mode=match）：两队 + 模型胜/平/胜概率。概率由调用方（比赛页）按池倍率反推后
+  // 以 hp/dp/ap 传入（0-100），本路由只渲染、不算数（与 swing 同哲学）。队名 h/a 过雷词闸 fail-closed；
+  // 不接受外部旗帜 URL（避免任意 <img src> 的 SSRF），故本卡无旗、纯文字+概率条。
+  if (searchParams.get("mode") === "match") {
+    const clampPct = (s: string | null) => {
+      const v = parseFloat(s ?? "");
+      return Number.isFinite(v) ? Math.round(Math.min(100, Math.max(0, v))) : null;
+    };
+    const cleanName = (s: string | null) => {
+      const n = (s ?? "").slice(0, 40).trim();
+      return n && findBannedTerms(n, "en").length === 0 && findBannedTerms(n, "zh").length === 0
+        ? n
+        : "";
+    };
+    const home = cleanName(searchParams.get("h"));
+    const away = cleanName(searchParams.get("a"));
+    const hp = clampPct(searchParams.get("hp"));
+    const dp = clampPct(searchParams.get("dp"));
+    const ap = clampPct(searchParams.get("ap"));
+    if (home && away && hp !== null && dp !== null && ap !== null) {
+      let mfonts: { name: string; data: ArrayBuffer; weight: 700 }[] = [];
+      if (locale === "zh") {
+        const f = await loadZhFont(
+          `${home}${away}主胜平局客胜模型胜负概率万次蒙特卡洛模拟更新于0123456789%· `
+        );
+        if (f) mfonts = [{ name: "NotoSansSC", data: f, weight: 700 }];
+        else locale = "en";
+      }
+      const ML =
+        locale === "zh"
+          ? { hdr: "模型 胜 / 平 / 胜 概率", draw: "平局", sims: "10,000 次蒙特卡洛模拟", updated: `更新于 ${updated} UTC` }
+          : { hdr: "Model win / draw / win chance", draw: "Draw", sims: "10,000 Monte Carlo simulations", updated: `Updated ${updated} UTC` };
+      const rows = [
+        { label: home, pct: hp, color: "#3fb950" },
+        { label: ML.draw, pct: dp, color: "#8b949e" },
+        { label: away, pct: ap, color: "#d29922" },
+      ];
+      const mbase: React.CSSProperties = {
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        backgroundColor: "#0c1116",
+        color: "#e6edf3",
+        padding: 64,
+        fontFamily: mfonts.length ? "NotoSansSC" : "sans-serif",
+      };
+      return new ImageResponse(
+        (
+          <div style={mbase}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", fontSize: 38, color: "#8b949e" }}>{ML.hdr}</div>
+              <div style={{ display: "flex", fontSize: 32, color: "#3fb950" }}>wc2026.cool</div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+              {rows.map((r, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 24 }}>
+                  <div style={{ display: "flex", width: 320, fontSize: 40, fontWeight: 700, overflow: "hidden" }}>
+                    {r.label}
+                  </div>
+                  <div style={{ display: "flex", flex: 1, height: 48, backgroundColor: "#1f2630", borderRadius: 8 }}>
+                    <div style={{ display: "flex", width: `${r.pct}%`, height: 48, backgroundColor: r.color, borderRadius: 8 }} />
+                  </div>
+                  <div style={{ display: "flex", width: 130, justifyContent: "flex-end", fontSize: 52, fontWeight: 700, color: r.color }}>
+                    {r.pct}%
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 24, color: "#8b949e" }}>
+              <div style={{ display: "flex" }}>{ML.sims}</div>
+              <div style={{ display: "flex" }}>{ML.updated}</div>
+            </div>
+          </div>
+        ),
+        { width: 1200, height: 630, fonts: mfonts.length ? mfonts : undefined }
+      );
+    }
+  }
+
   // 文案
   let fonts: { name: string; data: ArrayBuffer; weight: 700 }[] = [];
   const zhText = hit

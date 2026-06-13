@@ -8,6 +8,7 @@ import { MatchProbTrend } from "@/components/MatchProbTrend";
 import { ScoreProbs } from "@/components/ScoreProbs";
 import { LiveScoreProbs } from "@/components/LiveScoreProbs";
 import { MatchSwingShare } from "@/components/MatchSwingShare";
+import { MatchPreviewShare } from "@/components/MatchPreviewShare";
 import { SentimentBar } from "@/components/SentimentBar";
 import { Disclaimer } from "@/components/Disclaimer";
 import { TeamBadge } from "@/components/TeamBadge";
@@ -76,6 +77,25 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
   const swing = settled ? await getMatchSwing(id).catch(() => null) : null;
   // 比分分布：未结算即取赛前 Top-5（open 分支直接展示；进行中作为 LiveScoreProbs 实时未命中时的兜底）。
   const scoreline = !settled ? await getMatchScoreline(id).catch(() => null) : null;
+
+  // 赛前胜平负概率（由池倍率 p≈1/m 归一化）——供 MatchPreviewShare 分享卡用。
+  // 倍率全为默认 3.00（无真实预测的种子值）时退化为 33/33/34，不影响功能。
+  const impliedSplit = (() => {
+    const sels = m.market?.selections ?? [];
+    const find = (code: string) => sels.find((s) => s.code === code);
+    const h = find("home");
+    const d = find("draw");
+    const a = find("away");
+    if (!h || !d || !a || !(h.multiplier > 0) || !(d.multiplier > 0) || !(a.multiplier > 0))
+      return null;
+    const inv = [1 / h.multiplier, 1 / d.multiplier, 1 / a.multiplier];
+    const sum = inv[0] + inv[1] + inv[2];
+    if (!(sum > 0) || !Number.isFinite(sum)) return null;
+    const pcts = inv.map((x) => Math.round((x / sum) * 100));
+    const diff = 100 - (pcts[0] + pcts[1] + pcts[2]);
+    if (diff !== 0) pcts[pcts.indexOf(Math.max(...pcts))] += diff; // round 余数补给最大项，保证和=100
+    return { hp: pcts[0], dp: pcts[1], ap: pcts[2] };
+  })();
   const resultLabel: Record<string, string> = {
     home: t.match.home,
     draw: t.match.draw,
@@ -177,6 +197,17 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
               <ScoreProbs data={scoreline} locale={locale} home={m.home} away={m.away} />
             )}
             <MatchProbTrend matchId={id} locale={locale} />
+            {impliedSplit && (
+              <MatchPreviewShare
+                matchId={id}
+                home={m.home.name}
+                away={m.away.name}
+                hp={impliedSplit.hp}
+                dp={impliedSplit.dp}
+                ap={impliedSplit.ap}
+                locale={locale}
+              />
+            )}
           </>
         ) : inPlay ? (
           <LiveScoreProbs
