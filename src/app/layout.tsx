@@ -7,6 +7,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { Footer } from "@/components/Footer";
 import { ToastProvider } from "@/components/Toast";
 import { getLocale } from "@/i18n/server";
+import { JsonLd } from "@/lib/seo/jsonLd";
 
 const oswald = Oswald({
   variable: "--font-oswald",
@@ -83,12 +84,34 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const locale = await getLocale();
+  const m = META[locale];
+  // 站点级实体（WebSite + Organization）；服务端渲染进首块。只填真实字段。
+  const siteJsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://www.wc2026.cool/#website",
+        url: "https://www.wc2026.cool/",
+        name: m.siteName,
+        inLanguage: m.ogLocale,
+        publisher: { "@id": "https://www.wc2026.cool/#org" },
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://www.wc2026.cool/#org",
+        name: "wc2026.cool",
+        url: "https://www.wc2026.cool/",
+      },
+    ],
+  };
   return (
     <html
       lang={locale}
       className={`${oswald.variable} ${inter.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-bg text-text font-body pb-16">
+        <JsonLd data={siteJsonLd} />
         <ToastProvider>
           {children}
           <Footer locale={locale} />

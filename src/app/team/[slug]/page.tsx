@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getLocale } from "@/i18n/server";
 import { getTeamDetail, type TeamResult } from "@/lib/prob/getTeamDetail";
 import { getSettledIndex } from "@/lib/seo/freshness";
+import { JsonLd } from "@/lib/seo/jsonLd";
 import { HeaderShare } from "@/components/HeaderShare";
 import { SetMyTeamButton } from "@/components/SetMyTeamButton";
 import { LocalTime } from "@/components/LocalTime";
@@ -144,8 +145,30 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
   const nextOpp = d.next ? (locale === "zh" ? d.next.oppZh : d.next.oppName) : "";
   const ogUrl = `${SITE}/api/og?team=${d.slug}&locale=${locale}&u=${encodeURIComponent(`/team/${d.slug}`)}`;
 
+  // SportsTeam + 面包屑实体（只填真实字段；实力评分对外不写官方排名）。
+  const teamJsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SportsTeam",
+        "@id": `${SITE}/team/${d.slug}#team`,
+        name: d.name,
+        sport: "Soccer",
+        url: `${SITE}/team/${d.slug}`,
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: locale === "zh" ? "首页" : "Home", item: `${SITE}/` },
+          { "@type": "ListItem", position: 2, name: nm, item: `${SITE}/team/${d.slug}` },
+        ],
+      },
+    ],
+  };
+
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-8">
+      <JsonLd data={teamJsonLd} />
       <div className="flex items-center justify-between">
         <Link href="/" className="text-xs text-muted">
           {c.back}
@@ -243,6 +266,15 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
         className="mt-6 block rounded-lg border border-border bg-surface p-3 text-sm text-green"
       >
         {c.calc(nm)}
+      </Link>
+      <Link
+        href={`/calculator/group/${d.letter.toLowerCase()}`}
+        className="mt-2 block rounded-lg border border-border bg-surface p-3 text-sm text-muted"
+      >
+        {locale === "zh" ? `🧮 看 ${d.letter} 组完整出线形势 →` : `🧮 See full Group ${d.letter} scenarios →`}
+      </Link>
+      <Link href="/rules" className="mt-2 block rounded-lg border border-border bg-surface p-3 text-sm text-muted">
+        {locale === "zh" ? "📖 出线规则详解（第三名怎么算）" : "📖 How World Cup 2026 qualification works"}
       </Link>
 
       <p className="mt-4 text-[10px] text-muted">{c.sims}</p>

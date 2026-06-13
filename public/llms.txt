@@ -6,6 +6,7 @@
 - https://www.wc2026.cool/ — home: today's matches and predictions
 - https://www.wc2026.cool/forecast — advancement and title probabilities (live model)
 - https://www.wc2026.cool/calculator — third-place qualification scenario calculator
+- https://www.wc2026.cool/rules — 2026 World Cup format and qualification rules explained (48 teams, 12 groups, 8 best thirds)
 - https://www.wc2026.cool/calculator/group/a — Group A: who advances (groups a through l)
 - https://www.wc2026.cool/watch — official broadcast guide
 - https://www.wc2026.cool/sitemap.xml — full index of every team and match page (48 teams + all fixtures, with per-team chance to advance/win and per-match prediction + most likely scores)

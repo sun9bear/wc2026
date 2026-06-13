@@ -20,6 +20,7 @@ import { getForecast } from "@/lib/prob/pipeline";
 import { findTeam, teamSlug } from "@/lib/prob/findTeam";
 import { getMatchSwing, swingOgPath } from "@/lib/prob/getMatchSwing";
 import { getMatchScoreline } from "@/lib/prob/getMatchScoreline";
+import { JsonLd } from "@/lib/seo/jsonLd";
 import { getDict } from "@/i18n";
 import { getLocale } from "@/i18n/server";
 import { maybeAutoSettle } from "@/lib/settlement/autoSettle";
@@ -172,6 +173,38 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
       : null;
   const headerOgUrl = !headerMatch && swing ? `${SITE}${swingOgPath(swing, locale)}` : null;
 
+  // SportsEvent + 面包屑实体（实体/GEO 理解，非 Event 富结果；不编造 offers/location）。
+  const evHome = teamName(m.home.name, locale);
+  const evAway = teamName(m.away.name, locale);
+  const matchJsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SportsEvent",
+        "@id": `${SITE}/match/${id}#event`,
+        name: `${evHome} vs ${evAway}`,
+        sport: "Soccer",
+        startDate: m.kickoffAt,
+        eventStatus: settled
+          ? "https://schema.org/EventCompleted"
+          : "https://schema.org/EventScheduled",
+        competitor: [
+          { "@type": "SportsTeam", name: evHome },
+          { "@type": "SportsTeam", name: evAway },
+        ],
+        superEvent: { "@type": "SportsEvent", name: "FIFA World Cup 2026" },
+        url: `${SITE}/match/${id}`,
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: locale === "zh" ? "首页" : "Home", item: `${SITE}/` },
+          { "@type": "ListItem", position: 2, name: `${evHome} vs ${evAway}`, item: `${SITE}/match/${id}` },
+        ],
+      },
+    ],
+  };
+
   // AI 内容：EN 视图优先英文版（Gemini 生成，平铺展示）；无英文版则折叠中文，避免满屏中文破相。
   const AiBlock = ({
     tag,
@@ -208,6 +241,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
 
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-8">
+      <JsonLd data={matchJsonLd} />
       {/* 语义 h1（视觉隐藏，不改版式；给爬虫/AI 明确实体标题）。 */}
       <h1 className="sr-only">
         {locale === "zh"

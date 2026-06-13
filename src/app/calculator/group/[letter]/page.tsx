@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getLocale } from "@/i18n/server";
 import { getForecast } from "@/lib/prob/pipeline";
 import { getSettledIndex } from "@/lib/seo/freshness";
+import { JsonLd } from "@/lib/seo/jsonLd";
 import { teamSlug } from "@/lib/prob/findTeam";
 import { LocalTime } from "@/components/LocalTime";
 import { Disclaimer } from "@/components/Disclaimer";
@@ -92,8 +93,25 @@ export default async function GroupPage({
   const name = (t: { name: string; zh: string }) => (locale === "zh" ? t.zh : t.name);
   const pct = (x: number) => `${((x > 1 ? x : x * 100)).toFixed(0)}%`;
 
+  // ItemList 实体：该组出线概率排名（只填真实字段）。
+  const groupJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name:
+      locale === "zh"
+        ? `2026 世界杯 ${X} 组出线形势`
+        : `World Cup 2026 Group ${X} — chance to advance`,
+    itemListElement: group.table.map((t, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: name(t),
+      description: locale === "zh" ? `出线概率 ${pct(t.pAdvance)}` : `${pct(t.pAdvance)} chance to advance`,
+    })),
+  };
+
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-8">
+      <JsonLd data={groupJsonLd} />
       <div className="flex items-center justify-between">
         <Link href="/calculator" className="text-xs text-muted">
           {c.back}
@@ -156,16 +174,18 @@ export default async function GroupPage({
           <h2 className="font-head mb-2 mt-6 text-sm font-semibold">{c.fixtures}</h2>
           <ul className="space-y-1.5 text-sm">
             {fixtures.map((m) => (
-              <li
-                key={m.id}
-                className="flex items-center justify-between rounded-md border border-border bg-surface-2 px-3 py-2"
-              >
-                <span>
-                  {name(m.home)} vs {name(m.away)}
-                </span>
-                <span className="text-xs text-muted">
-                  <LocalTime iso={m.kickoff} locale={locale} mode="datetime" />
-                </span>
+              <li key={m.id}>
+                <Link
+                  href={`/match/${m.id}`}
+                  className="flex items-center justify-between rounded-md border border-border bg-surface-2 px-3 py-2 transition hover:border-green/50"
+                >
+                  <span>
+                    {name(m.home)} vs {name(m.away)}
+                  </span>
+                  <span className="text-xs text-muted">
+                    <LocalTime iso={m.kickoff} locale={locale} mode="datetime" />
+                  </span>
+                </Link>
               </li>
             ))}
           </ul>
@@ -183,6 +203,9 @@ export default async function GroupPage({
         )}
         <Link href="/calculator" className="block rounded-lg border border-border bg-surface p-3">
           {c.tool}
+        </Link>
+        <Link href="/rules" className="block rounded-lg border border-border bg-surface-2 p-3 text-muted">
+          {locale === "zh" ? "📖 出线规则详解（第三名怎么算）" : "📖 How qualification works (third-place rules)"}
         </Link>
       </div>
 

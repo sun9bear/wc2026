@@ -5,6 +5,8 @@ import { getForecast, type ForecastData } from "@/lib/prob/pipeline";
 import { getTeamAdvanceTrends } from "@/lib/prob/getTrends";
 import { Sparkline } from "@/components/Sparkline";
 import { TrackedLink } from "@/components/TrackedLink";
+import { JsonLd } from "@/lib/seo/jsonLd";
+import { getSettledIndex } from "@/lib/seo/freshness";
 
 export const maxDuration = 60; // 首次计算含外部抓取+万次模拟
 
@@ -121,6 +123,22 @@ export default async function ForecastPage() {
   const note = zhFirst ? data.noteZh : data.noteEn;
   const upcoming = data.matches.slice(0, 12);
 
+  // Dataset 实体（独家万次模拟概率，dateModified 用真实 settled_at；仅填合法/真实字段）。
+  const idx = await getSettledIndex().catch(() => null);
+  const datasetJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Dataset",
+    name: c.title,
+    description: c.description,
+    url: "https://www.wc2026.cool/forecast",
+    creator: { "@type": "Organization", name: "wc2026.cool", url: "https://www.wc2026.cool/" },
+    isAccessibleForFree: true,
+    variableMeasured: zhFirst
+      ? ["出线概率", "夺冠概率"]
+      : ["chance to advance", "chance to win the title"],
+    ...(idx?.all ? { dateModified: idx.all } : {}),
+  };
+
   // 出线概率异动：近 4 天 |Δp_advance| 最大的 6 队，队名/旗从 forecast data 映射。
   // 快照表未建/无数据时安全降级为空 → 板块显示"追踪中"双语 note。
   const teamMap = new Map(data.groups.flatMap((g) => g.table).map((t) => [t.id, t] as const));
@@ -141,6 +159,7 @@ export default async function ForecastPage() {
 
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-8">
+      <JsonLd data={datasetJsonLd} />
       <h1 className="font-head text-2xl font-bold">📊 {c.h1}</h1>
       <p className="mt-1 text-[11px] text-muted">
         {c.updated} {new Date(data.updatedAt).toLocaleString(zhFirst ? "zh-CN" : "en-US")}
@@ -286,9 +305,10 @@ export default async function ForecastPage() {
         <p className="mb-2 text-[10px] text-muted">{c.thirdsNote}</p>
         <div className="rounded-lg border border-border bg-surface p-3">
           {data.thirds.map((t) => (
-            <div
+            <Link
               key={t.id}
-              className={`flex items-center justify-between py-1 text-sm ${
+              href={`/calculator/group/${t.letter.toLowerCase()}`}
+              className={`flex items-center justify-between py-1 text-sm transition hover:text-green ${
                 t.rank === 8 ? "border-b border-dashed border-green/60 pb-2" : ""
               } ${t.rank > 8 ? "opacity-50" : ""}`}
             >
@@ -301,7 +321,7 @@ export default async function ForecastPage() {
                 {t.pts}pts · GD{t.gd >= 0 ? "+" : ""}
                 {t.gd}
               </span>
-            </div>
+            </Link>
           ))}
         </div>
         <Link
