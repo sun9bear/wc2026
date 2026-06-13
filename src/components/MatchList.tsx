@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import type { FixtureMatch } from "@/lib/fixtures/matches";
 import { MatchCard } from "@/components/MatchCard";
 import { getDict, type Locale } from "@/i18n";
@@ -32,6 +32,14 @@ function groupByLocalDate(matches: FixtureMatch[], locale: Locale) {
   return [...current, ...past];
 }
 
+const emptySubscribe = () => () => {};
+// 客户端时间戳只在首次读取时捕获一次，保证 getSnapshot 跨渲染返回稳定值，避免 useSyncExternalStore 死循环。
+let clientNow = 0;
+function getClientNow() {
+  if (clientNow === 0) clientNow = Date.now();
+  return clientNow;
+}
+
 export function MatchList({
   matches,
   locale,
@@ -41,12 +49,13 @@ export function MatchList({
   locale: Locale;
   filter: string;
 }) {
-  // 分组依赖浏览器时区——挂载后再算，SSR 阶段渲染骨架避免 hydration 抖动。
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  // 分组按浏览器时区、"upcoming" 过滤按客户端当前时间——hydration 后再算，SSR 阶段渲染骨架避免抖动。
+  // 用 useSyncExternalStore 而非 effect+setState：既不在 render 里调用 Date.now()（react-hooks/purity），
+  // 也不在 effect 里同步 setState（react-hooks/set-state-in-effect）；SSR 与首次 hydration 用服务端快照保证一致。
+  const now = useSyncExternalStore(emptySubscribe, getClientNow, () => 0);
+  const mounted = now !== 0;
 
   const t = getDict(locale);
-  const now = Date.now();
   const filtered = matches.filter((m) => {
     if (filter === "upcoming")
       return m.status !== "settled" && new Date(m.kickoffAt).getTime() > now;
