@@ -9,7 +9,7 @@ import { ScoreProbs } from "@/components/ScoreProbs";
 import { LiveScoreProbs } from "@/components/LiveScoreProbs";
 import { MatchSwingShare } from "@/components/MatchSwingShare";
 import { MatchPreviewShare } from "@/components/MatchPreviewShare";
-import { ShareIconButton } from "@/components/ShareIconButton";
+import { HeaderShare } from "@/components/HeaderShare";
 import { SentimentBar } from "@/components/SentimentBar";
 import { Disclaimer } from "@/components/Disclaimer";
 import { TeamBadge } from "@/components/TeamBadge";
@@ -110,6 +110,26 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
     away: t.match.away,
   };
 
+  // 页眉右上分享（任务 A）：未结算 → 比赛预览卡（mode=match，含 Top-3 比分[任务E] + zh 二维码[任务D]）；
+  // 已结算且爆冷 → 摆动卡；其余只给链接分享。
+  const headerMatch =
+    open && impliedSplit
+      ? {
+          home: teamName(m.home.name, locale),
+          away: teamName(m.away.name, locale),
+          hp: impliedSplit.hp,
+          dp: impliedSplit.dp,
+          ap: impliedSplit.ap,
+          kickoffIso: m.kickoffAt,
+          homeFlag,
+          awayFlag,
+          aiTake: locale === "zh" ? m.sentiment : m.sentimentEn,
+          scoreTop3: scoreline?.top ?? null,
+          qrPath: `/match/${id}`,
+        }
+      : null;
+  const headerOgUrl = !headerMatch && swing ? `${SITE}${swingOgPath(swing, locale)}` : null;
+
   // AI 内容：EN 视图优先英文版（Gemini 生成，平铺展示）；无英文版则折叠中文，避免满屏中文破相。
   const AiBlock = ({
     tag,
@@ -150,10 +170,13 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
         <Link href="/" className="text-xs text-muted">
           {t.common.back}
         </Link>
-        <ShareIconButton
-          url={`${SITE}/match/${id}`}
-          text={`${teamName(m.home.name, locale)} vs ${teamName(m.away.name, locale)}`}
+        <HeaderShare
           locale={locale}
+          shareUrl={`${SITE}/match/${id}`}
+          text={`${teamName(m.home.name, locale)} vs ${teamName(m.away.name, locale)}`}
+          match={headerMatch}
+          ogUrl={headerOgUrl}
+          source="match"
         />
       </div>
 
@@ -163,7 +186,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
           <LocalTime iso={m.kickoffAt} locale={locale} mode="datetime" tz />
         </div>
         <div className="flex items-center justify-between">
-          <TeamBadge name={m.home.name} locale={locale} size="lg" />
+          <TeamBadge name={m.home.name} locale={locale} size="lg" linkToTeam />
           <div className="text-center">
             {settled ? (
               <div className="font-head text-3xl font-bold">
@@ -173,7 +196,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
               <span className="font-head text-sm text-muted">VS</span>
             )}
           </div>
-          <TeamBadge name={m.away.name} locale={locale} size="lg" />
+          <TeamBadge name={m.away.name} locale={locale} size="lg" linkToTeam />
         </div>
       </div>
 
@@ -214,7 +237,6 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
             <MatchProbTrend matchId={id} locale={locale} />
             {impliedSplit && (
               <MatchPreviewShare
-                matchId={id}
                 home={teamName(m.home.name, locale)}
                 away={teamName(m.away.name, locale)}
                 hp={impliedSplit.hp}
@@ -222,9 +244,6 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
                 ap={impliedSplit.ap}
                 locale={locale}
                 kickoff={m.kickoffAt}
-                homeFlag={homeFlag}
-                awayFlag={awayFlag}
-                aiTake={locale === "zh" ? m.sentiment : m.sentimentEn}
               />
             )}
           </>

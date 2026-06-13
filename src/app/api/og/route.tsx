@@ -1,9 +1,12 @@
 import { ImageResponse } from "next/og";
+import QRCode from "qrcode";
 import { getForecast } from "@/lib/prob/pipeline";
 import { findTeam } from "@/lib/prob/findTeam";
 import { findBannedTerms, findBannedTermsStrict } from "@/lib/compliance/bannedTerms";
 
 export const maxDuration = 60;
+
+const SITE = "https://www.wc2026.cool";
 
 // 动态 OG 图卡：/api/og?team=south-korea&locale=zh
 // 球队出线概率卡（1200×630）——Twitter/Discord/Telegram/WhatsApp 链接自动展开；
@@ -34,10 +37,49 @@ async function loadZhFont(text: string): Promise<ArrayBuffer | null> {
   }
 }
 
+// 二维码（任务 D）：只编码本站 URL（path 由调用方传入并白名单过滤），fail-soft 返回 null。
+// 仅 zh 卡渲染——微信/小红书长按识别 QR 是标配；西方平台 App 不扫 feed 图 QR，故 en 卡不加。
+async function qrDataUrl(path: string | null): Promise<string | null> {
+  const safe = path && /^\/[A-Za-z0-9\-_/?=&.%]*$/.test(path) && path.length <= 120 ? path : "/";
+  try {
+    return await QRCode.toDataURL(`${SITE}${safe}`, {
+      margin: 1,
+      width: 200,
+      errorCorrectionLevel: "M",
+      color: { dark: "#0A0E13", light: "#FFFFFF" },
+    });
+  } catch {
+    return null;
+  }
+}
+
+// 「最可能比分」Top-3（任务 E）：解析 "1-0:17,2-0:12,0-0:8" → ["1-0 17%", …]。
+// 纯数字/连字符/冒号，无雷词风险；越界丢弃。
+function parseScoreline(sl: string | null): string[] {
+  if (!sl) return [];
+  return sl
+    .split(",")
+    .slice(0, 3)
+    .map((s) => {
+      const m = s.match(/^(\d{1,2})-(\d{1,2}):(\d{1,3})$/);
+      if (!m) return null;
+      const h = +m[1];
+      const a = +m[2];
+      const p = +m[3];
+      if (h > 20 || a > 20 || p < 1 || p > 100) return null;
+      return `${h}-${a} ${p}%`;
+    })
+    .filter((x): x is string => x !== null);
+}
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const q = searchParams.get("team") ?? "";
   let locale = searchParams.get("locale") === "zh" ? "zh" : "en";
+
+  // 二维码意图（任务 D）：默认仅 zh 卡渲染；qr=1 强制开、qr=0 强制关。u=要编码的站内路径。
+  const qrFlag = searchParams.get("qr");
+  const uPath = searchParams.get("u");
 
   const data = await getForecast();
   const hit = q ? findTeam(data, q) : null;
@@ -183,7 +225,13 @@ export async function GET(req: Request) {
     };
     const clean = (s: string | null, max: number) => {
       const v = (s ?? "").replace(/\s+/g, " ").slice(0, max).trim();
-      return v && findBannedTerms(v, "en").length === 0 && findBannedTerms(v, "zh").length === 0 ? v : "";
+      // 用户可控且渲染到品牌图卡 → 严格雷词闸 fail-closed（NFKC+去零宽+删分隔+子串，抗全角/拆分/驼峰绕过），
+      // 与同卡 by/result 同级（findBannedTerms 词边界版会被 BetKing/ｂｅｔ/b.e.t 绕过）。
+      return v &&
+        findBannedTermsStrict(v, "en").length === 0 &&
+        findBannedTermsStrict(v, "zh").length === 0
+        ? v
+        : "";
     };
     const flagOk = (s: string | null) =>
       s && /^https:\/\/flagcdn\.com\//i.test(s) ? s.replace("/w80/", "/w160/") : null;
@@ -201,15 +249,18 @@ export async function GET(req: Request) {
       let mfonts: { name: string; data: ArrayBuffer; weight: 700 }[] = [];
       if (locale === "zh") {
         const f = await loadZhFont(
-          `${home}${away}${kickoff}${aitake}模型胜平局客胜概率万次蒙特卡洛模拟更新于预测仅供娱乐改一剩余比分自己算出线世界杯小组赛0123456789%·：、，。- `
+          `${home}${away}${kickoff}${aitake}模型胜平局客胜概率万次蒙特卡洛模拟更新于预测仅供娱乐改一剩余比分自己算出线世界杯小组赛最可能扫码0123456789%·：、，。- `
         );
         if (f) mfonts = [{ name: "NotoSansSC", data: f, weight: 700 }];
         else locale = "en";
       }
       const ML =
         locale === "zh"
-          ? { kicker: "世界杯 2026 · 小组赛", hdr: "模型 胜 / 平 / 胜 概率", draw: "平局", sims: "10,000 次蒙特卡洛模拟", updated: `更新于 ${updated} UTC`, cta: "改一改剩余比分，自己算出线 →", disc: "预测仅供娱乐" }
-          : { kicker: "World Cup 2026 · Group stage", hdr: "Model win / draw / win chance", draw: "Draw", sims: "10,000 Monte Carlo simulations", updated: `Updated ${updated} UTC`, cta: "Flip any remaining result yourself →", disc: "For entertainment only" };
+          ? { kicker: "世界杯 2026 · 小组赛", hdr: "模型 胜 / 平 / 胜 概率", draw: "平局", sims: "10,000 次蒙特卡洛模拟", updated: `更新于 ${updated} UTC`, cta: "改一改剩余比分，自己算出线 →", disc: "预测仅供娱乐", scoreLbl: "最可能比分", scan: "扫码自己算" }
+          : { kicker: "World Cup 2026 · Group stage", hdr: "Model win / draw / win chance", draw: "Draw", sims: "10,000 Monte Carlo simulations", updated: `Updated ${updated} UTC`, cta: "Flip any remaining result yourself →", disc: "For entertainment only", scoreLbl: "Most likely", scan: "" };
+      const scoreParts = parseScoreline(searchParams.get("sl"));
+      const scoreLine = scoreParts.length ? `${ML.scoreLbl}  ${scoreParts.join(" · ")}` : "";
+      const qr = locale === "zh" && qrFlag !== "0" ? await qrDataUrl(uPath) : null;
       const cols = [
         { name: home, pct: hp, color: "#1BE27F", align: "flex-start" as const },
         { name: ML.draw, pct: dp, color: "#FFB02E", align: "center" as const },
@@ -276,6 +327,9 @@ export async function GET(req: Request) {
                   </div>
                 ))}
               </div>
+              {scoreLine ? (
+                <div style={{ display: "flex", fontSize: 27, color: "#C9D2DC" }}>{scoreLine}</div>
+              ) : null}
             </div>
 
             <div style={{ display: "flex", fontSize: 30, color: "#C9D2DC", lineHeight: 1.35 }}>{aitake ? `“${aitake}”` : " "}</div>
@@ -284,12 +338,21 @@ export async function GET(req: Request) {
               <div style={{ display: "flex", fontSize: 30, fontWeight: 700, color: "#1BE27F" }}>{ML.cta}</div>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 23, color: "#5a6472" }}>
-                <div style={{ display: "flex" }}>{ML.sims}</div>
-                <div style={{ display: "flex" }}>{ML.updated}</div>
+            <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 24 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, flexGrow: 1 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 23, color: "#5a6472" }}>
+                  <div style={{ display: "flex" }}>{ML.sims}</div>
+                  <div style={{ display: "flex" }}>{ML.updated}</div>
+                </div>
+                <div style={{ display: "flex", fontSize: 22, color: "#5a6472" }}>{`wc2026.cool · ${ML.disc}`}</div>
               </div>
-              <div style={{ display: "flex", fontSize: 22, color: "#5a6472" }}>{`wc2026.cool · ${ML.disc}`}</div>
+              {qr ? (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={qr} width={124} height={124} style={{ borderRadius: 10 }} />
+                  <div style={{ display: "flex", fontSize: 20, color: "#8A97A6" }}>{ML.scan}</div>
+                </div>
+              ) : null}
             </div>
           </div>
         ),
@@ -303,11 +366,24 @@ export async function GET(req: Request) {
   const zhText = hit
     ? `${hit.team.zh}组第名出线概率夺冠万次蒙特卡洛模拟更新于0123456789ABCDEFGHIJKL.%· `
     : "";
+  // 署名标签（任务 C「我的主队」分享图）：用户经 slug 间接可控 → 过雷词闸 + 截断 fail-closed。
+  const tagRaw = (searchParams.get("tag") ?? "").replace(/\s+/g, " ").slice(0, 24).trim();
+  const tag =
+    tagRaw &&
+    findBannedTermsStrict(tagRaw, "en").length === 0 &&
+    findBannedTermsStrict(tagRaw, "zh").length === 0
+      ? tagRaw
+      : "";
   if (locale === "zh") {
-    const f = await loadZhFont(zhText + "我的队还有戏吗世界杯出线计算器免费无需注册次蒙特卡洛模拟");
+    const f = await loadZhFont(
+      zhText + tag + "我的队还有戏吗世界杯出线计算器免费无需注册次蒙特卡洛模拟扫码自己算主队"
+    );
     if (f) fonts = [{ name: "NotoSansSC", data: f, weight: 700 }];
     else locale = "en"; // 字体取不到就出英文卡
   }
+  // 二维码（任务 D）：team/brand 卡 zh 时角落小 QR；locale 已在上方字体回退后定型。
+  const qr = locale === "zh" && qrFlag !== "0" ? await qrDataUrl(uPath) : null;
+  const scanLabel = "扫码自己算";
 
   const L =
     locale === "zh"
@@ -352,7 +428,16 @@ export async function GET(req: Request) {
             <div style={{ display: "flex", fontSize: 72, fontWeight: 700 }}>{L.hook}</div>
             <div style={{ display: "flex", fontSize: 36, color: "#8b949e" }}>{L.sub}</div>
           </div>
-          <div style={{ display: "flex", fontSize: 24, color: "#8b949e" }}>{L.sims}</div>
+          <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", fontSize: 24, color: "#8b949e" }}>{L.sims}</div>
+            {qr ? (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={qr} width={108} height={108} style={{ borderRadius: 8 }} />
+                <div style={{ display: "flex", fontSize: 18, color: "#8b949e" }}>{scanLabel}</div>
+              </div>
+            ) : null}
+          </div>
         </div>
       ),
       { width: 1200, height: 630, fonts: fonts.length ? fonts : undefined }
@@ -381,6 +466,9 @@ export async function GET(req: Request) {
               <div style={{ display: "flex", fontSize: 28, color: "#8b949e" }}>
                 {L.group(hit.letter, hit.rank)}
               </div>
+              {tag ? (
+                <div style={{ display: "flex", fontSize: 26, color: "#3fb950", marginTop: 4 }}>⭐ {tag}</div>
+              ) : null}
             </div>
           </div>
           <div style={{ display: "flex", fontSize: 32, color: "#3fb950" }}>wc2026.cool</div>
@@ -399,9 +487,18 @@ export async function GET(req: Request) {
           </div>
         </div>
 
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 24, color: "#8b949e" }}>
-          <div style={{ display: "flex" }}>{L.sims}</div>
-          <div style={{ display: "flex" }}>{L.updated}</div>
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 24 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 24, color: "#8b949e" }}>
+            <div style={{ display: "flex" }}>{L.sims}</div>
+            <div style={{ display: "flex" }}>{L.updated}</div>
+          </div>
+          {qr ? (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={qr} width={112} height={112} style={{ borderRadius: 8 }} />
+              <div style={{ display: "flex", fontSize: 18, color: "#8b949e" }}>{scanLabel}</div>
+            </div>
+          ) : null}
         </div>
       </div>
     ),

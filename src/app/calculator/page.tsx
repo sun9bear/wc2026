@@ -5,8 +5,11 @@ import { getForecast } from "@/lib/prob/pipeline";
 import { findTeam, teamSlug } from "@/lib/prob/findTeam";
 import { ThirdCalculator } from "@/components/ThirdCalculator";
 import { CalculatorFocus } from "@/components/CalculatorFocus";
+import { HeaderShare } from "@/components/HeaderShare";
 
 export const maxDuration = 60;
+
+const SITE = "https://www.wc2026.cool";
 
 const COPY = {
   zh: {
@@ -108,15 +111,38 @@ export default async function CalculatorPage({
     (x): x is { name: string; zh: string; slug: string } => !!x
   );
 
+  // 页眉分享（任务 A）：选了队 → 该队 OG 卡（zh 带二维码）；未选 → 仅链接分享整页。
+  const focusSlug = hit ? teamSlug(hit.team.name) : null;
+  const shareUrl = focusSlug ? `${SITE}/calculator?team=${focusSlug}` : `${SITE}/calculator`;
+  const shareText = hit
+    ? locale === "zh"
+      ? `${hit.team.zh}出线概率 ${(hit.team.pAdvance > 1 ? hit.team.pAdvance : hit.team.pAdvance * 100).toFixed(0)}% · 自己改一版剩余赛果`
+      : `${hit.team.name} chance to advance — flip remaining results yourself`
+    : locale === "zh"
+      ? "2026 世界杯出线计算器（我的队还有戏吗）"
+      : "World Cup 2026 scenario calculator";
+  const shareOg = focusSlug
+    ? `${SITE}/api/og?team=${focusSlug}&locale=${locale}&u=${encodeURIComponent(`/calculator?team=${focusSlug}`)}`
+    : null;
+
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-8">
-      <div className="flex items-center justify-between">
-        <Link href="/" className="text-xs text-muted">
+      <div className="flex items-center justify-between gap-2">
+        <Link href="/" className="shrink-0 text-xs text-muted">
           {c.back}
         </Link>
-        <Link href="/forecast" className="text-xs text-green">
-          {c.forecast}
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/forecast" className="shrink-0 text-xs text-green">
+            {c.forecast}
+          </Link>
+          <HeaderShare
+            locale={locale}
+            shareUrl={shareUrl}
+            text={shareText}
+            ogUrl={shareOg}
+            source="calculator"
+          />
+        </div>
       </div>
       <h1 className="font-head mb-4 mt-3 text-2xl font-bold">🧮 {c.h1}</h1>
       <CalculatorFocus

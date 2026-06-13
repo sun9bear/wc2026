@@ -66,7 +66,6 @@ export function CalculatorFocus({
 
   const adv = focus ? ((focus.pAdvance > 1 ? focus.pAdvance : focus.pAdvance * 100)).toFixed(0) : "";
   const url = focus ? `https://www.wc2026.cool/calculator?team=${focus.slug}` : "";
-  const ogUrl = focus ? `https://www.wc2026.cool/api/og?team=${focus.slug}&locale=${locale}` : "";
 
   function doCopy(kind: "text" | "link") {
     if (!focus) return;
@@ -76,20 +75,6 @@ export function CalculatorFocus({
       setDone(kind);
       setTimeout(() => setDone(null), 1600);
     }
-  }
-
-  async function doShare() {
-    if (!focus) return;
-    if (typeof navigator !== "undefined" && navigator.share) {
-      try {
-        await navigator.share({ title: "wc2026.cool", text: t.share(focus, adv, url), url });
-        track("calculator_share_copy", { kind: "native", team: focus.slug });
-      } catch {
-        /* 用户取消，忽略 */
-      }
-      return;
-    }
-    doCopy("text"); // 不支持原生分享则退化为复制
   }
 
   return (
@@ -151,22 +136,6 @@ export function CalculatorFocus({
             >
               {done === "link" ? t.copied : t.copyLink}
             </button>
-            <button
-              type="button"
-              onClick={doShare}
-              className="rounded-md border border-border bg-surface-2 px-3 py-1.5 text-muted transition hover:border-green hover:text-green"
-            >
-              {t.shareNow}
-            </button>
-            <a
-              href={ogUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => track("calculator_share_image", { team: focus.slug })}
-              className="rounded-md border border-border bg-surface-2 px-3 py-1.5 text-muted transition hover:border-green hover:text-green"
-            >
-              {t.shareImg}
-            </a>
           </div>
         </div>
       )}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { Disclaimer } from "@/components/Disclaimer";
 import { CheckinCard } from "@/components/CheckinCard";
+import { MyTeamCard } from "@/components/MyTeamCard";
 import { fmtPoints } from "@/lib/format";
 import { copyText } from "@/lib/clipboard";
 import { Skeleton } from "@/components/Skeleton";
@@ -179,6 +180,8 @@ export function MeClient({ locale }: { locale: Locale }) {
           {t.common.back}
         </Link>
       </div>
+
+      <MyTeamCard locale={locale} />
 
       <div className="mt-4">
         <CheckinCard locale={locale} />

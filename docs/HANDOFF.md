@@ -37,6 +37,7 @@
 
 | 日期 | 交付 | 备注 |
 |---|---|---|
+| 6/14 | **任务 A–E 全量上线**（feat/legal-pages，已部署生产 dpl_6Y54qR4…+线上验证；next build 净、144 vitest 全过；17-agent 对抗审查 6 项确认全修） | ①**A 分享入口移右上**：新建 `HeaderShare`（图片卡按钮=绿色发光呼吸边框 `.breathe-glow`+尊重 reduced-motion；链接按钮弱化 ghost），比赛/计算器/球队页页眉复用；删 `ShareIconButton`；`MatchPreviewShare` 退化为纯概率展示；URL 构造抽到 `src/lib/share/matchCard.ts`。②**B 球队详情页 `/team/[slug]`**：出线/夺冠概率+**模型实力评分(Elo，标注非官方排名)**+最近5场战绩+下一场+计算器交叉链接；新建 `getTeamDetail.ts`；48 队进 sitemap（仅收 A-L 组）；`TeamBadge` 加 `linkToTeam`（比赛页启用，MatchCard 不启用以免整卡链接嵌套 `<a>`）。③**C 设为主队**：`localStorage(my_team)` 零 DDL，`SetMyTeamButton`+`/me` `MyTeamCard`（拉 `/api/team/[slug]`，「XX的主队」署名分享图）。④**D 二维码**：`qrcode` 库，仅 zh 卡角落 QR（编码本站路径 `u`，fail-soft），en 卡不加。⑤**E 比分上卡**：`mode=match` 卡加 Top-3 最可能比分（数字 `sl` 参数）。**审查修复**：OG 用户可控文本 `h/a/t/q/tag` 改 `findBannedTermsStrict`（防全角/零宽/拆分绕过，与 `by/result` 同级）；`HeaderShare`/`MatchPreviewShare` 开球时区 hydration 守门；`getTeamDetail` 显式 `status==='settled'`。新增依赖 `qrcode`(+@types)。 |
 | 6/12 夜 | **修复全站 500 生产事故**（6/10 起持续 54h+，除首页外全挂） | Vercel CLI 重新部署即愈；根因未深究（旧部署损坏） |
 | 6/13 | **Parlay 措辞洞修复**（commit f7b144b） | nav→Combo、/parlay→/combo(308)、/api/bet→/api/predict、请求体 stake→points、雷词表+8 词 |
 | 6/13 | **SEO 基建**（991b1cb, 7290a06） | robots.ts、sitemap.ts(78+ URL)、Accept-Language 驱动英文默认 metadata（无中文头的访客/爬虫得 lang=en）、og.png、canonical 统一 www、GSC 已验证+提交收录 |

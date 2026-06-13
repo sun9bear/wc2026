@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { supabase } from "@/lib/supabase/client";
+import { teamSlug } from "@/lib/prob/findTeam";
 
 const BASE = "https://www.wc2026.cool";
 
@@ -23,13 +24,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/disclaimer`, changeFrequency: "monthly", priority: 0.3 },
   ];
   try {
-    const { data } = await supabase.from("matches").select("id").order("kickoff_at");
-    const matches = (((data as { id: string }[] | null) ?? [])).map((m) => ({
+    const [{ data: matchData }, { data: teamData }] = await Promise.all([
+      supabase.from("matches").select("id").order("kickoff_at"),
+      supabase.from("teams").select("name, grp"),
+    ]);
+    const matches = (((matchData as { id: string }[] | null) ?? [])).map((m) => ({
       url: `${BASE}/match/${m.id}`,
       changeFrequency: "hourly" as const,
       priority: 0.8,
     }));
-    return [...statics, ...matches];
+    // 48 个球队详情着陆页（强 SEO：「<队名> world cup chances」类长尾）。
+    // 只收有 A-L 组的队——与 findTeam 可解析集合对齐，避免 sitemap 出 404（占位/附加赛 TBD 行）。
+    const teams = (((teamData as { name: string; grp: string | null }[] | null) ?? []))
+      .filter((t) => /[A-L]/.test(t.grp ?? ""))
+      .map((t) => ({
+        url: `${BASE}/team/${teamSlug(t.name)}`,
+        changeFrequency: "hourly" as const,
+        priority: 0.75,
+      }));
+    return [...statics, ...teams, ...matches];
   } catch {
     return statics;
   }

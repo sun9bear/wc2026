@@ -53,6 +53,18 @@ body {
   animation: pulse-dot 1.6s infinite;
 }
 
+/* 分享图片按钮：绿色发光边框 + 呼吸脉冲（DESIGN.md §4 绿色微光）。
+   reduced-motion 由文末媒体查询统一关停（仅留静态描边+微光）。 */
+@keyframes breathe-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(27, 226, 127, 0), 0 0 10px rgba(27, 226, 127, 0.16); }
+  50% { box-shadow: 0 0 0 3px rgba(27, 226, 127, 0.16), 0 0 24px rgba(27, 226, 127, 0.45); }
+}
+.breathe-glow {
+  border-color: var(--color-green);
+  box-shadow: 0 0 14px rgba(27, 226, 127, 0.22);
+  animation: breathe-glow 2.2s ease-in-out infinite;
+}
+
 /* 入场淡入上浮 */
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(6px); }
