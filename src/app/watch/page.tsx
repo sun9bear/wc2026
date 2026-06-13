@@ -3,9 +3,9 @@ import Link from "next/link";
 import { getLocale } from "@/i18n/server";
 
 // 观赛指南：按地区列官方转播/流媒体渠道（双语，随 locale 切换）。
-// 合作追踪链接获批后只需替换下面的常量，页面结构不动。
+// 纯官方转播链接，无任何联盟/追踪链接。
 const LINKS = {
-  fubo: "https://www.fubo.tv/stream/worldcup/",
+  fox: "https://www.foxsports.com/soccer/fifa-world-cup-2026",
   peacock: "https://www.peacocktv.com/",
   tsn: "https://www.tsn.ca/",
   migu: "https://www.miguvideo.com/",
@@ -23,9 +23,9 @@ const COPY = {
       {
         flag: "🇺🇸",
         title: "美国（英语）",
-        body: "FOX 与 FS1 直播全部 104 场比赛。流媒体可用 Fubo（含 FOX/FS1 频道，支持试用）或 foxsports.com（需有线电视账号登录）。",
-        linkText: "Fubo 世界杯专题页 →",
-        href: LINKS.fubo,
+        body: "FOX 与 FS1 直播全部 104 场比赛，流媒体可用 foxsports.com（需有线电视账号登录）。",
+        linkText: "FOX Sports →",
+        href: LINKS.fox,
       },
       {
         flag: "🇺🇸",
@@ -56,7 +56,7 @@ const COPY = {
         href: LINKS.fifa,
       },
     ],
-    note: "流媒体服务有地区限制，实际可用性以你所在地区为准。本页部分链接将来可能为合作链接（不增加你的任何费用）。",
+    note: "流媒体服务有地区限制，实际可用性以你所在地区为准。",
     back: "← 返回赛程",
   },
   en: {
@@ -69,9 +69,9 @@ const COPY = {
       {
         flag: "🇺🇸",
         title: "United States (English)",
-        body: "FOX and FS1 carry every match. Stream via Fubo (includes FOX & FS1, trial available) or foxsports.com with a TV-provider login.",
-        linkText: "Fubo World Cup hub →",
-        href: LINKS.fubo,
+        body: "FOX and FS1 carry every match; stream via foxsports.com with a TV-provider login.",
+        linkText: "FOX Sports →",
+        href: LINKS.fox,
       },
       {
         flag: "🇺🇸",
@@ -102,7 +102,7 @@ const COPY = {
         href: LINKS.fifa,
       },
     ],
-    note: "Streaming services are region-locked; availability depends on your location. Some links on this page may become partner links in the future (at no extra cost to you).",
+    note: "Streaming services are region-locked; availability depends on your location.",
     back: "← Back to matches",
   },
 } as const;
@@ -134,7 +134,7 @@ export default async function WatchPage() {
             <a
               href={s.href}
               target="_blank"
-              rel="noopener sponsored"
+              rel="noopener noreferrer"
               className="mt-2 inline-block text-sm font-semibold text-green"
             >
               {s.linkText}

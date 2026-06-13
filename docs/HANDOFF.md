@@ -15,7 +15,7 @@
 **回本口径（诚实版）**：
 - 回本 $6.18 域名 ≈ 必然；回本 $206（域名+一月 Max）按应计收入算概率 10-20%；现金 5 周内到账概率 0%（AdSense $100 起付+PIN 邮寄+次月 21 日付款，最早 8 月见钱）
 - **及格线 = 赛事结束时 AdSense 应计 + 联盟确认 ≥ $100**（够起付线，钱最终拿得到）
-- 变现优先级：① Fubo 联盟 $30/确认订阅（7 单全回本，仅美/加/西流量计佣，free trial 不计佣，现实预期 0-3 单）② AdSense 按社交流量真实 RPM $1-3 只当或有收入 ③ Ko-fi+爱发电锦上添花（Buy Me a Coffee 不可用，Stripe 不支持大陆）
+- 变现优先级（**⚠️ 6/13 更新：Fubo 联盟申请被拒且禁止再申请，该路径已死**）：① AdSense 按社交流量真实 RPM $1-3（现唯一主力或有收入）② Ko-fi+爱发电锦上添花（Buy Me a Coffee 不可用，Stripe 不支持大陆）③ Impact 平台仍可申其他非博彩联盟（Fubo 之外；拒信亦提示 impact.com 有更多机会）
 
 **差异化（核查后幸存的真空白）**：
 1. 实时第三名出线计算器（唯一竞品需手动输数据；已上线 `/calculator`）
@@ -40,8 +40,8 @@
 | 6/12 夜 | **修复全站 500 生产事故**（6/10 起持续 54h+，除首页外全挂） | Vercel CLI 重新部署即愈；根因未深究（旧部署损坏） |
 | 6/13 | **Parlay 措辞洞修复**（commit f7b144b） | nav→Combo、/parlay→/combo(308)、/api/bet→/api/predict、请求体 stake→points、雷词表+8 词 |
 | 6/13 | **SEO 基建**（991b1cb, 7290a06） | robots.ts、sitemap.ts(78+ URL)、Accept-Language 驱动英文默认 metadata（无中文头的访客/爬虫得 lang=en）、og.png、canonical 统一 www、GSC 已验证+提交收录 |
-| 6/13 | **/watch 观赛指南**（e14ece6） | 双语，官方直链占位；Fubo 批准后只需换 `LINKS` 常量 |
-| 6/13 | 用户完成 **Fubo 联盟申请**（Impact，In Review）+ W-8BEN + Wise 美元账户收款（ACH 免费通道） | 等审核邮件 |
+| 6/13 | **/watch 观赛指南**（e14ece6） | 双语，纯官方转播直链（FOX/Peacock/TSN/咪咕/FIFA）；**Fubo 痕迹 6/13 已清（申请被拒）** |
+| 6/13 | ~~Fubo 联盟申请（Impact，In Review）~~ **6/13 被拒且禁止再申请——路径已死**；W-8BEN + Wise 美元账户收款仍可用于其他 Impact 联盟 | — |
 | 6/13 | **The Odds API 实测**：免费 500 credits/月，1 credit 返回全部 70 场×24 机构 | **$30 档不用买**；key 在 .env.local |
 | 6/14 凌晨 | **概率引擎+页面全量上线**（30b8590, caabf9a, 93d01b0） | 见下节；109 个 vitest 全过 |
 | 6/14 | 快照持久化代码（7b68152，**已提交未部署**） | 等 0002 迁移完成后部署即自动攒历史 |
@@ -84,7 +84,7 @@ AI：DeepSeek 只写双语短评（夺冠 Top3 一句话），雷词 fail-closed
 
 **P1（一周内）**
 6. 6/22-27 分发窗口素材：第三名场景 OC 数据图（r/worldcup、国家队 sub）、X 图卡（正文原生图+链接放回复）、爆冷摆动卡（终场后 15 分钟内发）
-7. Fubo 批准后：换 /watch 的 LINKS 为 Impact 追踪链接（5 分钟+部署）
+7. ~~Fubo 批准后换 /watch LINKS 为追踪链接~~ **作废（6/13 Fubo 被拒且禁止再申请）；日后若过其他 Impact 联盟再议**
 8. AdSense 审核结果跟进（若拒且因低价值内容：比赛页加 AI 前瞻正文厚度后复审）
 9. ~~概率历史曲线前端~~ **已上线（6/13，commit 8265562，已部署生产+线上验证）**：`src/lib/prob/getTrends.ts`（getTeamAdvanceTrends 按队分组+降采样24点+|Δ|倒序 / getMatchProbTrend 单场胜平负<3点返null；均 unstable_cache 600s；**降序+limit 取最新再反转，规避 PostgREST 1000 行硬顶静默丢最新行**）；`MatchProbTrend.tsx`（SSR，接 /match[id] open 分支）；/forecast 加「📈 出线概率异动」top6(|Δ|≥0.02，无数据降级"追踪中"双语 note)；「近期比赛」死 div → TrackedLink+「预测 →」CTA（④ 转化）；Sparkline 加 fluid 自适应宽修窄屏溢出。15-agent 对抗审查修 2 项（行顶截断 high、窄屏溢出 medium）。
    - ~~摆动 OG 图卡前端入口~~ **已上线（6/13，commit 472829c，生产已验证）**：比赛页「爆冷瞬间」模块——已结算且出线概率摆动 ≥10pp 时显示页内摆动视觉（before 删除线→after 大数字绿涨红跌）+ **Web Share 原生分享**（降级复制+toast）+「保存图片卡」直链 OG PNG；`generateMetadata` 把 og:image 设为摆动卡（分享链接自动展开震撼图）；挂载拉 /api/me 按队名匹配→**本人押中则第一人称『你猜中了这场爆冷』**（参与感）。新建 `getMatchSwing.ts`（before=开球前快照，after=settled_at 起首张→稳定可归因）+ `MatchSwingShare.tsx`；埋点 swing_card_view/swing_share_click。21-agent 对抗审查修 3 项（连字符 slug high、after 漂移 medium、窄屏溢出 medium），并修好既有球队卡 OG 的连字符 bug（findTeam 对称归一化）。线上验证：美国 4-1 巴拉圭摆动卡渲染（巴拉圭 65%→43%）。
@@ -153,7 +153,7 @@ AI：DeepSeek 只写双语短评（夺冠 Top3 一句话），雷词 fail-closed
 - 代理：`D:\daili`（v2ray；直连-154.json / 住宅-140.json；scripts/ 下有现成启动器，AI_PROXY_README.md 是索引）
 - Vercel 项目：sun9bears-projects/wc2026；cron：每日 03:00 UTC `/api/cron/settle`（Bearer CRON_SECRET）
 - GSC：已验证 https://www.wc2026.cool/（HTML 标记法，meta 在 layout.tsx，勿删）
-- Impact/Fubo：账号 WC2026.Cool，申请 In Review；税表收款已配
+- Impact（**Fubo 已拒**）：账号 WC2026.Cool；Fubo 6/13 被拒且禁止再申请；W-8BEN/Wise 收款已配（可用于其他联盟）
 - Turnstile：`verifyTurnstile()` 已写未接线（src/lib/security/turnstile.ts），客户端组件未做——接线前生产侧勿启用强制校验
 
 ## 八、账号清单、凭据与新会话冷启动
@@ -164,7 +164,7 @@ AI：DeepSeek 只写双语短评（夺冠 Top3 一句话），雷词 fail-closed
 | Vercel | sun9bear，CLI 已登录（凭据在 Windows 用户目录，失效则 `npx vercel login` 设备码流程） | Token 备份：docs/secret/Vercel Token.txt；恢复码：docs/secret/vercel recovery-codes.txt |
 | Supabase | GitHub OAuth 绑定（**当前锁定**，等 GitHub 解封） | 项目密钥/DB 密码：docs/secret/supabase.txt |
 | GitHub | sun9bear（**封禁中**，申诉 support.github.com） | — |
-| Impact/Fubo | 账号名 WC2026.Cool，申请 In Review | 用户自设邮箱+密码 |
+| Impact（Fubo 已拒） | 账号名 WC2026.Cool；Fubo 6/13 被拒+禁再申，平台可申其他联盟 | 用户自设邮箱+密码 |
 | The Odds API | 免费档 | key 在 .env.local |
 | Google（AdSense/GSC） | 用户 Google 账号 | — |
 | 关联邮箱 | Supabase 通知走 sun9bear@126.com | — |
