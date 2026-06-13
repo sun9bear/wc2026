@@ -45,6 +45,7 @@
 | 6/13 | **The Odds API 实测**：免费 500 credits/月，1 credit 返回全部 70 场×24 机构 | **$30 档不用买**；key 在 .env.local |
 | 6/14 凌晨 | **概率引擎+页面全量上线**（30b8590, caabf9a, 93d01b0） | 见下节；109 个 vitest 全过 |
 | 6/14 | 快照持久化代码（7b68152，**已提交未部署**） | 等 0002 迁移完成后部署即自动攒历史 |
+| 6/13 | **全球受众改版上线**（结算自驱动+全站双语+本地时区+加载页+倍率种子） | 受众定位扩为全球球迷。①结算：runSettlement 抽库 + 首页/比赛页 after() 流量自驱动结算（10 分钟节流幂等），修复每日 cron 滞后 24h+；已手动清 3 场积压。②EN 视图全量可用：队名/赛段/按钮/免责声明双语，中文 AI 内容对 EN 折叠。③LocalTime 组件+客户端日期分组：全站按浏览器时区显示（带 GMT 标注）。④首页 hero：计算器主入口+今晚焦点+1000 积分横幅；底部导航"串关"→"出线"。⑤loading.tsx×3 加载页。⑥proxy.ts 首访写 NEXT_LOCALE/wc_country cookie（为小语种扩展备）。⑦scripts/seed-pools.ts 用市场共识概率灌注 69 场倍率（≈1/p）。⑧THE_ODDS_API_KEY 已入 Vercel 生产；.env.local 吞行已修。计划文档 docs/GROWTH-PLAN.md |
 
 ## 三、概率引擎架构（`src/lib/prob/`）
 
@@ -72,7 +73,7 @@ AI：DeepSeek 只写双语短评（夺冠 Top3 一句话），雷词 fail-closed
    a. 走 D:\daili 的 v2ray 代理（美国出口）做 SOCKS5 本地端口转发 → `npx tsx scripts/migrate.ts supabase/migrations/0002_probabilities.sql`（连接串在 .env.local 的 SUPABASE_DB_URL；pg 不认 HTTP_PROXY，需写无依赖 SOCKS5 转发脚本；SOCKS 远端解析域名可顺便绕过 IPv6 问题）
    b. GitHub 解封后登仪表盘 SQL Editor 直接粘贴执行
    完成后 `npx vercel deploy --prod --yes` 部署快照写入（用户已授权部署），验证：anon GET `/rest/v1/prob_meta?select=key` 返回 200
-2. **把 THE_ODDS_API_KEY 加进 Vercel 生产环境变量**（目前只在本地！生产 /forecast 的市场轴拿不到报价、一直在纯 Elo 模型降级运行）；顺手确认 DEEPSEEK_API_KEY 是否在 Vercel（docs/secret/vercel.env 里没有这条，缺了 AI 短评不会出现）。入口：Vercel Dashboard → wc2026 → Settings → Environment Variables，加完需重新部署
+2. ~~把 THE_ODDS_API_KEY 加进 Vercel 生产环境变量~~ **已完成（6/13，CLI `vercel env add`+重新部署；DEEPSEEK_API_KEY 实测本就在生产）**
 3. **GitHub 申诉**（support.github.com）——解封后恢复：push 备份、Supabase 仪表盘、Git 自动部署链
 4. **UptimeRobot 监控**（一直没做！上次 54h 无人发现的事故不能重演）：监控 / 和 /leaderboard
 5. 用户日课：**Reddit 养号**（每天 match thread 真实评论，6/22 前攒 50-100 karma）+ **X Premium $8**
@@ -105,7 +106,7 @@ AI：DeepSeek 只写双语短评（夺冠 Top3 一句话），雷词 fail-closed
 2. **本机网络连不通 Supabase Postgres**（5432/6543 全被掐；HTTPS REST 正常）。任何 DDL 要么走代理隧道要么等仪表盘。
 3. **生产部署已获用户永久授权**（2026-06-13："每次部署你可以自行确认，我已明确授权"）——但权限分类器对高危表面（如接受任意连接串执行 DDL 的临时 admin 路由）仍会单独拦截且理由正当，**别再造那种路由**。
 4. **teams.grp 格式是 "A 组"**（字母+空格+组），代码统一用 `/[A-L]/` 提取裸字母。
-5. **DB 比分只在每日 03:00 UTC settle cron 更新**；盘中新鲜比分靠 pipeline 里 football-data FINISHED 合并（FOOTBALL_API_KEY 在 Vercel env，本地没有——本地开发时该合并静默跳过）。
+5. **DB 比分更新链路（6/13 已升级）**：每日 03:00 UTC settle cron 仍在；另有流量自驱动结算（src/lib/settlement/autoSettle.ts，首页/比赛页访问触发、10 分钟节流、幂等）。注意 football-data 免费档完赛标记自身滞后数小时（实测 6/11 21:00 UTC 完赛→6/12 08:25 才标 FINISHED）；热门场次想立刻结算可手动 `curl -H "Authorization: Bearer <CRON_SECRET>" https://www.wc2026.cool/api/cron/settle`。FOOTBALL_API_KEY 现已同时在 Vercel env 与 .env.local。
 6. **PowerShell 5.1**：git commit 消息含双引号会被原生参数传递截断（用单引号 here-string 且避免双引号）；`vercel` 用 `npx vercel@latest`；`Start-Process npx` 要包 cmd /c。
 7. **GateGuard hook**：每个文件首次 Write/Edit 必被拦，需在消息中列 4 项事实后 retry（每文件一次）。绕过：`ECC_GATEGUARD=off`。
 8. **会话成本**：长会话切 `[1m]` 模型会按长上下文费率重读全部历史（实测一轮 $82→$483 等价）。大任务用新会话+本文档冷启动。
