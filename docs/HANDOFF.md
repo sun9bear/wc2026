@@ -46,6 +46,7 @@
 | 6/14 凌晨 | **概率引擎+页面全量上线**（30b8590, caabf9a, 93d01b0） | 见下节；109 个 vitest 全过 |
 | 6/14 | 快照持久化代码（7b68152，**已提交未部署**） | 等 0002 迁移完成后部署即自动攒历史 |
 | 6/13 | **全球受众改版上线**（结算自驱动+全站双语+本地时区+加载页+倍率种子） | 受众定位扩为全球球迷。①结算：runSettlement 抽库 + 首页/比赛页 after() 流量自驱动结算（10 分钟节流幂等），修复每日 cron 滞后 24h+；已手动清 3 场积压。②EN 视图全量可用：队名/赛段/按钮/免责声明双语，中文 AI 内容对 EN 折叠。③LocalTime 组件+客户端日期分组：全站按浏览器时区显示（带 GMT 标注）。④首页 hero：计算器主入口+今晚焦点+1000 积分横幅；底部导航"串关"→"出线"。⑤loading.tsx×3 加载页。⑥proxy.ts 首访写 NEXT_LOCALE/wc_country cookie（为小语种扩展备）。⑦scripts/seed-pools.ts 用市场共识概率灌注 69 场倍率（≈1/p）。⑧THE_ODDS_API_KEY 已入 Vercel 生产；.env.local 吞行已修。计划文档 docs/GROWTH-PLAN.md |
+| 6/13 | **任务 2-6 全量上线**（commit 5628c55，已部署生产+线上验证；备份 D:/wc2026-backup.bundle） | NEXT-SESSION 清单 2-6 一口气做完，121 vitest 全过。①**英文 AI 内容（Gemini Flash）**：新建 `src/lib/ai/gemini.ts`（REST v1beta，默认 `gemini-3.1-flash`，404 时 ListModels 自动选最新 flash），content.ts 加 EN prompts（r/soccer 梗味，雷词 fail-closed），getMatchDetail 增 previewEn/recapEn/sentimentEn，match 页 EN 优先英文平铺/无则折叠中文，settle 路由生成 recap_en（CAP 8→4），**新建 `/api/cron/gen-content`** 幂等回填（≤8 场/次，Gemini 只在 Vercel 端可达，本机 geo 拦截）。②**留存三件**：/api/me 增 recent/streak/bestStreak（按 kickoff 排序）+beatPct，SettleDrawer 结算揭晓抽屉（挂 / 与 /me，localStorage `last_seen_settled_at`+BottomNav 红点），MeClient emoji 战绩格复制+连胜头部。③**埋点**：0003_events.sql，`/api/track`（同源校验+内存限流），5 个客户端事件，@vercel/analytics（**需 Dashboard 手动 Enable**）。④**昵称+私人擂台**：0004_leagues.sql，/api/profile 昵称，/api/league 创建/加入/[code]（全 service key），/league+/league/[code] 双语页（noindex 仅私域），入擂台须先有昵称，口令容错（含漏横杠）。⑤**爆冷摆动卡**：/api/og 加 `mode=swing`（result 过雷词闸），scripts/swing-bake.ts 本地预烘焙。**对抗审查 36 agents 确认并修复 3 项**：OG result 雷词过滤、track 同源+限流、league code 容错。0003/0004 已隧道执行（service_role 已 GRANT）。**⚠ .env.local 的 CRON_SECRET 与生产不一致——调生产 cron 用 docs/secret/vercel.env 那个（len 39）** |
 
 ## 三、概率引擎架构（`src/lib/prob/`）
 
@@ -77,6 +78,8 @@ AI：DeepSeek 只写双语短评（夺冠 Top3 一句话），雷词 fail-closed
 3. **GitHub 申诉**（support.github.com）——解封后恢复：push 备份、Supabase 仪表盘、Git 自动部署链
 4. **UptimeRobot 监控**（一直没做！上次 54h 无人发现的事故不能重演）：监控 / 和 /leaderboard
 5. 用户日课：**Reddit 养号**（每天 match thread 真实评论，6/22 前攒 50-100 karma）+ **X Premium $8**
+6. **【6/13 新增】cron-job.org 加一条**：每小时 GET `https://www.wc2026.cool/api/cron/gen-content`（请求头 `x-cron-secret: <生产CRON_SECRET，见 docs/secret/vercel.env，len 39>`）。回填英文 AI 内容（preview_en/sentiment_en/recap_en，幂等≤8 场/次）。当前已手动刷到 11 preview+10 sentiment，剩 ~26 待补；新比赛也靠它持续覆盖。**注意：Gemini 本机调不通（geo 拦截），只能 Vercel 端跑，别写本地回填脚本。**
+7. **【6/13 新增】Vercel Dashboard → wc2026 → Analytics 点 Enable**（@vercel/analytics 已接入代码，免费档，看地理分布以决定下一步小语种）。
 
 **P1（一周内）**
 6. 6/22-27 分发窗口素材：第三名场景 OC 数据图（r/worldcup、国家队 sub）、X 图卡（正文原生图+链接放回复）、爆冷摆动卡（终场后 15 分钟内发）
@@ -85,10 +88,10 @@ AI：DeepSeek 只写双语短评（夺冠 Top3 一句话），雷词 fail-closed
 9. 概率历史曲线 + 摆动图卡前端（表建好、快照攒 2-3 天后做）
 
 **P2（有余力）**
-10. 好友私有联赛/邀请房间（增长引擎，等有首批留存用户）
-11. emoji 战绩分享格（Wordle 式，一键复制；放大器不是引擎）
+10. ~~好友私有联赛/邀请房间~~ **MVP 已上线（6/13，任务 5）**：/league 创建+输码加入、/league/[code] 榜单、昵称门禁、邀请文案复制。后续可加：擂台内单独排名口径、成员上限提示、擂主踢人。
+11. ~~emoji 战绩分享格~~ **已上线（6/13，任务 3）**：/me「复制战绩」按钮，🟩🟥 格+连胜+击败 N%（样本≥50 才显示）。
 12. Brier 准确率公开页（信任机制）
-13. 全站英文内容补全（about/玩法/比赛页正文目前仅中文）+ 路由级 /en + hreflang
+13. 全站英文内容补全：**比赛页 AI 正文已英文化（6/13，Gemini Flash 回填中）**；剩 about/玩法静态正文仍仅中文 + 路由级 /en + hreflang 待做。
 14. Codex 外审概率引擎（CLI 非交互模式会卡死，要在交互终端跑）
 
 ## 五、可优化项（引擎/产品）
