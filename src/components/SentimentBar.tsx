@@ -1,25 +1,38 @@
 import type { SelectionView } from "@/lib/markets/getMatchDetail";
+import { getDict, type Locale } from "@/i18n";
 
-// 实时社区人气条：用各选项的累计投入(pooled_stake，公开聚合)算占比。
-// 纯展示、服务端渲染;无人下注时给友好空状态。
+// 热度参考条：用各选项的累计投入(pooled_stake，公开聚合)算占比。
+// 池子含模型先验种子（scripts/seed-pools.ts），故口径标注为"社区与模型综合"而非纯社区。
 const BAR: Record<string, string> = { home: "bg-green", draw: "bg-amber", away: "bg-blue" };
 const DOT: Record<string, string> = { home: "bg-green", draw: "bg-amber", away: "bg-blue" };
 
-export function SentimentBar({ selections }: { selections: SelectionView[] }) {
+export function SentimentBar({
+  selections,
+  locale,
+}: {
+  selections: SelectionView[];
+  locale: Locale;
+}) {
+  const t = getDict(locale);
   const total = selections.reduce((a, s) => a + (s.pooledStake || 0), 0);
+  const codeLabel: Record<string, string> = {
+    home: t.match.home,
+    draw: t.match.draw,
+    away: t.match.away,
+  };
 
   if (total <= 0) {
     return (
       <div className="rounded-lg border border-border bg-surface p-4">
-        <div className="mb-1 text-[11px] text-muted">🔥 社区人气</div>
-        <p className="text-sm text-muted">还没有人预测这场，来当第一个！</p>
+        <div className="mb-1 text-[11px] text-muted">{t.match.sentimentTitle}</div>
+        <p className="text-sm text-muted">{t.match.sentimentEmpty}</p>
       </div>
     );
   }
 
   const rows = selections.map((s) => ({
     code: s.code,
-    label: s.label,
+    label: codeLabel[s.code] ?? s.label,
     pct: Math.round((s.pooledStake / total) * 100),
     stake: s.pooledStake,
   }));
@@ -28,7 +41,7 @@ export function SentimentBar({ selections }: { selections: SelectionView[] }) {
 
   return (
     <div className="rounded-lg border border-border bg-surface p-4">
-      <div className="mb-2 text-[11px] text-muted">🔥 社区人气 · 实时</div>
+      <div className="mb-2 text-[11px] text-muted">{t.match.sentimentTitle}</div>
       <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-surface-2">
         {rows.map((r) => (
           <div
@@ -45,8 +58,8 @@ export function SentimentBar({ selections }: { selections: SelectionView[] }) {
             <i className={`inline-block h-2 w-2 rounded-full ${DOT[r.code] ?? "bg-muted"}`} />
             <span className="text-text">{r.label}</span>
             <span className="font-head">{r.pct}%</span>
-            {r.stake === maxStake && maxStake > minStake && <span title="人气最高">🔥</span>}
-            {r.stake === minStake && maxStake > minStake && <span title="潜在冷门">❄️</span>}
+            {r.stake === maxStake && maxStake > minStake && <span title={t.match.hotMost}>🔥</span>}
+            {r.stake === minStake && maxStake > minStake && <span title={t.match.coldMost}>❄️</span>}
           </span>
         ))}
       </div>

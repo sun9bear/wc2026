@@ -7,9 +7,11 @@ import { getDict, type Locale } from "@/i18n";
 export function BottomNav({ locale }: { locale: Locale }) {
   const pathname = usePathname();
   const nav = getDict(locale).nav;
+  // 小组赛期间"出线计算器"占主导航位（独家传播资产）；串关入口在首页与 /me。
+  // 淘汰赛阶段（6/28+）视数据评估是否换回 combo。
   const tabs = [
     { href: "/", label: nav.predict, icon: "⚽" },
-    { href: "/combo", label: nav.combo, icon: "🔗" },
+    { href: "/calculator", label: nav.calc, icon: "🧮" },
     { href: "/forecast", label: nav.forecast, icon: "📊" },
     { href: "/leaderboard", label: nav.ranking, icon: "🏆" },
     { href: "/me", label: nav.me, icon: "👤" },

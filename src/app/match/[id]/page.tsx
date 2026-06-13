@@ -1,44 +1,72 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { after } from "next/server";
 import { getMatchDetail } from "@/lib/markets/getMatchDetail";
 import { MarketPicks } from "@/components/MarketPicks";
 import { SentimentBar } from "@/components/SentimentBar";
 import { Disclaimer } from "@/components/Disclaimer";
 import { TeamBadge } from "@/components/TeamBadge";
+import { LocalTime } from "@/components/LocalTime";
 import { result1x2 } from "@/lib/settlement/result";
-
-const RESULT_LABEL: Record<string, string> = { home: "主胜", draw: "平局", away: "客胜" };
-
-function fmt(iso: string): string {
-  return new Date(iso).toLocaleString("zh-CN", {
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+import { stageName } from "@/lib/football/teams";
+import { getDict } from "@/i18n";
+import { getLocale } from "@/i18n/server";
+import { maybeAutoSettle } from "@/lib/settlement/autoSettle";
 
 export default async function MatchPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const locale = await getLocale();
+  const t = getDict(locale);
   const m = await getMatchDetail(id);
   if (!m) notFound();
+
+  // 流量自驱动结算（响应后执行；详情页是赛后回访的高频落点）
+  after(() => maybeAutoSettle());
 
   const settled = m.status === "settled" && m.homeScore != null && m.awayScore != null;
   const started = new Date(m.kickoffAt).getTime() <= Date.now();
   const open = !settled && !started;
+  const resultLabel: Record<string, string> = {
+    home: t.match.home,
+    draw: t.match.draw,
+    away: t.match.away,
+  };
+
+  // AI 内容目前仅中文——EN 视图折叠展示，避免英文用户满屏中文破相。
+  const AiBlock = ({
+    tag,
+    foldTag,
+    body,
+  }: {
+    tag: string;
+    foldTag: string;
+    body: string;
+  }) =>
+    locale === "en" ? (
+      <details className="fade-up mt-4 rounded-lg border border-border bg-surface p-4">
+        <summary className="cursor-pointer text-[11px] text-muted">{foldTag}</summary>
+        <p className="mt-2 text-sm leading-relaxed">{body}</p>
+      </details>
+    ) : (
+      <div className="fade-up mt-4 rounded-lg border border-border bg-surface p-4">
+        <div className="mb-1 text-[11px] text-muted">{tag}</div>
+        <p className="text-sm leading-relaxed">{body}</p>
+      </div>
+    );
 
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-8">
       <Link href="/" className="text-xs text-muted">
-        ← 返回
+        {t.common.back}
       </Link>
 
       <div className="mt-3 rounded-lg border border-border bg-surface p-5">
         <div className="mb-4 text-[11px] text-muted">
-          {m.stage} · {fmt(m.kickoffAt)}
+          {stageName(m.stage ?? "", locale)} ·{" "}
+          <LocalTime iso={m.kickoffAt} locale={locale} mode="datetime" tz />
         </div>
         <div className="flex items-center justify-between">
-          <TeamBadge name={m.home.name} size="lg" />
+          <TeamBadge name={m.home.name} locale={locale} size="lg" />
           <div className="text-center">
             {settled ? (
               <div className="font-head text-3xl font-bold">
@@ -48,51 +76,45 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
               <span className="font-head text-sm text-muted">VS</span>
             )}
           </div>
-          <TeamBadge name={m.away.name} size="lg" />
+          <TeamBadge name={m.away.name} locale={locale} size="lg" />
         </div>
       </div>
 
       {settled && m.recap && (
-        <div className="fade-up mt-4 rounded-lg border border-border bg-surface p-4">
-          <div className="mb-1 text-[11px] text-muted">📝 赛后小结 · AI 生成 · 仅供娱乐</div>
-          <p className="text-sm leading-relaxed">{m.recap}</p>
-        </div>
+        <AiBlock tag={t.match.recapTag} foldTag={t.match.recapTag} body={m.recap} />
       )}
 
       {m.preview && (
-        <div className="fade-up mt-4 rounded-lg border border-border bg-surface p-4">
-          <div className="mb-1 text-[11px] text-muted">📋 赛前前瞻 · AI 生成 · 仅供娱乐</div>
-          <p className="text-sm leading-relaxed">{m.preview}</p>
-        </div>
+        <AiBlock tag={t.match.previewTag} foldTag={t.match.previewFold} body={m.preview} />
       )}
 
       {!settled && m.sentiment && (
-        <div className="fade-up mt-4 rounded-lg border border-border bg-surface p-4">
-          <div className="mb-1 text-[11px] text-muted">🔥 冷热门看点 · AI 生成 · 仅供娱乐</div>
-          <p className="text-sm leading-relaxed">{m.sentiment}</p>
-        </div>
+        <AiBlock tag={t.match.hotTakeTag} foldTag={t.match.hotTakeFold} body={m.sentiment} />
       )}
 
       <section className="mt-5">
         {settled ? (
           <div className="rounded-md border border-border bg-surface-2 p-4 text-center text-sm">
-            <span className="text-muted">本场结果：</span>
+            <span className="text-muted">{t.match.resultPrefix}</span>
             <span className="font-head text-green">
-              {RESULT_LABEL[result1x2(m.homeScore as number, m.awayScore as number)]}
+              {resultLabel[result1x2(m.homeScore as number, m.awayScore as number)]}
             </span>
-            <span className="text-muted"> · 已结算派分</span>
+            <span className="text-muted">{t.match.settledSuffix}</span>
           </div>
         ) : open && m.market ? (
           <>
-            <SentimentBar selections={m.market.selections} />
+            <p className="mb-3 rounded-md border border-border bg-surface-2 px-3 py-2 text-center text-[11px] text-muted">
+              {t.hero.pointsBanner}
+            </p>
+            <SentimentBar selections={m.market.selections} locale={locale} />
             <h2 className="font-head mb-2 mt-5 flex items-center gap-2 text-sm font-semibold">
-              <span className="live-dot" /> 胜平负 · 实时倍率
+              <span className="live-dot" /> {t.match.livePicks}
             </h2>
-            <MarketPicks marketId={m.market.id} selections={m.market.selections} />
+            <MarketPicks marketId={m.market.id} selections={m.market.selections} locale={locale} />
           </>
         ) : (
           <p className="rounded-md border border-border bg-surface-2 p-4 text-center text-sm text-muted">
-            已封盘，等待比赛结果。
+            {t.match.locked}
           </p>
         )}
       </section>

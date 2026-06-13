@@ -1,14 +1,15 @@
 import Link from "next/link";
 import type { FixtureMatch } from "@/lib/fixtures/matches";
 import { TeamBadge } from "@/components/TeamBadge";
+import { LocalTime } from "@/components/LocalTime";
+import { stageName, groupName } from "@/lib/football/teams";
+import { getDict, type Locale } from "@/i18n";
 
-function formatKickoff(iso: string): string {
-  return new Date(iso).toLocaleString("zh-CN", { hour: "2-digit", minute: "2-digit" });
-}
-
-export function MatchCard({ match }: { match: FixtureMatch }) {
+export function MatchCard({ match, locale }: { match: FixtureMatch; locale: Locale }) {
+  const t = getDict(locale);
   const settled =
     match.status === "settled" && match.homeScore != null && match.awayScore != null;
+  const started = !settled && new Date(match.kickoffAt).getTime() <= Date.now();
 
   return (
     <Link
@@ -17,15 +18,22 @@ export function MatchCard({ match }: { match: FixtureMatch }) {
     >
       <div className="mb-3 flex items-center justify-between text-[11px] text-muted">
         <span>
-          {match.stage}
-          {match.group ? ` · ${match.group}` : ""}
+          {stageName(match.stage, locale)}
+          {match.group ? ` · ${groupName(match.group, locale)}` : ""}
         </span>
         {settled && (
-          <span className="rounded-pill bg-surface-2 px-2 py-0.5 text-[10px]">已结束</span>
+          <span className="rounded-pill bg-surface-2 px-2 py-0.5 text-[10px]">
+            {t.status.finished}
+          </span>
+        )}
+        {started && (
+          <span className="flex items-center gap-1 rounded-pill bg-surface-2 px-2 py-0.5 text-[10px] text-green">
+            <span className="live-dot" /> {t.status.live}
+          </span>
         )}
       </div>
       <div className="flex items-center justify-between">
-        <TeamBadge name={match.home.name} />
+        <TeamBadge name={match.home.name} locale={locale} />
         <div className="text-center">
           {settled ? (
             <div className="font-head text-xl font-bold">
@@ -35,12 +43,12 @@ export function MatchCard({ match }: { match: FixtureMatch }) {
             <>
               <div className="font-head text-sm font-bold text-muted">VS</div>
               <div className="font-head mt-1 text-xs text-text">
-                {formatKickoff(match.kickoffAt)}
+                <LocalTime iso={match.kickoffAt} locale={locale} mode="time" />
               </div>
             </>
           )}
         </div>
-        <TeamBadge name={match.away.name} />
+        <TeamBadge name={match.away.name} locale={locale} />
       </div>
     </Link>
   );

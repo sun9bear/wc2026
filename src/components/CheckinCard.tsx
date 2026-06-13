@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
+import { getDict, type Locale } from "@/i18n";
 
 interface Status {
   checkedInToday: boolean;
@@ -9,7 +10,8 @@ interface Status {
   balance: number;
 }
 
-export function CheckinCard() {
+export function CheckinCard({ locale }: { locale: Locale }) {
+  const t = getDict(locale);
   const [status, setStatus] = useState<Status | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -33,7 +35,7 @@ export function CheckinCard() {
       let session = (await supabase.auth.getSession()).data.session;
       if (!session) {
         const { error } = await supabase.auth.signInAnonymously();
-        if (error) throw new Error("进入游戏失败：" + error.message);
+        if (error) throw new Error(t.match.enterFail + error.message);
         session = (await supabase.auth.getSession()).data.session;
       }
       const res = await fetch("/api/checkin", {
@@ -47,11 +49,11 @@ export function CheckinCard() {
         balance: number;
         streak: number;
       };
-      if (!res.ok) throw new Error(j.error ?? "签到失败");
+      if (!res.ok) throw new Error(j.error ?? t.me.checkinFail);
       setStatus({ checkedInToday: true, streak: j.streak, balance: j.balance });
-      setMsg(j.alreadyCheckedIn ? "今日已签到" : `签到成功 +${j.awarded} 积分`);
+      setMsg(j.alreadyCheckedIn ? t.me.checkinAlready : `${t.me.checkinOkA}${j.awarded}`);
     } catch (e) {
-      setMsg(e instanceof Error ? e.message : "签到失败");
+      setMsg(e instanceof Error ? e.message : t.me.checkinFail);
     } finally {
       setBusy(false);
     }
@@ -60,9 +62,9 @@ export function CheckinCard() {
   return (
     <div className="flex items-center justify-between rounded-lg border border-border bg-surface p-4">
       <div>
-        <div className="font-head font-bold">每日签到</div>
+        <div className="font-head font-bold">{t.me.checkinTitle}</div>
         <div className="text-xs text-muted">
-          {status?.streak ? `🔥 连续 ${status.streak} 天` : "签到领积分"}
+          {status?.streak ? `${t.me.checkinStreak} ${status.streak}` : t.me.checkinDesc}
           {msg ? ` · ${msg}` : ""}
         </div>
       </div>
@@ -72,7 +74,7 @@ export function CheckinCard() {
         disabled={busy || status?.checkedInToday}
         className="rounded-md bg-green px-4 py-2 text-sm font-bold text-[#06231a] disabled:opacity-40"
       >
-        {status?.checkedInToday ? "已签到" : busy ? "…" : "签到 +50"}
+        {status?.checkedInToday ? t.me.checkinDone : busy ? "…" : t.me.checkinBtn}
       </button>
     </div>
   );

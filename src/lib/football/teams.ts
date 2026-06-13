@@ -79,6 +79,38 @@ export function teamZh(name: string): string {
   return NATIONS[name]?.zh ?? name;
 }
 
+/** 按语言取队名：DB 存的就是英文原名（football-data 拼写），en 直出、zh 查表。 */
+export function teamName(name: string, locale: "zh" | "en"): string {
+  return locale === "en" ? name : teamZh(name);
+}
+
+// DB 的 stage/grp 存中文（如 "小组赛"、"A 组"）——en 视图在渲染层反查，不动库。
+const STAGE_EN: Record<string, string> = {
+  小组赛: "Group Stage",
+  "32强": "Round of 32",
+  "1/16决赛": "Round of 32",
+  "1/8决赛": "Round of 16",
+  "16强": "Round of 16",
+  "1/4决赛": "Quarter-final",
+  "8强": "Quarter-final",
+  半决赛: "Semi-final",
+  季军赛: "Third place",
+  决赛: "Final",
+};
+
+/** 赛段名（zh 原样；en 反查表，未知原样返回）。 */
+export function stageName(stage: string, locale: "zh" | "en"): string {
+  if (locale === "zh") return stage;
+  return STAGE_EN[stage.replace(/\s/g, "")] ?? stage;
+}
+
+/** 组名（"A 组" ↔ "Group A"，按 A-L 字母提取）。 */
+export function groupName(grp: string, locale: "zh" | "en"): string {
+  const letter = grp.match(/[A-L]/)?.[0];
+  if (!letter) return grp;
+  return locale === "en" ? `Group ${letter}` : `${letter} 组`;
+}
+
 /** 英文队名 → 国旗图片 URL（未知返回 null）。 */
 export function flagUrl(name: string): string | null {
   const iso2 = NATIONS[name]?.iso2;

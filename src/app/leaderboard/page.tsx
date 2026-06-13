@@ -2,6 +2,8 @@ import Link from "next/link";
 import { getLeaderboard } from "@/lib/leaderboard/getLeaderboard";
 import { Disclaimer } from "@/components/Disclaimer";
 import { fmtPoints } from "@/lib/format";
+import { getDict } from "@/i18n";
+import { getLocale } from "@/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -15,21 +17,23 @@ const TIER_COLOR: Record<string, string> = {
 };
 
 export default async function LeaderboardPage() {
+  const locale = await getLocale();
+  const t = getDict(locale);
   const rows = await getLeaderboard();
 
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-8">
       <div className="flex items-center justify-between">
-        <h1 className="font-head text-2xl font-bold">🏆 排行榜</h1>
+        <h1 className="font-head text-2xl font-bold">{t.leaderboard.title}</h1>
         <Link href="/" className="text-xs text-muted">
-          ← 返回
+          {t.common.back}
         </Link>
       </div>
 
       {rows.length === 0 ? (
         <div className="mt-16 text-center">
           <div className="text-5xl">🏆</div>
-          <p className="mt-3 text-sm text-muted">还没有人上榜，快去预测拿积分吧！</p>
+          <p className="mt-3 text-sm text-muted">{t.leaderboard.empty}</p>
         </div>
       ) : (
         <ul className="mt-5 space-y-2">

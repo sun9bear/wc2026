@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { settleMatch } from "@/lib/settlement/settleMatch";
+import { runSettlement } from "@/lib/settlement/runSettlement";
 import { generateRecap } from "@/lib/ai/content";
 import { upsertContent } from "@/lib/ai/store";
 import { teamZh } from "@/lib/football/teams";
@@ -8,14 +8,10 @@ import { teamZh } from "@/lib/football/teams";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-interface FdMatch {
-  id: number;
-  score?: { fullTime?: { home: number | null; away: number | null } };
-}
-
 // 定时自动结算：拉取已结束比赛比分 → 给押中的人派分。
 // 受 CRON_SECRET 保护：Vercel Cron 会自动带 Authorization: Bearer <CRON_SECRET>；
 // 外部定时服务（cron-job.org 等）也用同一密钥调用即可。
+// 结算核心在 src/lib/settlement/runSettlement.ts（与流量自驱动结算 autoSettle 共用）。
 export async function GET(req: NextRequest) {
   const t0 = Date.now();
   const secret = process.env.CRON_SECRET;
@@ -34,40 +30,16 @@ export async function GET(req: NextRequest) {
   }
 
   const sb = createClient(url, sk);
-  const res = await fetch(
-    "https://api.football-data.org/v4/competitions/WC/matches?status=FINISHED",
-    { headers: { "X-Auth-Token": key } }
-  );
-  if (!res.ok) {
-    return NextResponse.json({ error: `football-data ${res.status}` }, { status: 502 });
-  }
-  const { matches } = (await res.json()) as { matches: FdMatch[] };
 
-  // 阶段一：先把所有比赛结算完（纯数据库、快、幂等）——结算绝不依赖任何 LLM 调用。
-  const newlySettled: { id: string; home: string; away: string; hs: number; as: number }[] = [];
-  for (const m of matches) {
-    const ft = m.score?.fullTime;
-    if (ft?.home == null || ft?.away == null) continue;
-    const { data: row } = await sb
-      .from("matches")
-      .select("id, status, home:home_team_id(name), away:away_team_id(name)")
-      .eq("external_id", m.id)
-      .maybeSingle();
-    const match = row as {
-      id: string;
-      status: string;
-      home: { name: string } | null;
-      away: { name: string } | null;
-    } | null;
-    if (!match || match.status === "settled") continue;
-    await settleMatch(sb, match.id, ft.home, ft.away);
-    newlySettled.push({
-      id: match.id,
-      home: teamZh(match.home?.name ?? "?"),
-      away: teamZh(match.away?.name ?? "?"),
-      hs: ft.home,
-      as: ft.away,
-    });
+  // 阶段一：结算（纯数据库、快、幂等）——绝不依赖任何 LLM 调用。
+  let newlySettled;
+  try {
+    newlySettled = await runSettlement(sb, key);
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "结算失败" },
+      { status: 502 }
+    );
   }
   const settled = newlySettled.length;
 
@@ -82,7 +54,7 @@ export async function GET(req: NextRequest) {
   for (const s of newlySettled.slice(0, RECAP_CAP)) {
     if (Date.now() - t0 > RECAP_DEADLINE_MS) break;
     try {
-      const body = await generateRecap(s.home, s.away, s.hs, s.as, RECAP_CALL_TIMEOUT_MS);
+      const body = await generateRecap(teamZh(s.home), teamZh(s.away), s.hs, s.as, RECAP_CALL_TIMEOUT_MS);
       await upsertContent(sb, s.id, "recap", body);
       recaps++;
     } catch {
