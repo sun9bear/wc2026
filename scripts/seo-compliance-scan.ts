@@ -13,6 +13,7 @@ const STATIC_PATHS = [
   "/forecast",
   "/calculator",
   "/calculator/group/a",
+  "/rules",
   "/watch",
   "/about",
   "/combo",

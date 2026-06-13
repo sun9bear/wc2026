@@ -81,7 +81,7 @@ const COPY = {
     thirdNote:
       "Exactly which 8 third-placed teams advance, and which Round-of-32 slot each takes, is set by a pre-determined FIFA table based on which groups' third-placed teams qualify.",
     fairNote:
-      "Note: fair-play points require yellow/red-card data. Where that data is unavailable, this site's model approximates the lowest tie-breakers with its model strength rating (labelled on every page) — this barely affects advancement odds, since it only applies when every earlier criterion is tied.",
+      "Note: fair-play points require yellow/red-card data. Where that data is unavailable, this site's model approximates the lowest tie-breakers with its model strength rating (labelled on every page) — this barely affects advancement chances, since it only applies when every earlier criterion is tied.",
     ctaH: "Can my team still advance?",
     ctaBody:
       "Flip any remaining result in the live scenario calculator and instantly see how all 12 group tables and the best-thirds race change — or read the model's chance to advance and to win the title for every team.",
