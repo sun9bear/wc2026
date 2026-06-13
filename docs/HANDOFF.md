@@ -78,7 +78,8 @@ AI：DeepSeek 只写双语短评（夺冠 Top3 一句话），雷词 fail-closed
 3. **GitHub 申诉**（support.github.com）——解封后恢复：push 备份、Supabase 仪表盘、Git 自动部署链
 4. **UptimeRobot 监控**（一直没做！上次 54h 无人发现的事故不能重演）：监控 / 和 /leaderboard
 5. 用户日课：**Reddit 养号**（每天 match thread 真实评论，6/22 前攒 50-100 karma）+ **X Premium $8**
-6. **【6/13 新增】cron-job.org 加一条**：每小时 GET `https://www.wc2026.cool/api/cron/gen-content`（请求头 `x-cron-secret: <生产CRON_SECRET，见 docs/secret/vercel.env，len 39>`）。回填英文 AI 内容（preview_en/sentiment_en/recap_en，幂等≤8 场/次）。当前已手动刷到 11 preview+10 sentiment，剩 ~26 待补；新比赛也靠它持续覆盖。**注意：Gemini 本机调不通（geo 拦截），只能 Vercel 端跑，别写本地回填脚本。**
+6. **【6/13 新增，已配】cron-job.org gen-content**：每小时 GET `/api/cron/gen-content`（header `x-cron-secret`，已配好生效）。回填英文 AI 内容（preview_en/sentiment_en/recap_en，幂等≤8 场/次）。**注意：Gemini 本机调不通（geo 拦截），只能 Vercel 端跑，别写本地回填脚本。**
+   - **【6/13 修复】/forecast 预热任务报 "output too large"**：cron-job.org 拉整页 HTML 超下载上限判失败（会触发自动禁用，进而停掉 prob_*_snapshots 快照累积）。已新建轻量端点 `/api/cron/warm`（commit 见下，跑同一 getForecast()，只回 ~60 字节 JSON）。**把那条 /forecast 任务的 URL 改成 `https://www.wc2026.cool/api/cron/warm`（无需 header）即可。**
 7. **【6/13 新增】Vercel Dashboard → wc2026 → Analytics 点 Enable**（@vercel/analytics 已接入代码，免费档，看地理分布以决定下一步小语种）。
 
 **P1（一周内）**
