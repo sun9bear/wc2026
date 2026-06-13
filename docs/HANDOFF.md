@@ -86,7 +86,8 @@ AI：DeepSeek 只写双语短评（夺冠 Top3 一句话），雷词 fail-closed
 6. 6/22-27 分发窗口素材：第三名场景 OC 数据图（r/worldcup、国家队 sub）、X 图卡（正文原生图+链接放回复）、爆冷摆动卡（终场后 15 分钟内发）
 7. Fubo 批准后：换 /watch 的 LINKS 为 Impact 追踪链接（5 分钟+部署）
 8. AdSense 审核结果跟进（若拒且因低价值内容：比赛页加 AI 前瞻正文厚度后复审）
-9. 概率历史曲线 + 摆动图卡前端（表建好、快照攒 2-3 天后做）
+9. ~~概率历史曲线前端~~ **已上线（6/13，commit 8265562，已部署生产+线上验证）**：`src/lib/prob/getTrends.ts`（getTeamAdvanceTrends 按队分组+降采样24点+|Δ|倒序 / getMatchProbTrend 单场胜平负<3点返null；均 unstable_cache 600s；**降序+limit 取最新再反转，规避 PostgREST 1000 行硬顶静默丢最新行**）；`MatchProbTrend.tsx`（SSR，接 /match[id] open 分支）；/forecast 加「📈 出线概率异动」top6(|Δ|≥0.02，无数据降级"追踪中"双语 note)；「近期比赛」死 div → TrackedLink+「预测 →」CTA（④ 转化）；Sparkline 加 fluid 自适应宽修窄屏溢出。15-agent 对抗审查修 2 项（行顶截断 high、窄屏溢出 medium）。**剩**：摆动 OG 图卡前端入口（OG mode=swing 后端已就绪，commit 5628c55）。
+   - **⏳ ④ 数据依赖待办（~6/18 再做）**：抽屉文案 A/B + AdSense 正文厚度复审——埋点 6/13 才开始流，攒 ~5 天数据再定。事件 `forecast_match_cta_click`/`prediction_submitted` 等已在 /api/track 落库，届时看转化漏斗与地理 RPM。
 
 **P2（有余力）**
 10. ~~好友私有联赛/邀请房间~~ **MVP 已上线（6/13，任务 5）**：/league 创建+输码加入、/league/[code] 榜单、昵称门禁、邀请文案复制。后续可加：擂台内单独排名口径、成员上限提示、擂主踢人。
