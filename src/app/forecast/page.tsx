@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale } from "@/i18n/server";
 import { getForecast, type ForecastData } from "@/lib/prob/pipeline";
+import { getTeamAdvanceTrends } from "@/lib/prob/getTrends";
+import { Sparkline } from "@/components/Sparkline";
+import { TrackedLink } from "@/components/TrackedLink";
 
 export const maxDuration = 60; // 首次计算含外部抓取+万次模拟
 
@@ -23,6 +26,10 @@ const COPY = {
       "方法：多源公开数据（队伍实力评分、公开预测市场共识）融合 + 泊松比分模型 + 10,000 次蒙特卡洛模拟；排名判据按 2026 官方新规（相互战绩优先），不含公平竞赛分（无红黄牌数据，以实力评分近似末位判据）。",
     fun: "全部概率仅供娱乐参考，不构成任何建议。",
     aiTag: "AI 短评 · 仅供娱乐",
+    swing: "📈 出线概率异动",
+    swingSub: "近期模型出线概率变化最大的球队",
+    swingEmpty: "概率快照追踪中，攒够 2–3 天数据后显示走势。",
+    predict: "预测 →",
   },
   en: {
     title: "World Cup 2026 Advancement & Title Probabilities (Live Model)",
@@ -41,6 +48,10 @@ const COPY = {
       "Method: fusion of public data (team strength ratings, public forecast consensus) + Poisson score model + 10,000 Monte Carlo runs; 2026 official tiebreakers (head-to-head first), fair-play points approximated by strength rating.",
     fun: "All probabilities are for entertainment only.",
     aiTag: "AI note · for fun only",
+    swing: "📈 Biggest advancement swings",
+    swingSub: "Teams whose chance to advance moved most recently",
+    swingEmpty: "Tracking snapshots — trends appear once 2–3 days of data build up.",
+    predict: "Predict →",
   },
 } as const;
 
@@ -104,6 +115,24 @@ export default async function ForecastPage() {
   const note = zhFirst ? data.noteZh : data.noteEn;
   const upcoming = data.matches.slice(0, 12);
 
+  // 出线概率异动：近 4 天 |Δp_advance| 最大的 6 队，队名/旗从 forecast data 映射。
+  // 快照表未建/无数据时安全降级为空 → 板块显示"追踪中"双语 note。
+  const teamMap = new Map(data.groups.flatMap((g) => g.table).map((t) => [t.id, t] as const));
+  let swings: {
+    team: NonNullable<ReturnType<typeof teamMap.get>>;
+    series: number[];
+    delta: number;
+  }[] = [];
+  try {
+    const trends = await getTeamAdvanceTrends();
+    swings = trends
+      .filter((tr) => Math.abs(tr.delta) >= 0.02 && teamMap.has(tr.teamId))
+      .slice(0, 6)
+      .map((tr) => ({ team: teamMap.get(tr.teamId)!, series: tr.series, delta: tr.delta }));
+  } catch {
+    swings = [];
+  }
+
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-8">
       <h1 className="font-head text-2xl font-bold">📊 {c.h1}</h1>
@@ -141,10 +170,54 @@ export default async function ForecastPage() {
       )}
 
       <section className="mt-7">
+        <h2 className="font-head mb-1 text-sm font-semibold">{c.swing}</h2>
+        <p className="mb-2 text-[10px] text-muted">{c.swingSub}</p>
+        {swings.length === 0 ? (
+          <p className="rounded-lg border border-dashed border-border bg-surface p-3 text-xs text-muted">
+            {c.swingEmpty}
+          </p>
+        ) : (
+          <div className="space-y-1.5">
+            {swings.map(({ team, series, delta }) => {
+              const up = delta >= 0;
+              const color = up ? "#1be27f" : "#ff5436";
+              return (
+                <div
+                  key={team.id}
+                  className="flex items-center gap-2.5 rounded-lg border border-border bg-surface p-2.5"
+                >
+                  <span className="min-w-0 flex-1 truncate text-xs">
+                    <TeamName t={team} zhFirst={zhFirst} />
+                  </span>
+                  <span className="shrink-0">
+                    <Sparkline lines={[{ values: series, color }]} width={88} height={28} />
+                  </span>
+                  <span className="shrink-0 text-right leading-tight">
+                    <span className="font-head block text-sm text-green">
+                      {pct(series[series.length - 1])}
+                    </span>
+                    <span className="text-[10px]" style={{ color }}>
+                      {up ? "▲" : "▼"} {Math.abs(delta * 100).toFixed(1)}pp
+                    </span>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <section className="mt-7">
         <h2 className="font-head mb-2 text-sm font-semibold">{c.matches}</h2>
         <div className="space-y-2">
           {upcoming.map((m) => (
-            <div key={m.id} className="rounded-lg border border-border bg-surface p-3">
+            <TrackedLink
+              key={m.id}
+              href={`/match/${m.id}`}
+              event="forecast_match_cta_click"
+              props={{ matchId: m.id }}
+              className="block rounded-lg border border-border bg-surface p-3 transition-colors hover:border-green/50"
+            >
               <div className="mb-1.5 flex items-center justify-between text-xs">
                 <TeamName t={m.home} zhFirst={zhFirst} />
                 <span className="text-[10px] text-muted">
@@ -167,7 +240,10 @@ export default async function ForecastPage() {
                 </span>
                 <span className="text-[#f97316]">{pct(m.p.away)}</span>
               </div>
-            </div>
+              <div className="mt-1.5 text-right text-[11px] font-semibold text-green">
+                {c.predict}
+              </div>
+            </TrackedLink>
           ))}
         </div>
       </section>

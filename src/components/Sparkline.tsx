@@ -14,6 +14,7 @@ export function Sparkline({
   yMax,
   strokeWidth = 2,
   showLastDot = true,
+  fluid = false,
 }: {
   lines: Line[];
   width?: number;
@@ -22,6 +23,7 @@ export function Sparkline({
   yMax?: number;
   strokeWidth?: number;
   showLastDot?: boolean;
+  fluid?: boolean; // 填满容器宽（width 仅作内部坐标系/纵横比），避免窄屏溢出
 }) {
   const all = lines.flatMap((l) => l.values).filter((v) => Number.isFinite(v));
   if (all.length === 0) return null;
@@ -46,9 +48,10 @@ export function Sparkline({
 
   return (
     <svg
-      width={width}
+      width={fluid ? "100%" : width}
       height={height}
       viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio={fluid ? "none" : undefined}
       aria-hidden="true"
       className="overflow-visible"
     >

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { after } from "next/server";
 import { getMatchDetail } from "@/lib/markets/getMatchDetail";
 import { MarketPicks } from "@/components/MarketPicks";
+import { MatchProbTrend } from "@/components/MatchProbTrend";
 import { SentimentBar } from "@/components/SentimentBar";
 import { Disclaimer } from "@/components/Disclaimer";
 import { TeamBadge } from "@/components/TeamBadge";
@@ -123,6 +124,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
               <span className="live-dot" /> {t.match.livePicks}
             </h2>
             <MarketPicks marketId={m.market.id} selections={m.market.selections} locale={locale} />
+            <MatchProbTrend matchId={id} locale={locale} />
           </>
         ) : (
           <p className="rounded-md border border-border bg-surface-2 p-4 text-center text-sm text-muted">
