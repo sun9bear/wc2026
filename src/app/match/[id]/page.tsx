@@ -14,7 +14,7 @@ import { Disclaimer } from "@/components/Disclaimer";
 import { TeamBadge } from "@/components/TeamBadge";
 import { LocalTime } from "@/components/LocalTime";
 import { result1x2 } from "@/lib/settlement/result";
-import { stageName } from "@/lib/football/teams";
+import { stageName, teamName } from "@/lib/football/teams";
 import { getMatchSwing, swingOgPath } from "@/lib/prob/getMatchSwing";
 import { getMatchScoreline } from "@/lib/prob/getMatchScoreline";
 import { getDict } from "@/i18n";
@@ -200,8 +200,8 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
             {impliedSplit && (
               <MatchPreviewShare
                 matchId={id}
-                home={m.home.name}
-                away={m.away.name}
+                home={teamName(m.home.name, locale)}
+                away={teamName(m.away.name, locale)}
                 hp={impliedSplit.hp}
                 dp={impliedSplit.dp}
                 ap={impliedSplit.ap}
