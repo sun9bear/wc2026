@@ -5,6 +5,10 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { teamZh } from "@/lib/football/teams";
 import { fmtPoints } from "@/lib/format";
+import { copyText } from "@/lib/clipboard";
+import { track } from "@/lib/track";
+import { swingShareParts, matchUrl } from "@/lib/share/swingShare";
+import type { MatchSwing } from "@/lib/prob/getMatchSwing";
 import type { Locale } from "@/i18n";
 
 // 结算揭晓抽屉（任务 3）：挂 / 与 /me。localStorage 存 last_seen_settled_at，
@@ -18,6 +22,7 @@ export const SETTLE_SEEN_EVENT = "wc:settled-seen";
 
 interface RecentBet {
   won: boolean;
+  matchId?: string;
   kickoff: string;
   settledAt: string | null;
   home: string;
@@ -46,6 +51,9 @@ const TXT = {
     more: (n: number) => `…还有 ${n} 条结果`,
     cta: "看我的战绩",
     close: "知道了",
+    flexUpset: "🎯 晒这波爆冷",
+    copied: "已复制，去粘贴分享 👍",
+    copyFail: "复制失败，可截图分享",
   },
   en: {
     title: "📣 Your picks have new results",
@@ -62,6 +70,9 @@ const TXT = {
     more: (n: number) => `…and ${n} more results`,
     cta: "See my record",
     close: "Got it",
+    flexUpset: "🎯 Flex this upset",
+    copied: "Copied — paste to share 👍",
+    copyFail: "Copy failed — screenshot to share",
   },
 } as const;
 
@@ -70,6 +81,8 @@ export function SettleDrawer({ locale }: { locale: Locale }) {
   const [items, setItems] = useState<RecentBet[]>([]);
   const [upcoming, setUpcoming] = useState(0);
   const [open, setOpen] = useState(false);
+  const [swings, setSwings] = useState<Record<string, MatchSwing>>({});
+  const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -109,6 +122,25 @@ export function SettleDrawer({ locale }: { locale: Locale }) {
         setOpen(true);
         localStorage.setItem(DOT_KEY, "1");
         window.dispatchEvent(new Event(SETTLE_NEW_EVENT));
+
+        // 揭晓里本人押中的爆冷场：拉 swing 给"晒一晒"（按 matchId 去重，取前几条 won）。
+        const wonIds = [
+          ...new Set(unseen.filter((x) => x.won && x.matchId).map((x) => x.matchId as string)),
+        ].slice(0, 4);
+        const sw: Record<string, MatchSwing> = {};
+        await Promise.all(
+          wonIds.map(async (mid) => {
+            try {
+              const r = await fetch(`/api/swing?id=${mid}`);
+              if (!r.ok) return;
+              const s = (await r.json()) as MatchSwing | null;
+              if (s && s.hero) sw[mid] = s;
+            } catch {
+              /* 单场失败忽略 */
+            }
+          })
+        );
+        if (alive && Object.keys(sw).length) setSwings(sw);
       } catch {
         /* 静默：抽屉是增强功能，绝不打扰主流程 */
       }
@@ -133,6 +165,24 @@ export function SettleDrawer({ locale }: { locale: Locale }) {
     setOpen(false);
   }
 
+  async function shareUpset(swing: MatchSwing, mid: string) {
+    const parts = swingShareParts(swing, locale, true); // 抽屉里都是本人押中 → 第一人称
+    const url = matchUrl(mid);
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ title: parts.title, text: parts.text, url });
+        track("swing_share_click", { matchId: mid, method: "native", source: "settle_drawer" });
+      } catch {
+        track("swing_share_click", { matchId: mid, method: "native_dismiss", source: "settle_drawer" });
+      }
+      return;
+    }
+    const ok = copyText(`${parts.text} ${url}`);
+    setToast(ok ? t.copied : t.copyFail);
+    track("swing_share_click", { matchId: mid, method: ok ? "copy" : "copy_fail", source: "settle_drawer" });
+    window.setTimeout(() => setToast(null), 2500);
+  }
+
   if (!open || items.length === 0) return null;
 
   const shown = items.slice(0, 3);
@@ -148,16 +198,29 @@ export function SettleDrawer({ locale }: { locale: Locale }) {
           </button>
         </div>
         <ul className="space-y-1.5 text-sm">
-          {shown.map((b, i) => (
-            <li key={i} className={b.won ? "text-green" : "text-muted"}>
-              {b.won ? t.win(b) : t.lose(b)}
-            </li>
-          ))}
+          {shown.map((b, i) => {
+            const sw = b.won && b.matchId ? swings[b.matchId] : undefined;
+            return (
+              <li key={i} className={b.won ? "text-green" : "text-muted"}>
+                {b.won ? t.win(b) : t.lose(b)}
+                {sw && (
+                  <button
+                    type="button"
+                    onClick={() => shareUpset(sw, b.matchId as string)}
+                    className="ml-2 inline-block rounded bg-green/15 px-1.5 py-0.5 align-middle text-[11px] font-semibold text-green"
+                  >
+                    {t.flexUpset}
+                  </button>
+                )}
+              </li>
+            );
+          })}
         </ul>
         {items.length > shown.length && (
           <div className="mt-1 text-[11px] text-muted">{t.more(items.length - shown.length)}</div>
         )}
         {hasLoss && <div className="mt-2 text-xs text-muted">{t.comeback(upcoming)}</div>}
+        {toast && <div className="mt-2 text-[11px] text-green">{toast}</div>}
         <div className="mt-3 flex gap-2 text-xs">
           <Link
             href="/me"

@@ -19,6 +19,7 @@ interface SettledBetRow {
     selection: {
       market: {
         match: {
+          id: string;
           kickoff_at: string;
           settled_at: string | null;
           home_score: number | null;
@@ -33,6 +34,7 @@ interface SettledBetRow {
 
 export interface RecentBet {
   won: boolean;
+  matchId: string; // 代表场（最晚开球的一腿）——结算抽屉据此查爆冷摆动
   kickoff: string;
   settledAt: string | null;
   home: string;
@@ -97,7 +99,7 @@ export async function GET(req: NextRequest) {
   const { data: settledRaw } = await db
     .from("bets")
     .select(
-      "id, status, payout, total_stake, total_multiplier, type, bet_selections(selection:selections(market:markets(match:matches(kickoff_at, settled_at, home_score, away_score, home:home_team_id(name), away:away_team_id(name)))))"
+      "id, status, payout, total_stake, total_multiplier, type, bet_selections(selection:selections(market:markets(match:matches(id, kickoff_at, settled_at, home_score, away_score, home:home_team_id(name), away:away_team_id(name)))))"
     )
     .eq("user_id", user.id)
     .in("status", ["won", "lost"]);
@@ -117,6 +119,7 @@ export async function GET(req: NextRequest) {
       );
       return {
         won: b.status === "won",
+        matchId: last.id,
         kickoff: last.kickoff_at,
         settledAt,
         home: last.home?.name ?? "?",

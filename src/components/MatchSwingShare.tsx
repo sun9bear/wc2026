@@ -4,13 +4,12 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { copyText } from "@/lib/clipboard";
 import { track } from "@/lib/track";
+import { swingShareParts, matchUrl } from "@/lib/share/swingShare";
 import type { MatchSwing } from "@/lib/prob/getMatchSwing";
 
 // 「爆冷瞬间」分享模块（摆动 OG 图卡前端入口）：页内还原摆动视觉 + 原生分享 + 个人押中炫耀。
 // 分享 url = 本场比赛页（其 og:image 已设为摆动卡，链接展开即震撼图）；降级复制+toast；
 // 「保存图片卡」直链 /api/og PNG（微信场景长按另存）。挂载拉 /api/me 检测是否本人押中。
-
-const SITE = "https://www.wc2026.cool";
 
 export function MatchSwingShare({
   swing,
@@ -52,15 +51,9 @@ export function MatchSwingShare({
     };
   }, [matchId, swing.homeName, swing.awayName]);
 
-  const up = swing.hero.delta >= 0;
+  const parts = swingShareParts(swing, locale, personalWin);
+  const { heroName, before: b, after: a, score, up } = parts;
   const heroColor = up ? "#1be27f" : "#ff5436";
-  const b = Math.round(swing.hero.before * 100);
-  const a = Math.round(swing.hero.after * 100);
-  const heroName = locale === "zh" ? swing.hero.zh : swing.hero.name;
-  const score =
-    locale === "zh"
-      ? `${swing.homeZh} ${swing.homeScore}-${swing.awayScore} ${swing.awayZh}`
-      : `${swing.homeName} ${swing.homeScore}-${swing.awayScore} ${swing.awayName}`;
 
   const c =
     locale === "zh"
@@ -70,10 +63,6 @@ export function MatchSwingShare({
           saveImg: "保存图片卡",
           copied: "已复制，去粘贴分享 👍",
           copyFail: "复制失败，可截图分享",
-          shareTitle: "wc2026.cool · 世界杯实时模型",
-          shareText: personalWin
-            ? `🎯 我猜中了这场爆冷！${score}，${heroName}出线概率 ${b}%→${a}%`
-            : `🔥 ${score}！${heroName}出线概率 ${b}%→${a}%`,
         }
       : {
           headline: personalWin ? "🎯 You called this upset" : "🔥 Upset moment",
@@ -81,18 +70,14 @@ export function MatchSwingShare({
           saveImg: "Save image card",
           copied: "Copied — paste to share 👍",
           copyFail: "Copy failed — screenshot to share",
-          shareTitle: "wc2026.cool · live World Cup model",
-          shareText: personalWin
-            ? `🎯 I called this upset! ${score} — ${heroName}'s chance to advance ${b}%→${a}%`
-            : `🔥 ${score}! ${heroName}'s chance to advance ${b}%→${a}%`,
         };
 
-  const shareUrl = `${SITE}/match/${matchId}`;
+  const shareUrl = matchUrl(matchId);
 
   async function onShare() {
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
-        await navigator.share({ title: c.shareTitle, text: c.shareText, url: shareUrl });
+        await navigator.share({ title: parts.title, text: parts.text, url: shareUrl });
         track("swing_share_click", { matchId, method: "native", personalized: personalWin });
       } catch {
         // 用户取消/分享失败：不强行降级复制（避免打扰），仅记一次
@@ -100,7 +85,7 @@ export function MatchSwingShare({
       }
       return;
     }
-    const ok = copyText(`${c.shareText} ${shareUrl}`);
+    const ok = copyText(`${parts.text} ${shareUrl}`);
     setToast(ok ? c.copied : c.copyFail);
     track("swing_share_click", { matchId, method: ok ? "copy" : "copy_fail", personalized: personalWin });
     window.setTimeout(() => setToast(null), 2500);

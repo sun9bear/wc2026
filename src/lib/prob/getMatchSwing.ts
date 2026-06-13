@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase/client";
 import { teamZh, flagUrl } from "@/lib/football/teams";
 import { teamSlug } from "./findTeam";
 
-const UPSET_MIN = 0.1; // 至少一队出线概率摆动 ≥10pp 才算"爆冷瞬间"（否则不够震撼，不外显）
+const UPSET_MIN = 0.1; // "爆冷"幅度门槛：出线概率摆动 ≥10pp（方向另需满足真爆冷，见 computeMatchSwing）
 
 export interface SwingTeam {
   teamId: string;
@@ -114,15 +114,23 @@ async function computeMatchSwing(matchId: string): Promise<MatchSwing | null> {
     buildTeam(m.away, m.kickoff_at, m.settled_at),
   ]);
   const teams = [h, a].filter((x): x is SwingTeam => x !== null);
-  if (teams.length === 0) return null;
+  // 真"爆冷"方向：被看好(≥50%)却崩盘，或不被看好(<50%)却飙升——
+  // 排除"大热确认"（强队净胜后概率飙升）这类幅度大但并不意外的情况，让"爆冷"名副其实。
+  // 推论：已结算且为真爆冷时，任何在本场押中的注单必然押的就是这个意外结果 → 第一人称『猜中了爆冷』为真。
+  const upsetTeams = teams.filter(
+    (x) =>
+      Math.abs(x.delta) >= UPSET_MIN &&
+      ((x.before >= 0.5 && x.delta < 0) || (x.before < 0.5 && x.delta > 0))
+  );
+  if (upsetTeams.length === 0) return null; // 不是真爆冷：不外显
 
-  teams.sort((x, y) => Math.abs(y.delta) - Math.abs(x.delta));
-  const hero = teams[0];
-  if (Math.abs(hero.delta) < UPSET_MIN) return null; // 摆动不够大：不是"爆冷"，不外显
+  upsetTeams.sort((x, y) => Math.abs(y.delta) - Math.abs(x.delta));
+  const hero = upsetTeams[0];
+  const other = teams.find((x) => x.teamId !== hero.teamId) ?? null;
 
   return {
     hero,
-    other: teams[1] ?? null,
+    other,
     homeName: m.home.name,
     awayName: m.away.name,
     homeZh: teamZh(m.home.name),
