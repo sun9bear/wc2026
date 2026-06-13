@@ -1,18 +1,59 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { after } from "next/server";
 import { getMatchDetail } from "@/lib/markets/getMatchDetail";
 import { MarketPicks } from "@/components/MarketPicks";
 import { MatchProbTrend } from "@/components/MatchProbTrend";
+import { MatchSwingShare } from "@/components/MatchSwingShare";
 import { SentimentBar } from "@/components/SentimentBar";
 import { Disclaimer } from "@/components/Disclaimer";
 import { TeamBadge } from "@/components/TeamBadge";
 import { LocalTime } from "@/components/LocalTime";
 import { result1x2 } from "@/lib/settlement/result";
 import { stageName } from "@/lib/football/teams";
+import { getMatchSwing, swingOgPath } from "@/lib/prob/getMatchSwing";
 import { getDict } from "@/i18n";
 import { getLocale } from "@/i18n/server";
 import { maybeAutoSettle } from "@/lib/settlement/autoSettle";
+
+const SITE = "https://www.wc2026.cool";
+
+// 已结算且出现"爆冷"（出线概率大摆动）时，把本场链接的 og:image 设为摆动卡——
+// 分享到 X/微信/Telegram 即自动展开成震撼图卡。非爆冷场次继承默认 metadata。
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  let swing = null;
+  try {
+    swing = await getMatchSwing(id);
+  } catch {
+    swing = null;
+  }
+  if (!swing) return {};
+  const locale = await getLocale();
+  const ogUrl = `${SITE}${swingOgPath(swing, locale)}`;
+  const heroName = locale === "zh" ? swing.hero.zh : swing.hero.name;
+  const bp = Math.round(swing.hero.before * 100);
+  const ap = Math.round(swing.hero.after * 100);
+  const title =
+    locale === "zh"
+      ? `爆冷！${swing.homeZh} ${swing.homeScore}-${swing.awayScore} ${swing.awayZh} · wc2026.cool`
+      : `Upset! ${swing.homeName} ${swing.homeScore}-${swing.awayScore} ${swing.awayName} · wc2026.cool`;
+  const description =
+    locale === "zh"
+      ? `${heroName}出线概率 ${bp}% → ${ap}%。世界杯 2026 实时模型，免费无需注册。`
+      : `${heroName}'s chance to advance ${bp}% → ${ap}%. Live World Cup 2026 model, free, no sign-up.`;
+  return {
+    title,
+    description,
+    openGraph: { title, description, images: [{ url: ogUrl, width: 1200, height: 630 }] },
+    twitter: { card: "summary_large_image", title, description, images: [ogUrl] },
+  };
+}
 
 export default async function MatchPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -27,6 +68,8 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
   const settled = m.status === "settled" && m.homeScore != null && m.awayScore != null;
   const started = new Date(m.kickoffAt).getTime() <= Date.now();
   const open = !settled && !started;
+  // 「爆冷瞬间」摆动卡：仅已结算且出线概率大摆动时返回非 null（缓存读快照，失败降级 null）。
+  const swing = settled ? await getMatchSwing(id).catch(() => null) : null;
   const resultLabel: Record<string, string> = {
     home: t.match.home,
     draw: t.match.draw,
@@ -132,6 +175,15 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
           </p>
         )}
       </section>
+
+      {swing && (
+        <MatchSwingShare
+          swing={swing}
+          matchId={id}
+          locale={locale}
+          ogPath={swingOgPath(swing, locale)}
+        />
+      )}
 
       <footer className="mt-8 text-center">
         <Disclaimer />
