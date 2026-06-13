@@ -119,10 +119,13 @@ AI：DeepSeek 只写双语短评（夺冠 Top3 一句话），雷词 fail-closed
   - `/forecast`：单个比分标签 → 展开 Top-3 最可能比分。
   - 线上验证：6/6 未开赛比赛页渲染模块、forecast Top-3 行、EN 文案、0 雷词。
 - ✅ **实时进球重算数学内核已写好测好**：`src/lib/prob/poisson.ts` 的 `liveScoreline(lh0,la0,hNow,aNow,minutesPlayed)`——剩余时间内进球 ~ 泊松(λ×剩余/90)+DC 修正，叠加当前比分得最终比分分布；6 单测过（归一/领先升/时间衰减/终场锁定/边界）。**纯函数，等数据源接入即可用。**
-- ⏳ **Phase B 实时进球更新（卡在数据源——需用户动作）**：
-  1. **【需用户做】注册 API-Football 免费 key**（api-sports.io，免费 100 req/天）——唯一同时给「当前比分+比赛分钟」的合规源。football-data 免费档只标 FINISHED 且滞后数小时，The Odds API `/scores` 无分钟字段，均喂不动 `liveScoreline`。
-  2. 接：cron-job.org 心跳 → 重算路由（调 API-Football + `liveScoreline`）→ 新建 `live_match_state` 表（走 Supabase 隧道 + 显式 GRANT）→ Supabase Realtime 推前端 → /match 页 LIVE 状态（替换 open-only 限制）。
-  3. **上线前必做**：用一场真实直播实测免费档 live 覆盖（有源头称免费档无 live data，必须验证）；免费 100/天≈仅够单场重点赛，并发要 $19/月 Pro。
+- ✅ **Phase B 实时进球更新已上线（commit 754d06b，已部署生产+线上验证 /api/live 返回 200）**：
+  - 架构（**比原计划更简，零 DDL/零 cron/零 Realtime**）：客户端轮询。`src/components/LiveScoreProbs.tsx`（进行中比赛页 ~30s 轮询）→ `/api/live?id`（`src/app/api/live/route.ts`）→ `src/lib/prob/liveFeed.ts` 调 API-Football `/fixtures?live=all` 过滤 `league=1`（unstable_cache 70s，配额不随观众增长）→ 命中则用 `lambdasFrom1x2(最新快照1X2)` 反推 λ → `liveScoreline()` 算实时最终比分分布。**未命中/无 key/配额耗尽全 fail-soft 回退赛前分布**。
+  - match 页新增 `inPlay` 分支（已开赛未结算）渲染 `<LiveScoreProbs>`（取代原 locked）；open 分支仍 SSR 静态 `<ScoreProbs>`。
+  - 环境：`APISPORTS_KEY` 已入 `.env.local` + Vercel 生产（key 文件 `docs/secret/api-football.com.txt`）。
+  - **⚠️ 已知数据限制（待验证/可选升级）**：API-Football **免费档不含 season 2026**（查 league=1&season=2026 报 "Free plans do not have access to this season, try 2022-2024"）。`/fixtures?live=all` 实测能返回 >2024 的直播（如 2025 捷克低级别联赛），故 WC 直播**可能**仍出现在 live=all——但**必须用一场真实 WC 直播实测确认**（当前无 WC 直播，无法即时验证）。若免费档不返回 WC 直播：升级 API-Football **Pro ~$19/月**即解锁（代码零改动，自动生效）。配额：免费 100/天，70s 缓存下连续观看约够 2 小时/天 ≈ 单场重点赛；超额自动降级赛前。
+  - **验证清单（下次有 WC 直播时做）**：① 开球后访问该场 /match 页，看是否出现「实时最终比分预测」+实时比分+分钟；② 进球后约 30s 内分布是否更新；③ 若一直显示「赛前比分预测（比赛进行中）」说明 live=all 未返回该场（免费档 season 限制），需升级 Pro。
+- ⏳ **可选增强**：球队名映射（liveFeed `matchLive` 用 `normalizeTeamName` 对称匹配，含主客对调兜底）——若实测发现某些队名匹配失败（API-Football vs DB 英文名差异），在 `names.ts` 补别名。
 - ⏳ **赛后「比分战报卡」（高分享回报，未做）**：每场结算后用赛前快照算「本场结果赛前是第 N 可能 X% / 你押中模型只给 X% 的冷门」，复用 `MatchSwingShare`+`/api/og`+`swingShare.ts` 管线（新增一个 mode）。比摆动卡触发频率高得多（每场都有，不限爆冷）。
 - 市场对标结论（8-agent 调研+对抗验证）：完整「比分概率网格」公开互联网上几乎只存在于博彩 correct-score 市场；非博彩消费产品要么不做要么只给单个最可能比分（Forebet/Opta），FotMob/Sofascore 只有 1X2/动量。**干净去博彩化的 Top-5 比分分布是真空白**。实时胜率(1X2)是大路货但全靠付费实时源，且业界视其为「博彩入口」——对反博彩+AdSense 定位是合规负债，故只做「比分分布」不做实时胜率 ticker。
 
