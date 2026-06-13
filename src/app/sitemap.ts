@@ -12,6 +12,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/watch`, changeFrequency: "weekly", priority: 0.7 },
     { url: `${BASE}/forecast`, changeFrequency: "hourly", priority: 0.9 },
     { url: `${BASE}/calculator`, changeFrequency: "daily", priority: 0.85 },
+    // 12 个按组着陆页（脉冲式搜索："Group A who advances" / "X 组出线形势"）
+    ..."abcdefghijkl".split("").map((letter) => ({
+      url: `${BASE}/calculator/group/${letter}`,
+      changeFrequency: "hourly" as const,
+      priority: 0.85,
+    })),
     { url: `${BASE}/about`, changeFrequency: "monthly", priority: 0.5 },
     { url: `${BASE}/privacy`, changeFrequency: "monthly", priority: 0.3 },
     { url: `${BASE}/disclaimer`, changeFrequency: "monthly", priority: 0.3 },

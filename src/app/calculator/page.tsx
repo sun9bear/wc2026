@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale } from "@/i18n/server";
 import { getForecast } from "@/lib/prob/pipeline";
+import { findTeam, teamSlug } from "@/lib/prob/findTeam";
 import { ThirdCalculator } from "@/components/ThirdCalculator";
+import { CalculatorFocus } from "@/components/CalculatorFocus";
 
 export const maxDuration = 60;
 
@@ -11,6 +13,9 @@ const COPY = {
     title: "第三名出线计算器 · 2026 世界杯（我的队还有戏吗）",
     description:
       "点选剩余小组赛结果，实时计算 12 个小组排名与 8 个最佳第三名晋级形势——2026 世界杯 48 队新赛制专用工具。",
+    teamTitle: (zh: string) => `${zh}怎样才能出线？2026 世界杯第三名计算器`,
+    teamDesc: (zh: string) =>
+      `${zh}的出线形势实时计算：改任意剩余赛果，立即看 ${zh} 在小组与最佳第三名榜的位置变化。免费、无需注册。`,
     h1: "第三名出线计算器",
     back: "← 返回",
     forecast: "📊 看模型概率版 →",
@@ -19,18 +24,66 @@ const COPY = {
     title: "World Cup 2026 Third-Place Scenario Calculator — Who Advances?",
     description:
       "Pick the remaining group-stage results and instantly see all 12 tables and which 8 best third-placed teams advance under the new 48-team format.",
+    teamTitle: (name: string) => `Can ${name} still advance? World Cup 2026 scenario calculator`,
+    teamDesc: (name: string) =>
+      `Live qualification scenarios for ${name}: flip any remaining result and instantly see where ${name} lands in the group and best-thirds race. Free, no sign-up.`,
     h1: "Third-Place Scenario Calculator",
     back: "← Back",
     forecast: "📊 See model probabilities →",
   },
 } as const;
 
-export async function generateMetadata(): Promise<Metadata> {
+// 12 支热门队（北美主场三强 + 传统豪门 + 东亚），slug 与 DB 英文名对应
+const HOT = [
+  "United States",
+  "Canada",
+  "Mexico",
+  "Brazil",
+  "Argentina",
+  "Japan",
+  "South Korea",
+  "England",
+  "France",
+  "Spain",
+  "Portugal",
+  "Germany",
+];
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ team?: string }>;
+}): Promise<Metadata> {
+  const { team = "" } = await searchParams;
   const locale = await getLocale();
-  return { title: COPY[locale].title, description: COPY[locale].description };
+  const c = COPY[locale];
+  if (team) {
+    try {
+      const data = await getForecast();
+      const hit = findTeam(data, team);
+      if (hit) {
+        const nm = locale === "zh" ? hit.team.zh : hit.team.name;
+        const og = `/api/og?team=${teamSlug(hit.team.name)}&locale=${locale}`;
+        return {
+          title: c.teamTitle(nm),
+          description: c.teamDesc(nm),
+          openGraph: { images: [{ url: og, width: 1200, height: 630 }] },
+          twitter: { card: "summary_large_image", images: [og] },
+        };
+      }
+    } catch {
+      /* 降级为通用 meta */
+    }
+  }
+  return { title: c.title, description: c.description };
 }
 
-export default async function CalculatorPage() {
+export default async function CalculatorPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ team?: string }>;
+}) {
+  const { team = "" } = await searchParams;
   const locale = await getLocale();
   const c = COPY[locale];
   const data = await getForecast();
@@ -46,6 +99,15 @@ export default async function CalculatorPage() {
     likely: m.likely,
   }));
 
+  const hit = team ? findTeam(data, team) : null;
+  const allTeams = data.groups
+    .flatMap((g) => g.table)
+    .map((t) => ({ name: t.name, zh: t.zh, slug: teamSlug(t.name) }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const hotTeams = HOT.map((n) => allTeams.find((t) => t.name === n)).filter(
+    (x): x is { name: string; zh: string; slug: string } => !!x
+  );
+
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-8">
       <div className="flex items-center justify-between">
@@ -57,12 +119,32 @@ export default async function CalculatorPage() {
         </Link>
       </div>
       <h1 className="font-head mb-4 mt-3 text-2xl font-bold">🧮 {c.h1}</h1>
+      <CalculatorFocus
+        locale={locale}
+        hot={hotTeams}
+        all={allTeams}
+        focus={
+          hit
+            ? {
+                name: hit.team.name,
+                zh: hit.team.zh,
+                flag: hit.team.flag,
+                letter: hit.letter,
+                rank: hit.rank,
+                pAdvance: hit.team.pAdvance,
+                pChampion: hit.team.pChampion,
+                slug: teamSlug(hit.team.name),
+              }
+            : null
+        }
+      />
       <ThirdCalculator
         locale={locale}
         groups={groups}
         played={data.played}
         remaining={remaining}
         rating={data.rating}
+        focusLetter={hit?.letter ?? null}
       />
     </main>
   );

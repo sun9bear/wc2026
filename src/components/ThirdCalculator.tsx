@@ -56,12 +56,14 @@ export function ThirdCalculator({
   played,
   remaining,
   rating,
+  focusLetter = null,
 }: {
   locale: Locale;
   groups: { letter: string; teams: CalcTeam[] }[];
   played: GroupResult[];
   remaining: CalcMatch[];
   rating: Record<string, number>;
+  focusLetter?: string | null;
 }) {
   const t = TXT[locale];
   const [picks, setPicks] = useState<Record<string, "h" | "d" | "a">>(() =>
@@ -112,6 +114,10 @@ export function ThirdCalculator({
       <div className="space-y-3">
         {groups
           .filter((g) => groupsWithMatches.has(g.letter))
+          // 焦点组（?team= 选中的队所在组）排最前，用户落地即见自己的组
+          .sort((a, b) =>
+            a.letter === focusLetter ? -1 : b.letter === focusLetter ? 1 : 0
+          )
           .map((g) => {
             const table = tables.find((x) => x.letter === g.letter)!.order;
             return (
