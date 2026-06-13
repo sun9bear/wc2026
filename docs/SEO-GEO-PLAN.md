@@ -226,7 +226,27 @@
 - **MAJOR（采纳）**：sitemap 不调 getForecast()；hreflang 等 /en URL 再做；Phase 1 EN-first 预期；robots 保留单 `*` 组（避免丢 disallow）；JSON-LD `<` 转义 + 白名单字段；ld+json 顶层边界前渲染 + curl 验证；"市场共识"改写；Dataset 须填合法属性或先用 ItemList；Phase 1 拆 1A/1B；IndexNow batch 措辞纠正。
 - **MINOR（采纳）**：llms.txt 降级为可选 URL-only；`changeFrequency`/`priority` 非 Google 杠杆，不计入有效工作。
 
-**Round 2**：待对 v2 做收敛复核（确认 6 个 BLOCKER 已解、新 freshness/canonical/scope 设计无新坑）。
+**Round 2**（plan v2 收敛复核）：6 个 BLOCKER 全部 RESOLVED；新设计无新 BLOCKER，仅 2 小 MAJOR（lastSettledAt 须带 revalidate；settled_at 勿标 Updated）——已采纳。
+
+**Round 3**（Phase 1A 实施后 diff 审）：0 BLOCKER、4 MAJOR、1 MINOR，全部修复：①freshness byGroup 仅组赛更新（淘汰赛不误标）②补全 7 条 sitemap 内页 canonical（combo/leaderboard/watch/calculator/about/privacy/disclaimer）③match openGraph 补全 og.png/type/url（修非爆冷场丢分享图回归）④扫描器 fail-closed + 删 /rules + 抽样真实 team/match⑤llms.txt 改指 sitemap。
+
+**Round 4**（修复后复核）：M1/M2/M3/MINOR RESOLVED；M4 残留（sampleDynamic 仍 fail-open）→ 改为抓取失败/无 team|match URL 即抛错、main 记失败。
+
+**Round 5**（聚焦复核）：扫描器 fail-closed RESOLVED。**裁决：安全部署。**
+
+---
+
+## 十二、部署与线上验证（2026-06-14）
+
+- 提交 `6223fbc`（feat/legal-pages，18 文件）；备份 `D:\wc2026-backup.bundle` 已刷新；`git tag seo-baseline-20260614` 为还原点。
+- `npx vercel deploy --prod --yes` → 生产 READY（dpl_4FmJMtoMSzzwToAS8po3LKjsHv3V），别名 www.wc2026.cool。
+- 线上验证（en/爬虫视角）：
+  - **canonical 修复确认**：/forecast、/match/[id]（含真实标题 "Switzerland vs Canada — World Cup 2026 prediction & likely scores"，原 `{}` 已修）、/team/mexico、/combo 均自指——**内页不再 canonical 到首页**。
+  - 前置答案句渲染（forecast 含 "10,000-run Monte Carlo simulation"）。
+  - sitemap.xml 含真实 `<lastmod>`（取自 settled_at，如 2026-06-13T21:15:16Z，非 now）。
+  - robots.txt 正常；llms.txt 200；合规扫描器全页 en+zh 0 雷词。
+- **待用户动作**：GSC URL Inspection 手动请求收录 12 个 group 页 + 重点 matchday-3 场次页（配额约十几条/天）。
+- **后续轮次**：Phase 1B（JSON-LD schema + /rules 常青页 + 内链）；Phase 2（IndexNow / best-thirds 页 / 意图重定向）；Phase 3（i18n + hreflang，谨慎并行轨）；Phase 4（只读 AI 侦察 /schedule；AdSense 通过后改脚本策略）。
 
 ---
 
