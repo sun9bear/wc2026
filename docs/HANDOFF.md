@@ -86,7 +86,8 @@ AI：DeepSeek 只写双语短评（夺冠 Top3 一句话），雷词 fail-closed
 6. 6/22-27 分发窗口素材：第三名场景 OC 数据图（r/worldcup、国家队 sub）、X 图卡（正文原生图+链接放回复）、爆冷摆动卡（终场后 15 分钟内发）
 7. Fubo 批准后：换 /watch 的 LINKS 为 Impact 追踪链接（5 分钟+部署）
 8. AdSense 审核结果跟进（若拒且因低价值内容：比赛页加 AI 前瞻正文厚度后复审）
-9. ~~概率历史曲线前端~~ **已上线（6/13，commit 8265562，已部署生产+线上验证）**：`src/lib/prob/getTrends.ts`（getTeamAdvanceTrends 按队分组+降采样24点+|Δ|倒序 / getMatchProbTrend 单场胜平负<3点返null；均 unstable_cache 600s；**降序+limit 取最新再反转，规避 PostgREST 1000 行硬顶静默丢最新行**）；`MatchProbTrend.tsx`（SSR，接 /match[id] open 分支）；/forecast 加「📈 出线概率异动」top6(|Δ|≥0.02，无数据降级"追踪中"双语 note)；「近期比赛」死 div → TrackedLink+「预测 →」CTA（④ 转化）；Sparkline 加 fluid 自适应宽修窄屏溢出。15-agent 对抗审查修 2 项（行顶截断 high、窄屏溢出 medium）。**剩**：摆动 OG 图卡前端入口（OG mode=swing 后端已就绪，commit 5628c55）。
+9. ~~概率历史曲线前端~~ **已上线（6/13，commit 8265562，已部署生产+线上验证）**：`src/lib/prob/getTrends.ts`（getTeamAdvanceTrends 按队分组+降采样24点+|Δ|倒序 / getMatchProbTrend 单场胜平负<3点返null；均 unstable_cache 600s；**降序+limit 取最新再反转，规避 PostgREST 1000 行硬顶静默丢最新行**）；`MatchProbTrend.tsx`（SSR，接 /match[id] open 分支）；/forecast 加「📈 出线概率异动」top6(|Δ|≥0.02，无数据降级"追踪中"双语 note)；「近期比赛」死 div → TrackedLink+「预测 →」CTA（④ 转化）；Sparkline 加 fluid 自适应宽修窄屏溢出。15-agent 对抗审查修 2 项（行顶截断 high、窄屏溢出 medium）。
+   - ~~摆动 OG 图卡前端入口~~ **已上线（6/13，commit 472829c，生产已验证）**：比赛页「爆冷瞬间」模块——已结算且出线概率摆动 ≥10pp 时显示页内摆动视觉（before 删除线→after 大数字绿涨红跌）+ **Web Share 原生分享**（降级复制+toast）+「保存图片卡」直链 OG PNG；`generateMetadata` 把 og:image 设为摆动卡（分享链接自动展开震撼图）；挂载拉 /api/me 按队名匹配→**本人押中则第一人称『你猜中了这场爆冷』**（参与感）。新建 `getMatchSwing.ts`（before=开球前快照，after=settled_at 起首张→稳定可归因）+ `MatchSwingShare.tsx`；埋点 swing_card_view/swing_share_click。21-agent 对抗审查修 3 项（连字符 slug high、after 漂移 medium、窄屏溢出 medium），并修好既有球队卡 OG 的连字符 bug（findTeam 对称归一化）。线上验证：美国 4-1 巴拉圭摆动卡渲染（巴拉圭 65%→43%）。
    - **⏳ ④ 数据依赖待办（~6/18 再做）**：抽屉文案 A/B + AdSense 正文厚度复审——埋点 6/13 才开始流，攒 ~5 天数据再定。事件 `forecast_match_cta_click`/`prediction_submitted` 等已在 /api/track 落库，届时看转化漏斗与地理 RPM。
 
 **P2（有余力）**
