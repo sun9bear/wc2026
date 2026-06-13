@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { getForecast } from "@/lib/prob/pipeline";
 import { findTeam } from "@/lib/prob/findTeam";
-import { findBannedTerms } from "@/lib/compliance/bannedTerms";
+import { findBannedTerms, findBannedTermsStrict } from "@/lib/compliance/bannedTerms";
 
 export const maxDuration = 60;
 
@@ -60,11 +60,20 @@ export async function GET(req: Request) {
       findBannedTerms(rawResult, "en").length === 0 && findBannedTerms(rawResult, "zh").length === 0
         ? rawResult
         : "";
-    // 分享者署名（用户可控 → 同 result 一样双语雷词闸 fail-closed + 限长）。
-    const rawBy = (searchParams.get("by") ?? "").slice(0, 16);
+    // 分享者署名（用户可控）：① 码点截断到 20（与昵称上限一致，且 Array.from 不拆断代理对，避免 �）；
+    // ② 限到「可渲染字符集」CJK+基本拉丁+数字+安全标点，去 emoji/异体脚本 → 卡上不出豆腐块；
+    // ③ 严格雷词闸 fail-closed（抗全角/零宽/拆分/驼峰绕过）。署名是短身份串，无正文误伤顾虑。
+    const byClean = Array.from(searchParams.get("by") ?? "")
+      .slice(0, 20)
+      .join("")
+      .normalize("NFKC")
+      .replace(/[^一-鿿A-Za-z0-9 _.\-·]/g, "")
+      .trim();
     const by =
-      rawBy && findBannedTerms(rawBy, "en").length === 0 && findBannedTerms(rawBy, "zh").length === 0
-        ? rawBy
+      byClean &&
+      findBannedTermsStrict(byClean, "en").length === 0 &&
+      findBannedTermsStrict(byClean, "zh").length === 0
+        ? byClean
         : "";
     if (before !== null && after !== null) {
       const t = hit.team;

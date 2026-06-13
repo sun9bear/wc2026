@@ -22,7 +22,10 @@ export interface LeagueBoard {
 
 const MEMBER_CAP = 200;
 
-export async function getLeagueBoard(code: string): Promise<LeagueBoard | null> {
+export async function getLeagueBoard(
+  code: string,
+  locale: "zh" | "en" = "zh"
+): Promise<LeagueBoard | null> {
   const db = getServerSupabase();
 
   const { data: lgRow } = await db
@@ -76,7 +79,7 @@ export async function getLeagueBoard(code: string): Promise<LeagueBoard | null> 
       const p = profs.get(uid);
       const a = agg.get(uid) ?? { won: 0, total: 0 };
       return {
-        nickname: p?.nickname || defaultName(uid, "zh"),
+        nickname: p?.nickname || defaultName(uid, locale),
         points: Number(p?.points_balance ?? 0),
         won: a.won,
         total: a.total,

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { genLeagueCode } from "@/lib/league/code";
-import { findBannedTerms } from "@/lib/compliance/bannedTerms";
+import { findBannedTermsStrict } from "@/lib/compliance/bannedTerms";
 
 // 擂台（任务 5）：POST 创建（要求已有昵称）；GET 列出我加入的擂台。
 // 全部 service key 操作，客户端不直读表。
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
   if (len < 2 || len > 24 || /[\n\r\t<>]/.test(name)) {
     return NextResponse.json({ error: "league_name_invalid" }, { status: 400 });
   }
-  if (findBannedTerms(name, "zh").length > 0 || findBannedTerms(name, "en").length > 0) {
+  if (findBannedTermsStrict(name, "zh").length > 0 || findBannedTermsStrict(name, "en").length > 0) {
     return NextResponse.json({ error: "league_name_banned" }, { status: 400 });
   }
 

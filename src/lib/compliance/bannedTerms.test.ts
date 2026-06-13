@@ -1,5 +1,5 @@
 import { it, expect, describe } from "vitest";
-import { findBannedTerms, assertClean } from "./bannedTerms";
+import { findBannedTerms, findBannedTermsStrict, assertClean } from "./bannedTerms";
 
 describe("findBannedTerms", () => {
   it("flags zh gambling terms", () => {
@@ -37,5 +37,32 @@ describe("findBannedTerms", () => {
   });
   it("assertClean passes clean copy", () => {
     expect(() => assertClean("趣味预测 · 冲榜", "zh")).not.toThrow();
+  });
+});
+
+describe("findBannedTermsStrict（用户身份字段抗绕过）", () => {
+  it("命中常规雷词（与基础版一致）", () => {
+    expect(findBannedTermsStrict("bet", "en")).toContain("bet");
+    expect(findBannedTermsStrict("投注", "zh")).toContain("投注");
+  });
+  it("命中归一化绕过：全角 / 空格 / 标点 / 全角空格 / 零宽", () => {
+    expect(findBannedTermsStrict("ｂｅｔ", "en")).toContain("bet"); // 全角拉丁
+    expect(findBannedTermsStrict("b e t", "en")).toContain("bet"); // 空格拆分
+    expect(findBannedTermsStrict("b.e.t", "en")).toContain("bet"); // 标点拆分
+    expect(findBannedTermsStrict("b​e​t", "en")).toContain("bet"); // 零宽插入
+    expect(findBannedTermsStrict("投　注", "zh")).toContain("投注"); // 全角空格
+    expect(findBannedTermsStrict("下​注", "zh")).toContain("下注"); // 零宽插入
+  });
+  it("命中拼接嵌入：驼峰 / 数字粘连（基础词边界版漏掉的）", () => {
+    expect(findBannedTermsStrict("BetKing", "en")).toContain("bet");
+    expect(findBannedTermsStrict("bet365", "en")).toContain("bet");
+    expect(findBannedTermsStrict("CasinoBoss", "en")).toContain("casino");
+    expect(findBannedTermsStrict("OddsGuru", "en")).toContain("odds");
+    // 反证：基础词边界版确实漏掉这些 —— 故身份字段必须用 strict
+    expect(findBannedTerms("BetKing", "en")).toEqual([]);
+  });
+  it("默认趣味名样例保持干净", () => {
+    expect(findBannedTermsStrict("LuckyFox42", "en")).toEqual([]);
+    expect(findBannedTermsStrict("神算预言家42", "zh")).toEqual([]);
   });
 });

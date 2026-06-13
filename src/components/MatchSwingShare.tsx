@@ -78,6 +78,7 @@ export function MatchSwingShare({
           as: "署名",
           rename: "✎ 改名",
           save: "保存",
+          cancel: "取消",
           saveErr: "名字不合法（2–20 字、无敏感词）",
         }
       : {
@@ -89,6 +90,7 @@ export function MatchSwingShare({
           as: "as",
           rename: "✎ Rename",
           save: "Save",
+          cancel: "Cancel",
           saveErr: "Invalid name (2–20 chars, no banned words)",
         };
 
@@ -111,6 +113,7 @@ export function MatchSwingShare({
   }
 
   async function saveName() {
+    if (saving) return; // 防极速双击在 disabled 生效前重复提交
     const v = draft.trim();
     if (!v) return;
     setSaving(true);
@@ -182,12 +185,20 @@ export function MatchSwingShare({
             <input
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") saveName();
+                else if (e.key === "Escape") setEditing(false);
+              }}
               maxLength={20}
               autoFocus
+              aria-label={c.as}
               className="w-32 rounded border border-border bg-surface-2 px-1.5 py-0.5 text-text"
             />
             <button type="button" disabled={saving} onClick={saveName} className="font-semibold text-green">
               {c.save}
+            </button>
+            <button type="button" onClick={() => setEditing(false)} className="text-muted">
+              {c.cancel}
             </button>
           </span>
         ) : (
@@ -195,7 +206,7 @@ export function MatchSwingShare({
             <button
               type="button"
               onClick={() => {
-                setDraft(nickname ?? "");
+                setDraft(nickname ?? effectiveName ?? "");
                 setEditing(true);
               }}
             >

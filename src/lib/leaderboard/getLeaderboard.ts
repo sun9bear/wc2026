@@ -17,7 +17,8 @@ interface ProfileRow {
 }
 
 // 服务端读取（service_role 绕过 RLS），按积分降序排名。
-export async function getLeaderboard(limit = 50): Promise<LeaderRow[]> {
+// locale 决定无昵称用户的趣味默认名语言——英文访客/Googlebot 必须拿英文名（不能漏中文到可索引页）。
+export async function getLeaderboard(locale: "zh" | "en", limit = 50): Promise<LeaderRow[]> {
   const { data } = await getServerSupabase()
     .from("profiles")
     .select("user_id, nickname, points_balance")
@@ -29,7 +30,7 @@ export async function getLeaderboard(limit = 50): Promise<LeaderRow[]> {
     const t = rankTier(Number(r.points_balance));
     return {
       rank: i + 1,
-      name: r.nickname ?? defaultName(r.user_id, "zh"),
+      name: r.nickname ?? defaultName(r.user_id, locale),
       points: Number(r.points_balance),
       tierCode: t.code,
       tierLabel: t.label,

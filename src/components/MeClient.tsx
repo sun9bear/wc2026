@@ -49,6 +49,7 @@ const TXT = {
     nameLabel: "我的名字",
     rename: "改名",
     save: "保存",
+    cancel: "取消",
     nameErr: "名字不合法（2–20 字、无敏感词）",
   },
   en: {
@@ -63,6 +64,7 @@ const TXT = {
     nameLabel: "My name",
     rename: "Rename",
     save: "Save",
+    cancel: "Cancel",
     nameErr: "Invalid name (2–20 chars, no banned words)",
   },
 } as const;
@@ -109,6 +111,7 @@ export function MeClient({ locale }: { locale: Locale }) {
   const effectiveName = nickname ?? (uid ? defaultName(uid, locale) : "");
 
   async function saveName() {
+    if (saving) return; // 防极速双击在 disabled 生效前重复提交
     const v = draft.trim();
     if (!v) return;
     setSaving(true);
@@ -224,8 +227,16 @@ export function MeClient({ locale }: { locale: Locale }) {
                 <input
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") saveName();
+                    else if (e.key === "Escape") {
+                      setEditing(false);
+                      setNameErr(null);
+                    }
+                  }}
                   maxLength={20}
                   autoFocus
+                  aria-label={tx.nameLabel}
                   className="min-w-0 flex-1 rounded border border-border bg-surface px-2 py-1 text-text"
                 />
                 <button
@@ -236,6 +247,16 @@ export function MeClient({ locale }: { locale: Locale }) {
                 >
                   {tx.save}
                 </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditing(false);
+                    setNameErr(null);
+                  }}
+                  className="shrink-0 rounded-md border border-border px-3 py-1 text-xs text-muted"
+                >
+                  {tx.cancel}
+                </button>
               </span>
             ) : (
               <>
@@ -245,7 +266,7 @@ export function MeClient({ locale }: { locale: Locale }) {
                 <button
                   type="button"
                   onClick={() => {
-                    setDraft(nickname ?? "");
+                    setDraft(nickname ?? effectiveName ?? "");
                     setEditing(true);
                   }}
                   className="ml-2 shrink-0 rounded-md border border-border bg-surface px-3 py-1 text-xs text-muted transition hover:border-green hover:text-green"

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getServerSupabase } from "@/lib/supabase/server";
-import { validateNickname } from "@/lib/league/nickname";
+import { validateNickname, canonicalizeNickname } from "@/lib/league/nickname";
 
 // 昵称（任务 5）：擂台社交前提——无昵称满屏 "Player-e4b1" 毫无意义，入擂台前必须先起名。
 // GET 返回当前昵称；POST 设置（2-20 字符，中英雷词双表校验）。
@@ -32,7 +32,8 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "未登录" }, { status: 401 });
 
   const body = (await req.json()) as { nickname?: unknown };
-  const nick = typeof body.nickname === "string" ? body.nickname.trim() : "";
+  // 规范化后存库——确保「存进去的」与「校验过的」逐字一致（防全角/零宽偷渡过闸）。
+  const nick = typeof body.nickname === "string" ? canonicalizeNickname(body.nickname) : "";
   const err = validateNickname(nick);
   if (err) return NextResponse.json({ error: err }, { status: 400 });
 

@@ -47,7 +47,7 @@ export default async function LeagueBoardPage({
   const { code } = await params;
   const locale = await getLocale();
   const t = TXT[locale];
-  const board = await getLeagueBoard(normalizeLeagueCode(code));
+  const board = await getLeagueBoard(normalizeLeagueCode(code), locale);
   if (!board) notFound();
 
   return (

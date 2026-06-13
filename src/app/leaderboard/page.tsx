@@ -19,7 +19,7 @@ const TIER_COLOR: Record<string, string> = {
 export default async function LeaderboardPage() {
   const locale = await getLocale();
   const t = getDict(locale);
-  const rows = await getLeaderboard();
+  const rows = await getLeaderboard(locale);
 
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-8">
@@ -46,7 +46,7 @@ export default async function LeaderboardPage() {
                 {r.rank}
               </span>
               <span className="flex-1 truncate text-sm font-medium">
-                {locale === "en" ? r.name.replace(/^玩家/, "Player ") : r.name}
+                {r.name}
               </span>
               <span className={`text-[10px] ${TIER_COLOR[r.tierCode] ?? "text-muted"}`}>
                 {t.tiers[r.tierCode] ?? r.tierLabel}
