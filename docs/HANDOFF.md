@@ -109,6 +109,23 @@ AI：DeepSeek 只写双语短评（夺冠 Top3 一句话），雷词 fail-closed
 - 队名匹配失败目前静默降级（books=0）→ 加监控/日志
 - og 动态图卡（@vercel/og）：每场概率卡、摆动卡自动生成（分发素材自动化）
 
+### 比分概率功能（6/13 新增，Phase A 已上线生产）
+> 背景：引擎早已算出每场 `topScores`（Dixon-Coles Top-5 比分概率）并持久化进 `prob_match_snapshots.top_scores`（生产 2254+ 行），但前端几乎没展示——/forecast 只露单个 top-1、/match 完全不展示。本次把它展示出来 + 写好实时进球重算的数学内核。
+
+- ✅ **Phase A 已交付（commit 42627ce，已部署生产+线上验证）**：
+  - `src/lib/prob/getMatchScoreline.ts`：读该场最新快照 `top_scores` → Top-5 + 「其他」桶（unstable_cache 600s）。
+  - `src/components/ScoreProbs.tsx`：「最可能的比分 / Most likely results」SSR 模块（概率条，合规中性措辞，零博彩词）。
+  - `/match/[id]`：**仅未开赛(open)** 分支接入比分模块（进行中暂不展示赛前分布以免误导，待实时版替换）。
+  - `/forecast`：单个比分标签 → 展开 Top-3 最可能比分。
+  - 线上验证：6/6 未开赛比赛页渲染模块、forecast Top-3 行、EN 文案、0 雷词。
+- ✅ **实时进球重算数学内核已写好测好**：`src/lib/prob/poisson.ts` 的 `liveScoreline(lh0,la0,hNow,aNow,minutesPlayed)`——剩余时间内进球 ~ 泊松(λ×剩余/90)+DC 修正，叠加当前比分得最终比分分布；6 单测过（归一/领先升/时间衰减/终场锁定/边界）。**纯函数，等数据源接入即可用。**
+- ⏳ **Phase B 实时进球更新（卡在数据源——需用户动作）**：
+  1. **【需用户做】注册 API-Football 免费 key**（api-sports.io，免费 100 req/天）——唯一同时给「当前比分+比赛分钟」的合规源。football-data 免费档只标 FINISHED 且滞后数小时，The Odds API `/scores` 无分钟字段，均喂不动 `liveScoreline`。
+  2. 接：cron-job.org 心跳 → 重算路由（调 API-Football + `liveScoreline`）→ 新建 `live_match_state` 表（走 Supabase 隧道 + 显式 GRANT）→ Supabase Realtime 推前端 → /match 页 LIVE 状态（替换 open-only 限制）。
+  3. **上线前必做**：用一场真实直播实测免费档 live 覆盖（有源头称免费档无 live data，必须验证）；免费 100/天≈仅够单场重点赛，并发要 $19/月 Pro。
+- ⏳ **赛后「比分战报卡」（高分享回报，未做）**：每场结算后用赛前快照算「本场结果赛前是第 N 可能 X% / 你押中模型只给 X% 的冷门」，复用 `MatchSwingShare`+`/api/og`+`swingShare.ts` 管线（新增一个 mode）。比摆动卡触发频率高得多（每场都有，不限爆冷）。
+- 市场对标结论（8-agent 调研+对抗验证）：完整「比分概率网格」公开互联网上几乎只存在于博彩 correct-score 市场；非博彩消费产品要么不做要么只给单个最可能比分（Forebet/Opta），FotMob/Sofascore 只有 1X2/动量。**干净去博彩化的 Top-5 比分分布是真空白**。实时胜率(1X2)是大路货但全靠付费实时源，且业界视其为「博彩入口」——对反博彩+AdSense 定位是合规负债，故只做「比分分布」不做实时胜率 ticker。
+
 ## 六、注意事项 / 已知坑（按踩坑成本排序）
 
 1. **GitHub 账号 sun9bear 被封**：不能 push（所有代码只在本机！建议尽快网盘/移动硬盘备份仓库目录）、不能 OAuth 登 Supabase。git ≠ 生产事实源；**部署唯一路径 = `npx vercel deploy --prod --yes`**（CLI 已登录 sun9bear）。Supabase 账号纯 GitHub 绑定，密码重置邮件明确说只能走 GitHub 登录。
