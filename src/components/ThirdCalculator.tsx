@@ -33,6 +33,7 @@ const TXT = {
     h: "主胜",
     d: "平",
     a: "客胜",
+    locked: "已完赛锁定为真实比分，仅剩余比赛可改",
   },
   en: {
     intro: "Pick each remaining group match and watch all 12 tables and the third-place race update live.",
@@ -45,6 +46,7 @@ const TXT = {
     h: "Home",
     d: "Draw",
     a: "Away",
+    locked: "Finished matches are locked at the real score; edit only remaining picks",
   },
 } as const;
 
@@ -109,7 +111,8 @@ export function ThirdCalculator({
   return (
     <div>
       <p className="mb-1 text-xs text-muted">{t.intro}</p>
-      <p className="mb-4 text-[10px] text-muted">{t.convention}</p>
+      <p className="mb-1 text-[10px] text-muted">{t.convention}</p>
+      <p className="mb-4 text-[10px] text-muted">🔒 {t.locked}</p>
 
       <div className="space-y-3">
         {groups
@@ -129,6 +132,38 @@ export function ThirdCalculator({
                     {label(teamById.get(table[1]?.teamId))}
                   </span>
                 </div>
+                {played
+                  .filter((m) => g.teams.some((x) => x.id === m.homeId))
+                  .map((m, i) => {
+                    const out: "h" | "d" | "a" =
+                      m.homeGoals > m.awayGoals ? "h" : m.homeGoals < m.awayGoals ? "a" : "d";
+                    return (
+                      <div
+                        key={`p-${m.homeId}-${m.awayId}-${i}`}
+                        className="mb-1.5 flex items-center gap-2 text-xs"
+                      >
+                        <span className="w-20 shrink-0 truncate text-right">
+                          {label(teamById.get(m.homeId))}
+                        </span>
+                        <div className="flex flex-1 gap-1">
+                          {(["h", "d", "a"] as const).map((opt) => (
+                            <div
+                              key={opt}
+                              title={t.locked}
+                              className={`flex-1 cursor-default rounded-sm border py-1 text-center text-[11px] ${
+                                out === opt
+                                  ? "border-green/60 bg-green/10 font-semibold text-green"
+                                  : "border-border/50 bg-surface-2/40 text-muted/40"
+                              }`}
+                            >
+                              {out === opt ? `🔒 ${m.homeGoals}-${m.awayGoals}` : t[opt]}
+                            </div>
+                          ))}
+                        </div>
+                        <span className="w-20 shrink-0 truncate">{label(teamById.get(m.awayId))}</span>
+                      </div>
+                    );
+                  })}
                 {remaining
                   .filter((m) => g.teams.some((x) => x.id === m.homeId))
                   .map((m) => (
