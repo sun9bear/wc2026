@@ -1,6 +1,8 @@
 # P2-2：多语种扩展（es / pt / de / fr）— 新会话交接 spec
 
-> 状态：**未开始（spec）**｜分支建议：`feat/i18n-romance-germanic`｜产出 2026-06-14
+> 状态：**进行中（staged，未激活）**｜分支：`feat/legal-pages`｜产出 2026-06-14
+> 已落地并提交（全绿、行为零变化、未对用户暴露）：**A0** 工单（§12）、**A1** 路由配置驱动重构（locales.ts，commit d86e1be）、**A2** 4 语 UI 字典（satisfies Dict，未挂 dicts，commit 7cd7c78）、**A6 国名表** 192 条（NATIONS 必填字段，commit 86180e7）。
+> 剩余：**A3**（各页 COPY，含 about/rules + 法务页 privacy/disclaimer 需母语/法务校对）、**A4**（85 裸三元）、**A5**（canonical/sitemap/layout META）、**A6 余**（签名加宽 + 赛段/组名）、**A7**（合规扫描 + 部署）。这些多需「加宽 Locale」一次性激活（不可再增量绿），建议新会话冷启动集中做。
 > 用途：新会话凭本文件冷启动接手「把站点从中英双语扩成 6 语种（+西/葡/德/法）」。
 > 节奏（用户已定）：**先 A 后 B、四语一起上**。A=外壳本地化（UI+SEO 落地页全量翻译，AI 比赛短文新语种回落英文）；B=给 4 个新语种各自生成入库的 AI 比赛内容。
 > 前置必读：`docs/P2-1-i18n-hreflang-HANDOFF.md`（本任务是它结尾预留的「小语种扩展」，`wc_country` cookie 已为此预埋）、`docs/SEO-GEO-PLAN.md`、Claude 记忆文件。
