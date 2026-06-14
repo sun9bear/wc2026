@@ -25,7 +25,7 @@ const fmtP = (x: number) => {
 const COPY = {
   zh: {
     back: "← 返回",
-    title: (nm: string) => `${nm}出线 & 夺冠概率 · 2026 世界杯`,
+    title: (nm: string) => `${nm}还能出线吗？出线 & 夺冠概率 · 2026 世界杯`,
     desc: (nm: string, adv: string, champ: string) =>
       `${nm}在 2026 世界杯的实时出线概率 ${adv}%、夺冠概率 ${champ}%（万次蒙特卡洛模拟），含模型实力评分、最近战绩与下一场。免费、无需注册。`,
     advance: "出线概率",
@@ -51,7 +51,7 @@ const COPY = {
   },
   en: {
     back: "← Back",
-    title: (nm: string) => `${nm} — chance to advance & win · World Cup 2026`,
+    title: (nm: string) => `Can ${nm} still advance? · World Cup 2026`,
     desc: (nm: string, adv: string, champ: string) =>
       `${nm}'s live World Cup 2026 chance to advance ${adv}% and to win ${champ}% (10,000 Monte Carlo sims), with model strength rating, recent form and next match. Free, no sign-up.`,
     advance: "Chance to advance",

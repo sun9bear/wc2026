@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { runSettlement } from "@/lib/settlement/runSettlement";
 import { generateRecap, generateRecapEn } from "@/lib/ai/content";
 import { upsertContent } from "@/lib/ai/store";
 import { teamZh } from "@/lib/football/teams";
+import { pingIndexNow } from "@/lib/seo/indexnow";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -77,6 +78,12 @@ export async function GET(req: NextRequest) {
     } catch {
       /* 忽略 AI 失败/超时（GEMINI_API_KEY 缺失同样静默，结算不受影响） */
     }
+  }
+
+  // P1-2 IndexNow：仅当本轮有新结算时，响应后 fire-and-forget ping Bing/Yandex（绝不含 Google）。
+  // 守 newlySettled.length>0 即天然去抖；pingIndexNow 全程 fail-soft，不影响已落库结算。
+  if (newlySettled.length > 0) {
+    after(() => pingIndexNow(sb, newlySettled));
   }
 
   return NextResponse.json({

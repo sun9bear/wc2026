@@ -16,6 +16,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/leaderboard`, changeFrequency: "hourly", priority: 0.8 },
     { url: `${BASE}/watch`, changeFrequency: "weekly", priority: 0.7 },
     { url: `${BASE}/forecast`, changeFrequency: "hourly", priority: 0.9 },
+    { url: `${BASE}/forecast/best-thirds`, changeFrequency: "hourly", priority: 0.85 },
     { url: `${BASE}/calculator`, changeFrequency: "daily", priority: 0.85 },
     { url: `${BASE}/rules`, changeFrequency: "monthly", priority: 0.8, lastModified: "2026-06-14" },
     // 12 个按组着陆页（脉冲式搜索："Group A who advances" / "X 组出线形势"）
@@ -33,7 +34,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const { data: teamData } = await supabase.from("teams").select("id, name, grp");
     // 静态页注入真实 lastModified：home/forecast=全站最近结算；group=该组最近结算（无则不带）。
     const statics: MetadataRoute.Sitemap = staticBase.map((e) => {
-      if (e.url === `${BASE}/` || e.url === `${BASE}/forecast`) {
+      if (
+        e.url === `${BASE}/` ||
+        e.url === `${BASE}/forecast` ||
+        e.url === `${BASE}/forecast/best-thirds`
+      ) {
         return idx.all ? { ...e, lastModified: idx.all } : e;
       }
       const gm = e.url.match(/\/calculator\/group\/([a-l])$/);

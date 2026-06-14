@@ -33,6 +33,7 @@ const COPY = {
     swingEmpty: "概率快照追踪中，攒够 2–3 天数据后显示走势。",
     predict: "预测 →",
     likely: "最可能比分",
+    thirdsMore: "查看最佳第三名完整排名与 32 强对阵 →",
   },
   en: {
     title: "World Cup 2026 Advancement & Title Probabilities (Live Model)",
@@ -56,6 +57,7 @@ const COPY = {
     swingEmpty: "Tracking snapshots — trends appear once 2–3 days of data build up.",
     predict: "Predict →",
     likely: "Likely scores",
+    thirdsMore: "Full best third-placed ranking & Round-of-32 matchups →",
   },
 } as const;
 
@@ -329,6 +331,12 @@ export default async function ForecastPage() {
           className="mt-3 inline-block rounded-md border border-green/50 px-3 py-2 text-sm font-semibold text-green"
         >
           {c.calculatorCta}
+        </Link>
+        <Link
+          href="/forecast/best-thirds"
+          className="mt-2 block text-xs text-muted transition hover:text-green"
+        >
+          {c.thirdsMore}
         </Link>
       </section>
 

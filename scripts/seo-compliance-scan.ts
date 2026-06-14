@@ -11,6 +11,7 @@ const BASE = (process.argv[2] || process.env.SCAN_BASE || "https://www.wc2026.co
 const STATIC_PATHS = [
   "/",
   "/forecast",
+  "/forecast/best-thirds",
   "/calculator",
   "/calculator/group/a",
   "/rules",

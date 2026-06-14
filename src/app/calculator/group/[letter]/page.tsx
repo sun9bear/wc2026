@@ -18,7 +18,7 @@ const LETTERS = "abcdefghijkl".split("");
 
 const COPY = {
   zh: {
-    title: (x: string) => `2026 世界杯 ${x} 组出线形势：积分榜 + 第三名晋级概率`,
+    title: (x: string) => `${x} 组谁能出线？2026 世界杯 ${x} 组积分榜 + 晋级概率`,
     desc: (x: string) =>
       `${x} 组实时积分榜、各队出线概率（万次蒙特卡洛模拟）与剩余赛程。用出线计算器改任意赛果，立即看 ${x} 组与最佳第三名榜变化。`,
     h1: (x: string) => `${x} 组出线形势`,
@@ -34,7 +34,7 @@ const COPY = {
     back: "← 返回",
   },
   en: {
-    title: (x: string) => `World Cup 2026 Group ${x} standings & qualification scenarios`,
+    title: (x: string) => `Group ${x}: who advances? — World Cup 2026 standings`,
     desc: (x: string) =>
       `Live Group ${x} table, every team's chance to advance (10,000 Monte Carlo simulations) and remaining fixtures. Flip any result in the scenario calculator and watch the best-thirds race update.`,
     h1: (x: string) => `Group ${x} — who advances?`,
