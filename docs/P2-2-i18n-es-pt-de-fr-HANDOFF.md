@@ -2,7 +2,7 @@
 
 > 状态：**进行中（staged，未激活）**｜分支：`feat/legal-pages`｜产出 2026-06-14
 > 已落地并提交（全绿、行为零变化、未对用户暴露）：**A0** 工单（§12）、**A1** 路由配置驱动重构（locales.ts，commit d86e1be）、**A2** 4 语 UI 字典（satisfies Dict，未挂 dicts，commit 7cd7c78）、**A6 国名表** 192 条（NATIONS 必填字段，commit 86180e7）、**A3 全部 6 个 COPY 页**（rules / calculator / forecast / group[letter] / best-thirds / team[slug]）4 语 COPY（staged，「纯增量绿」部分已 100% 清完）。
-> 剩余：**A3**（各页 COPY，含 about/rules + 法务页 privacy/disclaimer 需母语/法务校对）、**A4**（85 裸三元）、**A5**（canonical/sitemap/layout META）、**A6 余**（签名加宽 + 赛段/组名）、**A7**（合规扫描 + 部署）。这些多需「加宽 Locale」一次性激活（不可再增量绿），建议新会话冷启动集中做。
+> 剩余：**A3 余**（仅 about 需重构 + 法务页 privacy/disclaimer 需母语/法务校对——6 个增量绿 COPY 页已封口）、**A4**（85 裸三元）、**A5**（canonical/sitemap/layout META）、**A6 余**（签名加宽 + 赛段/组名 + OG 卡 + LocalTime）、**A7**（合规扫描 + 部署）。这些多需「加宽 Locale」一次性激活（不可再增量绿），建议新会话冷启动集中做。**完成度快照见 §5 末尾「A 完成度快照」。**
 > 用途：新会话凭本文件冷启动接手「把站点从中英双语扩成 6 语种（+西/葡/德/法）」。
 > 节奏（用户已定）：**先 A 后 B、四语一起上**。A=外壳本地化（UI+SEO 落地页全量翻译，AI 比赛短文新语种回落英文）；B=给 4 个新语种各自生成入库的 AI 比赛内容。
 > 前置必读：`docs/P2-1-i18n-hreflang-HANDOFF.md`（本任务是它结尾预留的「小语种扩展」，`wc_country` cookie 已为此预埋）、`docs/SEO-GEO-PLAN.md`、Claude 记忆文件。
@@ -145,7 +145,25 @@
 - `scripts/seo-compliance-scan.ts`：扫描路径扩到 `/es /pt /de /fr` 真实树（沿用 P2-1 扫真实 per-locale URL 的方式）。**对 4 个新语种 0 雷词 = 部署阻断闸。**
 - 构建验证 → 部署 → 抽查（见 §8/§9）。
 
-## 6. Phase B 实施分步（AI 内容本地化 ×4 语；A 干净上线后再做）
+### A 完成度快照（截至 2026-06-14｜分支 feat/legal-pages）
+
+> 给激活会话冷启动用：一眼看清 A 的进度与剩余闸口。**当前一切均为 staged——`Locale` 仍 `zh|en`，对用户零可见、未部署。** 🟢=可独立提交的增量已做完｜🟡=部分（基建/探针就绪，激活时补）｜🔴=未动。
+
+| 步骤 | 状态 | 已落地（commit） | 剩余（多需「先加宽 Locale」或「先重构/先审校」） |
+|---|---|---|---|
+| A0 加宽当工头 | 🟡 探针 | 80 错/26 文件工单（§12），已还原 | 正式加宽并修到 tsc 净（=激活动作本身） |
+| A1 路由/解析泛化 | 🟡 基建 | locales.ts/index/server/proxy 重构 + 11 测试（`d86e1be`） | Locale 加 4 值、server Accept-Lang、proxy matcher 扩正则、**LangToggle→多语下拉** |
+| A2 UI 字典 ×4 | 🟡 文件就绪 | es/pt/de/fr.ts ~95 键 `satisfies Dict`（`7cd7c78`） | 挂进 `dicts` + 母语校对 |
+| A3 就地 COPY | 🟢 增量绿封口 | **6 页** rules(`b34b08a`)/calculator(`c5d771b`)/forecast(`82268ac`)/group+best-thirds(`71082c9`)/team(`69560cc`) | **about**（硬编码 JSX，需先重构正文）、**privacy/disclaimer**（法务长文，需法务/母语审）、排查其它「整段 locale 分支」页 |
+| A4 裸三元清剿（85/31） | 🔴 未动 | — | og route 17 / match 14 / team 8 / share 库 **+ 6 staged 页里特意留下的全部三元**（队名/JsonLd/GEO 答案段/OG）。需先加宽 |
+| A5 canonical/sitemap/META | 🔴 未动 | — | canonical languages 补 4 码、sitemap 出 6 条、layout META 补 4 + alternateLocale、indexnow/llms.txt |
+| A6 teams/LocalTime/OG | 🟡 仅国名表 | NATIONS 192 国名（`86180e7`） | teamName/stageName/groupName **签名加宽** + 赛段/组名 4 语、LocalTime 日期映射、**og/route.tsx 17 三元 + 德语溢出 QA**、swingShare/matchCard |
+| A7 合规扫描 + 部署 | 🔴 未动 | — | 扫描器扩 /es /pt /de /fr 真实树、build→部署→抽查、多 agent 对抗评审 |
+
+**激活大爆炸（剩余真正闸口）**：加宽 `Locale`→6 值会一次性亮出 §12 的 ~80 个 tsc 错误，逐一修绿 + 把 A1/A2「激活时补」全打开（dicts/server/proxy matcher/LangToggle）+ A4/A5/A6余 + A7 部署验收。**建议新会话冷启动集中做**（成本与上下文考量）。
+**Phase B**：未启动（§4④ 已决策暂缓，A 干净上线后再定）。
+
+
 
 > **Phase B 状态：暂缓启动（§4④ 用户已定）**——先把 Phase A 全量干净上线、观察 es/pt/de/fr 收录效果，再决定 B 是否启动及怎么排（四语同步 / 先西葡后德法）。Phase B 才是把**合规风险与 token 成本**拉满的环节，**A 不依赖 B**。以下为 B 启动时的实施 spec，留作背景。
 
