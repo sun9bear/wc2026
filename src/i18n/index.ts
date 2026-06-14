@@ -1,8 +1,11 @@
 import { zh } from "./messages/zh";
 import { en } from "./messages/en";
+import type { Locale } from "./locales";
 
-// 语言与文案字典（通用，可在服务端/客户端引入；不含 next/headers）。
-export type Locale = "zh" | "en";
+// locale 配置/工具集中在叶子模块 ./locales（无字典依赖，中间件 proxy.ts 可安全引入）。
+// 此处重新导出，保持 `@/i18n` 为全站统一入口（既有 39 处 import 路径不变）。
+export type { Locale } from "./locales";
+export { DEFAULT_LOCALE, LOCALES, PREFIXED_LOCALES, isLocale, localeHref, stripLocale } from "./locales";
 
 export interface Dict {
   appName: string;
@@ -97,24 +100,9 @@ export interface Dict {
   ach: Record<string, { label: string; desc: string }>;
 }
 
-// Record<Locale, Dict> 强制 zh / en 两套文案结构完整一致（缺键即编译报错）。
+// Record<Locale, Dict> 强制各 locale 文案结构完整一致（缺键即编译报错）。
 const dicts: Record<Locale, Dict> = { zh, en };
 
 export function getDict(locale: Locale): Dict {
   return dicts[locale] ?? dicts.zh;
-}
-
-// 站内链接 locale 化：en 留根（无前缀），zh 加 /zh 前缀。path 必须以 "/" 开头且为 locale-无关裸路径。
-// 唯一前缀真理点——页面/组件内链、JSON-LD、OG、sitemap 全部经此构造，避免散落的字符串拼接。
-export function localeHref(locale: Locale, path: string): string {
-  if (locale !== "zh") return path;
-  return path === "/" ? "/zh" : `/zh${path}`;
-}
-
-// 剥掉 /zh 前缀得到 locale-无关裸路径（"/zh/forecast"→"/forecast"，"/zh"→"/"）。
-// 供 LangToggle 等已知当前 URL 的客户端在切换 locale 时重建链接。
-export function stripLocale(pathname: string): string {
-  if (pathname === "/zh") return "/";
-  if (pathname.startsWith("/zh/")) return pathname.slice(3);
-  return pathname;
 }
