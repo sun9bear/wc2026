@@ -363,6 +363,141 @@ export async function GET(req: Request) {
     }
   }
 
+  // 最佳第三名 OC 数据图（mode=thirds）：12 组第三名横排 + 前 8 晋级分数线。
+  // 数据 = getForecast().thirds（已按 2026 判据 pts→gd→gf 排名）；出线概率关联小组表。
+  // 纯数据图、零博彩词——给 Reddit r/worldcup / 国家队 sub 的 OC 素材；6/22-27 末轮峰值需求。
+  if (searchParams.get("mode") === "thirds" && data.thirds.length) {
+    const thirds = data.thirds;
+    const pAdvById = new Map<string, number>(
+      data.groups.flatMap((g) => g.table).map((t) => [t.id, t.pAdvance] as const)
+    );
+    let tfonts: { name: string; data: ArrayBuffer; weight: 700 }[] = [];
+    if (locale === "zh") {
+      const namesZh = thirds.map((t) => t.zh).join("");
+      const f = await loadZhFont(
+        `${namesZh}世界杯最佳第三名前晋级强出线分数次蒙特卡洛模拟更新于预测仅供娱乐扫码自己算0123456789.%·`
+      );
+      if (f) tfonts = [{ name: "NotoSansSC", data: f, weight: 700 }];
+      else locale = "en";
+    }
+    const cut = thirds.find((t) => t.rank === 8) ?? thirds[thirds.length - 1];
+    const TL =
+      locale === "zh"
+        ? {
+            kicker: "世界杯 2026 · 最佳第三名",
+            sub: `前 8 晋级 32 强 · 出线分数线 ${cut.pts} 分`,
+            ptsUnit: "分",
+            sims: "10,000 次蒙特卡洛模拟",
+            updated: `更新于 ${updated} UTC`,
+            disc: "预测仅供娱乐",
+            scan: "扫码自己算",
+          }
+        : {
+            kicker: "World Cup 2026 · Best 3rd-placed",
+            sub: `Top 8 advance to R32 · cut-off ${cut.pts} pts`,
+            ptsUnit: "pts",
+            sims: "10,000 Monte Carlo simulations",
+            updated: `Updated ${updated} UTC`,
+            disc: "For entertainment only",
+            scan: "scan to run it",
+          };
+    const qr = locale === "zh" && qrFlag !== "0" ? await qrDataUrl(uPath ?? "/forecast/best-thirds") : null;
+    const tbase: React.CSSProperties = {
+      width: "100%",
+      height: "100%",
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "space-between",
+      backgroundColor: "#0A0E13",
+      color: "#E8EDF2",
+      padding: 64,
+      fontFamily: tfonts.length ? "NotoSansSC" : "sans-serif",
+    };
+    return new ImageResponse(
+      (
+        <div style={tbase}>
+          {/* 顶部：kicker + 品牌 + 答案副标 */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{ display: "flex", width: 14, height: 14, borderRadius: 7, backgroundColor: "#1BE27F" }} />
+                <div style={{ display: "flex", fontSize: 28, color: "#8A97A6" }}>{TL.kicker}</div>
+              </div>
+              <div style={{ display: "flex", fontSize: 30, fontWeight: 700, color: "#1BE27F" }}>wc2026.cool</div>
+            </div>
+            <div style={{ display: "flex", fontSize: 36, fontWeight: 700, color: "#E8EDF2" }}>{TL.sub}</div>
+          </div>
+
+          {/* 12 组第三名横排 */}
+          <div style={{ display: "flex", flexDirection: "column", flexGrow: 1, justifyContent: "center", marginTop: 8 }}>
+            {thirds.map((t) => {
+              const pa = pAdvById.get(t.id);
+              const top8 = t.rank <= 8;
+              const nm = locale === "zh" ? t.zh : t.name;
+              return (
+                <div
+                  key={t.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    height: 74,
+                    opacity: top8 ? 1 : 0.45,
+                    borderBottom:
+                      t.rank === 8 ? "3px dashed rgba(27,226,127,0.7)" : "1px solid #161C24",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+                    <div style={{ display: "flex", width: 40, justifyContent: "flex-end", fontSize: 30, fontWeight: 700, color: top8 ? "#1BE27F" : "#8A97A6" }}>
+                      {t.rank}
+                    </div>
+                    {t.flag ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={t.flag.replace("/w80/", "/w160/")} width={54} height={36} style={{ borderRadius: 5, objectFit: "cover" }} />
+                    ) : (
+                      <div style={{ display: "flex", width: 54, height: 36, borderRadius: 5, backgroundColor: "#1B232D" }} />
+                    )}
+                    <div style={{ display: "flex", fontSize: 34, fontWeight: 700, color: "#E8EDF2" }}>{nm}</div>
+                    <div style={{ display: "flex", fontSize: 22, color: "#5a6472" }}>{t.letter}</div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+                    <div style={{ display: "flex", fontSize: 24, color: "#8A97A6" }}>
+                      {`${t.pts}${TL.ptsUnit} GD${t.gd >= 0 ? "+" : ""}${t.gd}`}
+                    </div>
+                    {data.simOk && typeof pa === "number" ? (
+                      <div style={{ display: "flex", width: 100, justifyContent: "flex-end", fontSize: 30, fontWeight: 700, color: "#1BE27F" }}>
+                        {Math.round(pa * 100)}%
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* 底部：模拟/更新 + 免责 + 二维码 */}
+          <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 24, marginTop: 8 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, color: "#5a6472" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", width: 560, fontSize: 23 }}>
+                <div style={{ display: "flex" }}>{TL.sims}</div>
+                <div style={{ display: "flex" }}>{TL.updated}</div>
+              </div>
+              <div style={{ display: "flex", fontSize: 21 }}>{`wc2026.cool · ${TL.disc}`}</div>
+            </div>
+            {qr ? (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={qr} width={120} height={120} style={{ borderRadius: 10 }} />
+                <div style={{ display: "flex", fontSize: 20, color: "#8A97A6" }}>{TL.scan}</div>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ),
+      { width: 1080, height: 1440, fonts: tfonts.length ? tfonts : undefined }
+    );
+  }
+
   // 文案
   let fonts: { name: string; data: ArrayBuffer; weight: 700 }[] = [];
   const zhText = hit
