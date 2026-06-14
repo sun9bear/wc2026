@@ -51,6 +51,72 @@ const COPY = {
       `As of the 2026 World Cup, ${leader} leads Group ${x} with a ${p} chance to advance to the Round of 32; flip any remaining result below to see how the group and best-third race change.`,
     back: "← Back",
   },
+  // P2-2 staged：es/pt/de/fr 暂不被渲染（locale 仍 zh|en），激活加宽 Locale 后 COPY[locale] 自动启用。
+  // 注：本页 name() 队名助手 / ItemList JsonLd / "出线规则详解"链接仍是 locale 三元（A4 清剿项），激活前 es/pt/de/fr 先回退英文分支（队名显英文名）。
+  es: {
+    title: (x: string) => `Grupo ${x}: ¿quién se clasifica? — Clasificación Mundial 2026`,
+    desc: (x: string) =>
+      `Tabla en vivo del Grupo ${x}, la probabilidad de cada selección de avanzar (10.000 simulaciones de Montecarlo) y los partidos restantes. Cambia cualquier resultado en la calculadora de escenarios y observa cómo cambia la carrera por los mejores terceros.`,
+    h1: (x: string) => `Grupo ${x} — ¿quién se clasifica?`,
+    table: "Clasificación en vivo",
+    cols: ["#", "Equipo", "PJ", "Pts", "DG", "Avance"],
+    fixtures: "Partidos restantes",
+    cta: (name: string) => `¿Puede ${name} todavía clasificar? Descúbrelo →`,
+    tool: "🧮 Abre la calculadora de escenarios (cambia cualquier resultado, recálculo en vivo)",
+    note: "Las probabilidades de avance provienen de 10.000 simulaciones de Montecarlo (datos públicos de predicción + mezcla Elo), actualizadas cada hora.",
+    latest: "Último resultado",
+    lead: (x: string, leader: string, p: string) =>
+      `Mundial 2026, Grupo ${x}: ${leader} encabeza con un ${p} de probabilidad de avanzar a los dieciseisavos; cambia cualquier resultado pendiente abajo para ver cómo cambia el grupo y la carrera por los mejores terceros.`,
+    back: "← Atrás",
+  },
+  pt: {
+    title: (x: string) => `Grupo ${x}: quem se classifica? — Classificação Copa 2026`,
+    desc: (x: string) =>
+      `Tabela ao vivo do Grupo ${x}, a chance de cada seleção avançar (10.000 simulações de Monte Carlo) e os jogos restantes. Mude qualquer resultado na calculadora de cenários e veja como muda a disputa pelos melhores terceiros.`,
+    h1: (x: string) => `Grupo ${x} — quem se classifica?`,
+    table: "Classificação ao vivo",
+    cols: ["#", "Seleção", "J", "Pts", "SG", "Avanço"],
+    fixtures: "Jogos restantes",
+    cta: (name: string) => `${name} ainda pode se classificar? Descubra →`,
+    tool: "🧮 Abra a calculadora de cenários (mude qualquer resultado, recálculo ao vivo)",
+    note: "As chances de avanço vêm de 10.000 simulações de Monte Carlo (dados públicos de previsão + mistura Elo), atualizadas a cada hora.",
+    latest: "Último resultado",
+    lead: (x: string, leader: string, p: string) =>
+      `Copa 2026, Grupo ${x}: ${leader} lidera com ${p} de chance de avançar aos 16-avos; mude qualquer resultado pendente abaixo para ver como muda o grupo e a disputa pelos melhores terceiros.`,
+    back: "← Voltar",
+  },
+  de: {
+    title: (x: string) => `Gruppe ${x}: Wer kommt weiter? — WM-2026-Tabelle`,
+    desc: (x: string) =>
+      `Live-Tabelle der Gruppe ${x}, die Chance jeder Mannschaft auf das Weiterkommen (10.000 Monte-Carlo-Simulationen) und die ausstehenden Spiele. Ändere ein beliebiges Ergebnis im Szenario-Rechner und beobachte, wie sich das Rennen um die besten Gruppendritten verändert.`,
+    h1: (x: string) => `Gruppe ${x} — wer kommt weiter?`,
+    table: "Live-Tabelle",
+    cols: ["#", "Team", "Sp", "Pkt", "TD", "Chance"],
+    fixtures: "Ausstehende Spiele",
+    cta: (name: string) => `Kann ${name} noch weiterkommen? Finde es heraus →`,
+    tool: "🧮 Szenario-Rechner öffnen (beliebiges Ergebnis ändern, Live-Neuberechnung)",
+    note: "Die Weiterkommen-Chancen stammen aus 10.000 Monte-Carlo-Simulationen (öffentliche Prognosedaten + Elo-Mix), stündlich aktualisiert.",
+    latest: "Letztes Ergebnis",
+    lead: (x: string, leader: string, p: string) =>
+      `WM 2026, Gruppe ${x}: ${leader} führt mit ${p} Chance auf das Weiterkommen ins Sechzehntelfinale; ändere unten ein beliebiges offenes Ergebnis, um zu sehen, wie sich die Gruppe und das Rennen um die besten Dritten verändern.`,
+    back: "← Zurück",
+  },
+  fr: {
+    title: (x: string) => `Groupe ${x} : qui se qualifie ? — Classement Mondial 2026`,
+    desc: (x: string) =>
+      `Classement en direct du Groupe ${x}, la probabilité de chaque sélection de se qualifier (10 000 simulations de Monte-Carlo) et les matchs restants. Modifie n'importe quel résultat dans le calculateur de scénarios et observe l'évolution de la course aux meilleurs troisièmes.`,
+    h1: (x: string) => `Groupe ${x} — qui se qualifie ?`,
+    table: "Classement en direct",
+    cols: ["#", "Équipe", "J", "Pts", "Diff", "Qualif."],
+    fixtures: "Matchs restants",
+    cta: (name: string) => `${name} peut-il encore se qualifier ? Découvre-le →`,
+    tool: "🧮 Ouvre le calculateur de scénarios (modifie n'importe quel résultat, recalcul en direct)",
+    note: "Les probabilités de qualification proviennent de 10 000 simulations de Monte-Carlo (données publiques de prévision + mélange Elo), actualisées chaque heure.",
+    latest: "Dernier résultat",
+    lead: (x: string, leader: string, p: string) =>
+      `Mondial 2026, Groupe ${x} : ${leader} est en tête avec ${p} de probabilité de se qualifier pour les seizièmes ; modifie n'importe quel résultat à venir ci-dessous pour voir comment évoluent le groupe et la course aux meilleurs troisièmes.`,
+    back: "← Retour",
+  },
 } as const;
 
 export function generateStaticParams() {

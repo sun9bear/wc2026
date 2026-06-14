@@ -69,6 +69,112 @@ const COPY = {
     na: "—",
     naMsg: "数据暂不可用，请稍后再试 / Data temporarily unavailable.",
   },
+  // P2-2 staged：es/pt/de/fr 暂不被渲染（locale 仍 zh|en），激活加宽 Locale 后 COPY[locale] 自动启用。
+  // 注：本页 GEO 答案段 / ItemList JsonLd / mapH 对阵行（"组第一 vs"）仍是 locale 三元（A4 清剿项），激活前 es/pt/de/fr 先回退英文分支。
+  es: {
+    title: "Mejores terceros del Mundial 2026: quiénes se clasifican (los 8 primeros)",
+    description:
+      "Ranking en vivo de los 12 equipos terceros — ordenados por los criterios de desempate oficiales de 2026 (puntos / diferencia de goles / goles); los 8 primeros avanzan a los dieciseisavos. Incluye el mapa del Anexo C de la FIFA que asigna cada tercero a un primero de grupo, actualizado tras cada resultado.",
+    h1: "Mejores terceros",
+    updated: "Actualizado",
+    intro:
+      "Cada uno de los 12 grupos tiene un equipo tercero; los 8 mejores avanzan a los dieciseisavos. Se comparan solo por puntos, diferencia de goles y goles marcados (entre grupos, sin enfrentamiento directo).",
+    rankH: "Los 12 terceros clasificados (los 8 primeros avanzan)",
+    rankNote: "Clasificados según los resultados reales hasta ahora; bajo la línea discontinua = eliminados por ahora. Toca un equipo para ver su grupo.",
+    advanceLabel: "Probabilidad de avanzar",
+    mapH: "Si la clasificación actual se mantiene: cruces de dieciseisavos de los terceros",
+    mapNote:
+      "Los 8 terceros clasificados se asignan a 8 primeros de grupo mediante la tabla de 495 combinaciones del Anexo C de la FIFA, de modo que un tercero nunca se enfrenta al primero de su propio grupo.",
+    ctaH: "¿Quieres ver cómo tu equipo puede colarse entre los 8 primeros?",
+    ctaBody: "Cambia cualquier resultado pendiente en la calculadora de escenarios y observa en vivo la carrera por los mejores terceros.",
+    calc: "🧮 Abre la calculadora de escenarios de terceros →",
+    forecast: "📊 Todas las probabilidades de clasificación y título →",
+    rules: "📖 Formato y reglas de clasificación del Mundial 2026 →",
+    back: "← Atrás",
+    method:
+      "Clasificados según los criterios de desempate oficiales de 2026 (puntos → diferencia de goles → goles → juego limpio → ranking FIFA → sorteo); los datos de tarjetas de juego limpio no están disponibles, por lo que ese paso se omite, y el paso del ranking FIFA se aproxima con la valoración de fuerza del modelo (Elo), con un sorteo aleatorio como último recurso. Las probabilidades de avance provienen de una simulación de Montecarlo de 10.000 corridas.",
+    fun: "Todas las probabilidades son solo para entretenimiento.",
+    na: "—",
+    naMsg: "Datos no disponibles por el momento, inténtalo más tarde.",
+  },
+  pt: {
+    title: "Melhores terceiros da Copa 2026: quem se classifica (os 8 primeiros)",
+    description:
+      "Ranking ao vivo das 12 seleções em terceiro — ordenadas pelos critérios de desempate oficiais de 2026 (pontos / saldo de gols / gols); os 8 primeiros avançam aos 16-avos. Inclui o mapa do Anexo C da FIFA que liga cada terceiro a um primeiro de grupo, atualizado após cada resultado.",
+    h1: "Melhores terceiros",
+    updated: "Atualizado",
+    intro:
+      "Cada um dos 12 grupos tem uma seleção em terceiro; as 8 melhores avançam aos 16-avos. Elas são comparadas apenas por pontos, saldo de gols e gols marcados (entre grupos, sem confronto direto).",
+    rankH: "Os 12 terceiros classificados (os 8 primeiros avançam)",
+    rankNote: "Classificados pelos resultados reais até agora; abaixo da linha tracejada = fora por enquanto. Toque numa seleção para ver seu grupo.",
+    advanceLabel: "Chance de avançar",
+    mapH: "Se a classificação atual se mantiver: confrontos dos 16-avos dos terceiros",
+    mapNote:
+      "As 8 seleções terceiras classificadas são atribuídas a 8 primeiros de grupo pela tabela de 495 combinações do Anexo C da FIFA, de modo que um terceiro nunca enfrenta o primeiro do próprio grupo.",
+    ctaH: "Quer ver como sua seleção pode entrar no top 8?",
+    ctaBody: "Mude qualquer resultado pendente na calculadora de cenários e acompanhe ao vivo a disputa pelos melhores terceiros.",
+    calc: "🧮 Abra a calculadora de cenários dos terceiros →",
+    forecast: "📊 Todas as probabilidades de classificação e título →",
+    rules: "📖 Formato e regras de classificação da Copa 2026 →",
+    back: "← Voltar",
+    method:
+      "Classificados pelos critérios de desempate oficiais de 2026 (pontos → saldo de gols → gols → fair play → ranking FIFA → sorteio); os dados de cartões de fair play não estão disponíveis, então essa etapa é ignorada, e a etapa do ranking FIFA é aproximada pela avaliação de força do modelo (Elo), com um sorteio aleatório como último recurso. As chances de avanço vêm de uma simulação de Monte Carlo de 10.000 rodadas.",
+    fun: "Todas as probabilidades são apenas para entretenimento.",
+    na: "—",
+    naMsg: "Dados indisponíveis no momento, tente novamente mais tarde.",
+  },
+  de: {
+    title: "Beste Gruppendritte der WM 2026: Wer kommt weiter (Top 8)",
+    description:
+      "Live-Rangliste der 12 Gruppendritten — sortiert nach den offiziellen Tiebreakern 2026 (Punkte / Tordifferenz / Tore); die besten 8 kommen ins Sechzehntelfinale. Inklusive der Anhang-C-Zuordnung der FIFA von Gruppendritten zu Gruppensiegern, nach jedem Ergebnis aktualisiert.",
+    h1: "Beste Gruppendritte",
+    updated: "Aktualisiert",
+    intro:
+      "Jede der 12 Gruppen hat einen Gruppendritten; die 8 besten kommen ins Sechzehntelfinale. Sie werden nur nach Punkten, Tordifferenz und erzielten Toren verglichen (gruppenübergreifend, ohne direkten Vergleich).",
+    rankH: "Alle 12 Gruppendritten im Ranking (Top 8 kommen weiter)",
+    rankNote: "Nach den bisherigen tatsächlichen Ergebnissen gereiht; unter der gestrichelten Linie = derzeit ausgeschieden. Tippe auf ein Team für seine Gruppenseite.",
+    advanceLabel: "Weiterkommen-Chance",
+    mapH: "Wenn die aktuelle Tabelle hält: Sechzehntelfinal-Duelle der Gruppendritten",
+    mapNote:
+      "Die 8 qualifizierten Gruppendritten werden über die 495-Kombinationen-Tabelle aus Anhang C der FIFA 8 Gruppensiegern zugeordnet, sodass ein Dritter nie auf den Sieger der eigenen Gruppe trifft.",
+    ctaH: "Willst du sehen, wie es dein Team in die Top 8 schaffen kann?",
+    ctaBody: "Ändere ein beliebiges offenes Ergebnis im Szenario-Rechner und verfolge live das Rennen um die besten Gruppendritten.",
+    calc: "🧮 Den Szenario-Rechner für Gruppendritte öffnen →",
+    forecast: "📊 Alle Weiterkommen- & Titel-Wahrscheinlichkeiten →",
+    rules: "📖 Format & Qualifikationsregeln der WM 2026 →",
+    back: "← Zurück",
+    method:
+      "Gereiht nach den offiziellen Tiebreakern 2026 (Punkte → Tordifferenz → Tore → Fair Play → FIFA-Rangliste → Losentscheid); Fair-Play-Kartendaten liegen nicht vor, daher entfällt dieser Schritt, und der FIFA-Ranglisten-Schritt wird durch den Modell-Stärkewert (Elo) angenähert, mit einem zufälligen Losentscheid als letzter Instanz. Die Weiterkommen-Chancen stammen aus einer Monte-Carlo-Simulation mit 10.000 Läufen.",
+    fun: "Alle Wahrscheinlichkeiten dienen nur der Unterhaltung.",
+    na: "—",
+    naMsg: "Daten derzeit nicht verfügbar, bitte später erneut versuchen.",
+  },
+  fr: {
+    title: "Meilleurs troisièmes du Mondial 2026 : qui se qualifie (les 8 premiers)",
+    description:
+      "Classement en direct des 12 équipes troisièmes — triées selon les départages officiels 2026 (points / différence de buts / buts) ; les 8 premières se qualifient pour les seizièmes. Inclut la table de l'Annexe C de la FIFA reliant chaque troisième à un premier de groupe, mise à jour après chaque résultat.",
+    h1: "Meilleurs troisièmes",
+    updated: "Mis à jour",
+    intro:
+      "Chacun des 12 groupes a une équipe troisième ; les 8 meilleures se qualifient pour les seizièmes. Elles sont comparées uniquement aux points, à la différence de buts et aux buts marqués (entre groupes, sans confrontation directe).",
+    rankH: "Les 12 troisièmes classés (les 8 premiers se qualifient)",
+    rankNote: "Classés selon les résultats réels à ce jour ; sous la ligne pointillée = actuellement éliminés. Touche une équipe pour voir son groupe.",
+    advanceLabel: "Probabilité de qualification",
+    mapH: "Si le classement actuel se maintient : affiches des seizièmes des troisièmes",
+    mapNote:
+      "Les 8 troisièmes qualifiés sont attribués à 8 premiers de groupe via la table de 495 combinaisons de l'Annexe C de la FIFA, afin qu'un troisième ne rencontre jamais le premier de son propre groupe.",
+    ctaH: "Tu veux voir comment ton équipe peut se glisser dans le top 8 ?",
+    ctaBody: "Modifie n'importe quel résultat à venir dans le calculateur de scénarios et suis en direct la course aux meilleurs troisièmes.",
+    calc: "🧮 Ouvre le calculateur de scénarios des troisièmes →",
+    forecast: "📊 Toutes les probabilités de qualification et de titre →",
+    rules: "📖 Format et règles de qualification du Mondial 2026 →",
+    back: "← Retour",
+    method:
+      "Classés selon les départages officiels 2026 (points → différence de buts → buts → fair-play → classement FIFA → tirage au sort) ; les données de cartons fair-play sont indisponibles, cette étape est donc ignorée, et l'étape du classement FIFA est approximée par la note de force du modèle (Elo), avec un tirage au sort aléatoire en dernier recours. Les probabilités de qualification proviennent d'une simulation de Monte-Carlo de 10 000 tirages.",
+    fun: "Toutes les probabilités sont fournies à titre de divertissement uniquement.",
+    na: "—",
+    naMsg: "Données indisponibles pour le moment, réessaie plus tard.",
+  },
 } as const;
 
 export async function generateMetadata(): Promise<Metadata> {
