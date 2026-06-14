@@ -106,10 +106,11 @@
 - `src/components/LangToggle.tsx`：二元按钮 → **多语下拉选单**，遍历 `LOCALES` 渲染；母语自称表（中文 / English / Español / Português / Deutsch / Français）。
 - **验证**：`curl` 无 Accept-Language 访问 `/es/forecast` 返回西语外壳、`/forecast` 仍英文、`/zh/forecast` 仍中文。
 
-### A2. UI 字典 ×4
-- 新建 `src/i18n/messages/{es,pt,de,fr}.ts`，各镜像 `Dict` 接口（约 95 键）。`src/i18n/index.ts` 的 `dicts` 补 4 键。
-- 翻译注意：保留 en.ts 顶部的**合规注释红线**（never use odds/bet/wager/payout… 的对应语族禁词）——见 §6.1 词族。emoji/占位结构与 zh/en 对齐。**口吻 es=拉美西语、pt=巴西葡语、de/fr=标准书面体**（§4②）。
-- tsc 对 `dicts` 与所有 `getDict` 消费点即转净。
+### A2. UI 字典 ×4 — ✅ 文件已建（2026-06-14，staged 未挂 dicts；tsc/eslint 净、合规词扫描 0 命中）
+- 新建 `src/i18n/messages/{es,pt,de,fr}.ts`（各 ~95 键），以 **`satisfies Dict`** 独立受 tsc 完整性校验（缺键/错形即编译报错），**暂不挂进 `dicts`、不动 `Locale`**——故全绿、可独立提交，不暴露半成品（守红线 1）。
+- 口吻：es=拉美西语、pt=巴西葡语、de/fr=标准书面体（§4②）。`langLabel` 暂填各语种母语自称（Español/Português/Deutsch/Français），LangToggle 下拉激活时统一改由 `LOCALES` 驱动。
+- 合规：各文件顶部保留 en.ts 式禁词红线注释；UI 文案已避开博彩词族（apuesta/aposta/Wette/pari/cote/cuota/odd/casino…，de 用非博彩的 Tipp/Tippspiel）——grep 仅命中注释行、正文 0 命中。
+- **⬜ 激活时补**（与 A0 加宽一并）：`Locale` 加 4 值后，把 `es/pt/de/fr` 挂进 `src/i18n/index.ts` 的 `dicts`（`satisfies Dict` 已保证可赋给 `Record<Locale,Dict>`）。建议母语者校对一遍文案（尤其 langLabel/缩写）。
 
 ### A3. 就地 COPY 对象 ×23 文件补键（tsc 驱动）
 - 按 A0 的 tsc 错误清单逐文件给 `COPY` 补 `es/pt/de/fr` 块。重点长文：
