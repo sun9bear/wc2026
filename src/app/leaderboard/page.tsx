@@ -3,15 +3,19 @@ import Link from "next/link";
 import { getLeaderboard } from "@/lib/leaderboard/getLeaderboard";
 import { Disclaimer } from "@/components/Disclaimer";
 import { fmtPoints } from "@/lib/format";
-import { getDict } from "@/i18n";
+import { getDict, localeHref } from "@/i18n";
 import { getLocale } from "@/i18n/server";
+import { localizedAlternates } from "@/lib/seo/canonical";
 
 export const dynamic = "force-dynamic";
 
 // 显式绝对自指 canonical（CodeX 外审 M2）。
-export const metadata: Metadata = {
-  alternates: { canonical: "https://www.wc2026.cool/leaderboard" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return {
+    alternates: localizedAlternates("/leaderboard", locale),
+  };
+}
 
 const TIER_COLOR: Record<string, string> = {
   legend: "text-gold",
@@ -31,7 +35,7 @@ export default async function LeaderboardPage() {
     <main className="mx-auto w-full max-w-xl px-4 py-8">
       <div className="flex items-center justify-between">
         <h1 className="font-head text-2xl font-bold">{t.leaderboard.title}</h1>
-        <Link href="/" className="text-xs text-muted">
+        <Link href={localeHref(locale, "/")} className="text-xs text-muted">
           {t.common.back}
         </Link>
       </div>

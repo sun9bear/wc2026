@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale } from "@/i18n/server";
+import { localeHref } from "@/i18n";
+import { localizedAlternates, selfUrl } from "@/lib/seo/canonical";
 import { getForecast } from "@/lib/prob/pipeline";
 import { findTeam, teamSlug } from "@/lib/prob/findTeam";
 import { ThirdCalculator } from "@/components/ThirdCalculator";
@@ -71,7 +73,7 @@ export async function generateMetadata({
           title: c.teamTitle(nm),
           description: c.teamDesc(nm),
           // ?team= 变体合并到 /calculator（同一工具、不入 sitemap，避免近重复页）。
-          alternates: { canonical: `${SITE}/calculator` },
+          alternates: localizedAlternates("/calculator", locale),
           openGraph: { images: [{ url: og, width: 1200, height: 630 }] },
           twitter: { card: "summary_large_image", images: [og] },
         };
@@ -83,7 +85,7 @@ export async function generateMetadata({
   return {
     title: c.title,
     description: c.description,
-    alternates: { canonical: `${SITE}/calculator` },
+    alternates: localizedAlternates("/calculator", locale),
   };
 }
 
@@ -119,7 +121,9 @@ export default async function CalculatorPage({
 
   // 页眉分享（任务 A）：选了队 → 该队 OG 卡（zh 带二维码）；未选 → 仅链接分享整页。
   const focusSlug = hit ? teamSlug(hit.team.name) : null;
-  const shareUrl = focusSlug ? `${SITE}/calculator?team=${focusSlug}` : `${SITE}/calculator`;
+  const shareUrl = focusSlug
+    ? selfUrl(`/calculator?team=${focusSlug}`, locale)
+    : selfUrl("/calculator", locale);
   const shareText = hit
     ? locale === "zh"
       ? `${hit.team.zh}出线概率 ${(hit.team.pAdvance > 1 ? hit.team.pAdvance : hit.team.pAdvance * 100).toFixed(0)}% · 自己改一版剩余赛果`
@@ -128,17 +132,17 @@ export default async function CalculatorPage({
       ? "2026 世界杯出线计算器（我的队还有戏吗）"
       : "World Cup 2026 scenario calculator";
   const shareOg = focusSlug
-    ? `${SITE}/api/og?team=${focusSlug}&locale=${locale}&u=${encodeURIComponent(`/calculator?team=${focusSlug}`)}`
+    ? `${SITE}/api/og?team=${focusSlug}&locale=${locale}&u=${encodeURIComponent(localeHref(locale, `/calculator?team=${focusSlug}`))}`
     : null;
 
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-8">
       <div className="flex items-center justify-between gap-2">
-        <Link href="/" className="shrink-0 text-xs text-muted">
+        <Link href={localeHref(locale, "/")} className="shrink-0 text-xs text-muted">
           {c.back}
         </Link>
         <div className="flex items-center gap-2">
-          <Link href="/forecast" className="shrink-0 text-xs text-green">
+          <Link href={localeHref(locale, "/forecast")} className="shrink-0 text-xs text-green">
             {c.forecast}
           </Link>
           <HeaderShare

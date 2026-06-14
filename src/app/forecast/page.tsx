@@ -7,6 +7,8 @@ import { Sparkline } from "@/components/Sparkline";
 import { TrackedLink } from "@/components/TrackedLink";
 import { JsonLd } from "@/lib/seo/jsonLd";
 import { getSettledIndex } from "@/lib/seo/freshness";
+import { localeHref } from "@/i18n";
+import { localizedAlternates, selfUrl, SITE_ORIGIN } from "@/lib/seo/canonical";
 
 export const maxDuration = 60; // 首次计算含外部抓取+万次模拟
 
@@ -66,7 +68,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: COPY[locale].title,
     description: COPY[locale].description,
-    alternates: { canonical: "https://www.wc2026.cool/forecast" },
+    alternates: localizedAlternates("/forecast", locale),
   };
 }
 
@@ -132,8 +134,8 @@ export default async function ForecastPage() {
     "@type": "Dataset",
     name: c.title,
     description: c.description,
-    url: "https://www.wc2026.cool/forecast",
-    creator: { "@type": "Organization", name: "wc2026.cool", url: "https://www.wc2026.cool/" },
+    url: selfUrl("/forecast", locale),
+    creator: { "@type": "Organization", name: "wc2026.cool", url: `${SITE_ORIGIN}/` },
     isAccessibleForFree: true,
     variableMeasured: zhFirst
       ? ["出线概率", "夺冠概率"]
@@ -256,7 +258,7 @@ export default async function ForecastPage() {
           {upcoming.map((m) => (
             <TrackedLink
               key={m.id}
-              href={`/match/${m.id}`}
+              href={localeHref(locale, `/match/${m.id}`)}
               event="forecast_match_cta_click"
               props={{ matchId: m.id }}
               className="block rounded-lg border border-border bg-surface p-3 transition-colors hover:border-green/50"
@@ -309,7 +311,7 @@ export default async function ForecastPage() {
           {data.thirds.map((t) => (
             <Link
               key={t.id}
-              href={`/calculator/group/${t.letter.toLowerCase()}`}
+              href={localeHref(locale, `/calculator/group/${t.letter.toLowerCase()}`)}
               className={`flex items-center justify-between py-1 text-sm transition hover:text-green ${
                 t.rank === 8 ? "border-b border-dashed border-green/60 pb-2" : ""
               } ${t.rank > 8 ? "opacity-50" : ""}`}
@@ -327,13 +329,13 @@ export default async function ForecastPage() {
           ))}
         </div>
         <Link
-          href="/calculator"
+          href={localeHref(locale, "/calculator")}
           className="mt-3 inline-block rounded-md border border-green/50 px-3 py-2 text-sm font-semibold text-green"
         >
           {c.calculatorCta}
         </Link>
         <Link
-          href="/forecast/best-thirds"
+          href={localeHref(locale, "/forecast/best-thirds")}
           className="mt-2 block text-xs text-muted transition hover:text-green"
         >
           {c.thirdsMore}

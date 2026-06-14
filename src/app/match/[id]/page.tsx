@@ -21,9 +21,10 @@ import { findTeam, teamSlug } from "@/lib/prob/findTeam";
 import { getMatchSwing, swingOgPath } from "@/lib/prob/getMatchSwing";
 import { getMatchScoreline } from "@/lib/prob/getMatchScoreline";
 import { JsonLd } from "@/lib/seo/jsonLd";
-import { getDict } from "@/i18n";
+import { getDict, localeHref } from "@/i18n";
 import { getLocale } from "@/i18n/server";
 import { maybeAutoSettle } from "@/lib/settlement/autoSettle";
+import { localizedAlternates, selfUrl } from "@/lib/seo/canonical";
 
 const SITE = "https://www.wc2026.cool";
 
@@ -37,10 +38,11 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   const locale = await getLocale();
-  const canonical = `${SITE}/match/${id}`;
+  const canonical = selfUrl(`/match/${id}`, locale);
+  const alts = localizedAlternates(`/match/${id}`, locale);
 
   const m = await getMatchDetail(id).catch(() => null);
-  let base: Metadata = { alternates: { canonical } };
+  let base: Metadata = { alternates: alts };
   if (m) {
     const home = teamName(m.home.name, locale);
     const away = teamName(m.away.name, locale);
@@ -55,7 +57,7 @@ export async function generateMetadata({
     base = {
       title,
       description,
-      alternates: { canonical },
+      alternates: alts,
       // 完整 openGraph（CodeX 外审 MAJOR：page 的 openGraph 整体替换 layout 的、不深合并；
       // 非爆冷场次原先丢了默认 og.png/type/url，伤分享卡）。默认 /og.png，爆冷场次下方覆盖为摆动卡。
       openGraph: {
@@ -181,7 +183,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
     "@graph": [
       {
         "@type": "SportsEvent",
-        "@id": `${SITE}/match/${id}#event`,
+        "@id": `${selfUrl(`/match/${id}`, locale)}#event`,
         name: `${evHome} vs ${evAway}`,
         sport: "Soccer",
         startDate: m.kickoffAt,
@@ -193,13 +195,13 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
           { "@type": "SportsTeam", name: evAway },
         ],
         superEvent: { "@type": "SportsEvent", name: "FIFA World Cup 2026" },
-        url: `${SITE}/match/${id}`,
+        url: selfUrl(`/match/${id}`, locale),
       },
       {
         "@type": "BreadcrumbList",
         itemListElement: [
-          { "@type": "ListItem", position: 1, name: locale === "zh" ? "首页" : "Home", item: `${SITE}/` },
-          { "@type": "ListItem", position: 2, name: `${evHome} vs ${evAway}`, item: `${SITE}/match/${id}` },
+          { "@type": "ListItem", position: 1, name: locale === "zh" ? "首页" : "Home", item: selfUrl("/", locale) },
+          { "@type": "ListItem", position: 2, name: `${evHome} vs ${evAway}`, item: selfUrl(`/match/${id}`, locale) },
         ],
       },
     ],
@@ -249,12 +251,12 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
           : `${teamName(m.home.name, locale)} vs ${teamName(m.away.name, locale)} — World Cup 2026 prediction`}
       </h1>
       <div className="flex items-center justify-between">
-        <Link href="/" className="text-xs text-muted">
+        <Link href={localeHref(locale, "/")} className="text-xs text-muted">
           {t.common.back}
         </Link>
         <HeaderShare
           locale={locale}
-          shareUrl={`${SITE}/match/${id}`}
+          shareUrl={selfUrl(`/match/${id}`, locale)}
           text={`${teamName(m.home.name, locale)} vs ${teamName(m.away.name, locale)}`}
           match={headerMatch}
           ogUrl={headerOgUrl}

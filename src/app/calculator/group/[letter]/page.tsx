@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLocale } from "@/i18n/server";
+import { localeHref } from "@/i18n";
+import { localizedAlternates } from "@/lib/seo/canonical";
 import { getForecast } from "@/lib/prob/pipeline";
 import { getSettledIndex } from "@/lib/seo/freshness";
 import { JsonLd } from "@/lib/seo/jsonLd";
@@ -68,7 +70,7 @@ export async function generateMetadata({
   return {
     title: c.title(X),
     description: c.desc(X),
-    alternates: { canonical: `https://www.wc2026.cool/calculator/group/${letter}` },
+    alternates: localizedAlternates(`/calculator/group/${letter}`, locale),
   };
 }
 
@@ -113,7 +115,7 @@ export default async function GroupPage({
     <main className="mx-auto w-full max-w-xl px-4 py-8">
       <JsonLd data={groupJsonLd} />
       <div className="flex items-center justify-between">
-        <Link href="/calculator" className="text-xs text-muted">
+        <Link href={localeHref(locale, "/calculator")} className="text-xs text-muted">
           {c.back}
         </Link>
       </div>
@@ -149,7 +151,7 @@ export default async function GroupPage({
                 <td className="px-2 py-2 font-head">{i + 1}</td>
                 <td className="px-2 py-2">
                   <Link
-                    href={`/calculator?team=${teamSlug(t.name)}`}
+                    href={localeHref(locale, `/calculator?team=${teamSlug(t.name)}`)}
                     className="inline-flex items-center gap-1.5 hover:text-green"
                   >
                     {t.flag && (
@@ -176,7 +178,7 @@ export default async function GroupPage({
             {fixtures.map((m) => (
               <li key={m.id}>
                 <Link
-                  href={`/match/${m.id}`}
+                  href={localeHref(locale, `/match/${m.id}`)}
                   className="flex items-center justify-between rounded-md border border-border bg-surface-2 px-3 py-2 transition hover:border-green/50"
                 >
                   <span>
@@ -195,16 +197,16 @@ export default async function GroupPage({
       <div className="mt-6 space-y-2 text-sm">
         {group.table[2] && (
           <Link
-            href={`/calculator?team=${teamSlug(group.table[2].name)}`}
+            href={localeHref(locale, `/calculator?team=${teamSlug(group.table[2].name)}`)}
             className="block rounded-lg border border-green/40 bg-surface p-3 text-green"
           >
             {c.cta(name(group.table[2]))}
           </Link>
         )}
-        <Link href="/calculator" className="block rounded-lg border border-border bg-surface p-3">
+        <Link href={localeHref(locale, "/calculator")} className="block rounded-lg border border-border bg-surface p-3">
           {c.tool}
         </Link>
-        <Link href="/rules" className="block rounded-lg border border-border bg-surface-2 p-3 text-muted">
+        <Link href={localeHref(locale, "/rules")} className="block rounded-lg border border-border bg-surface-2 p-3 text-muted">
           {locale === "zh" ? "📖 出线规则详解（第三名怎么算）" : "📖 How qualification works (third-place rules)"}
         </Link>
       </div>

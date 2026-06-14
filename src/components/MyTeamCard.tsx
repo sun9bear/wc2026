@@ -7,6 +7,7 @@ import { HeaderShare } from "@/components/HeaderShare";
 import { LocalTime } from "@/components/LocalTime";
 import { MY_TEAM_KEY, MY_TEAM_EVENT } from "@/components/SetMyTeamButton";
 import type { Locale } from "@/i18n";
+import { localeHref } from "@/i18n";
 
 // 「我的主队」卡（任务 C）：读 localStorage my_team → /api/team/[slug] → 出线/夺冠/评分 + 下一场 + 分享图。
 // 主队由球队详情页的「设为主队」按钮设定；本卡随 my-team-changed 事件刷新。
@@ -108,7 +109,7 @@ export function MyTeamCard({ locale }: { locale: Locale }) {
   if (state === "none") {
     return (
       <Link
-        href="/forecast"
+        href={localeHref(locale, "/forecast")}
         className="mt-3 block rounded-lg border border-dashed border-border bg-surface-2 px-4 py-3 text-xs text-muted transition hover:border-green/50 hover:text-green"
       >
         {c.empty}
@@ -141,7 +142,7 @@ export function MyTeamCard({ locale }: { locale: Locale }) {
         />
       </div>
 
-      <Link href={`/team/${d.slug}`} className="flex items-center gap-3 transition hover:opacity-80">
+      <Link href={localeHref(locale, `/team/${d.slug}`)} className="flex items-center gap-3 transition hover:opacity-80">
         {d.flag ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={d.flag} alt="" className="h-8 w-11 rounded-sm object-cover ring-1 ring-border" />
@@ -171,7 +172,7 @@ export function MyTeamCard({ locale }: { locale: Locale }) {
 
       {d.next && (
         <Link
-          href={`/match/${d.next.matchId}`}
+          href={localeHref(locale, `/match/${d.next.matchId}`)}
           className="mt-3 flex items-center justify-between rounded-md border border-border bg-surface-2 px-3 py-2 text-xs transition hover:border-green/50"
         >
           <span className="flex items-center gap-1.5 text-muted">

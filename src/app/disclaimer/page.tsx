@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getLocale } from "@/i18n/server";
+import { localeHref } from "@/i18n";
+import { localizedAlternates } from "@/lib/seo/canonical";
 
 // 免责声明（双语，locale-adaptive）：EN-first 爬虫/英文用户看到英文版——尤其「无官方关联」段
 // 是商标抗辩 + AdSense IP 审核的关键面，必须对英文受众可读。英文文案避开雷词（用 reward 不用 multiplier）。
@@ -61,11 +63,12 @@ const COPY = {
 } as const;
 
 export async function generateMetadata(): Promise<Metadata> {
-  const c = COPY[await getLocale()];
+  const locale = await getLocale();
+  const c = COPY[locale];
   return {
     title: c.title,
     description: c.description,
-    alternates: { canonical: "https://www.wc2026.cool/disclaimer" },
+    alternates: localizedAlternates("/disclaimer", locale),
   };
 }
 
@@ -79,10 +82,11 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export default async function DisclaimerPage() {
-  const c = COPY[await getLocale()];
+  const locale = await getLocale();
+  const c = COPY[locale];
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-8">
-      <Link href="/" className="text-xs text-muted">
+      <Link href={localeHref(locale, "/")} className="text-xs text-muted">
         {c.back}
       </Link>
       <h1 className="font-head mt-3 text-2xl font-bold">{c.h1}</h1>
@@ -113,11 +117,11 @@ export default async function DisclaimerPage() {
 
       <p className="mt-6 text-center text-[11px] text-muted">
         {c.seeAlso}
-        <Link href="/about" className="underline hover:text-text">
+        <Link href={localeHref(locale, "/about")} className="underline hover:text-text">
           {c.about}
         </Link>
         {" · "}
-        <Link href="/privacy" className="underline hover:text-text">
+        <Link href={localeHref(locale, "/privacy")} className="underline hover:text-text">
           {c.privacy}
         </Link>
       </p>

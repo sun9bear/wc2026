@@ -10,7 +10,7 @@ import { track } from "@/lib/track";
 import { swingShareParts, matchUrl } from "@/lib/share/swingShare";
 import { defaultName } from "@/lib/identity/defaultName";
 import type { MatchSwing } from "@/lib/prob/getMatchSwing";
-import type { Locale } from "@/i18n";
+import { localeHref, type Locale } from "@/i18n";
 
 // 结算揭晓抽屉（任务 3）：挂 / 与 /me。localStorage 存 last_seen_settled_at，
 // 检测到新结算 → 底部抽屉 + Me tab 红点（经 localStorage + 自定义事件联动 BottomNav）。
@@ -173,7 +173,7 @@ export function SettleDrawer({ locale }: { locale: Locale }) {
   async function shareUpset(swing: MatchSwing, mid: string) {
     const by = nickname ?? (uid ? defaultName(uid, locale) : undefined);
     const parts = swingShareParts(swing, locale, true, by); // 抽屉里都是本人押中 → 第一人称 + 署名
-    const url = matchUrl(mid);
+    const url = matchUrl(mid, locale);
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
         await navigator.share({ title: parts.title, text: parts.text, url });
@@ -229,7 +229,7 @@ export function SettleDrawer({ locale }: { locale: Locale }) {
         {toast && <div className="mt-2 text-[11px] text-green">{toast}</div>}
         <div className="mt-3 flex gap-2 text-xs">
           <Link
-            href="/me"
+            href={localeHref(locale, "/me")}
             onClick={dismiss}
             className="rounded-md bg-green px-3 py-1.5 font-bold text-[#06231a]"
           >

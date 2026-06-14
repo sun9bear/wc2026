@@ -7,16 +7,20 @@ import { MatchCard } from "@/components/MatchCard";
 import { Disclaimer } from "@/components/Disclaimer";
 import { SettleDrawer } from "@/components/SettleDrawer";
 import { TrackedLink } from "@/components/TrackedLink";
-import { getDict } from "@/i18n";
+import { getDict, localeHref } from "@/i18n";
 import { getLocale } from "@/i18n/server";
+import { localizedAlternates } from "@/lib/seo/canonical";
 import { maybeAutoSettle } from "@/lib/settlement/autoSettle";
 
 export const dynamic = "force-dynamic";
 
 // 显式绝对自指 canonical（根 layout 不再设相对 canonical；?filter= 变体统一归并到首页）。
-export const metadata: Metadata = {
-  alternates: { canonical: "https://www.wc2026.cool/" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return {
+    alternates: localizedAlternates("/", locale),
+  };
+}
 
 export default async function Home({
   searchParams,
@@ -57,7 +61,7 @@ export default async function Home({
 
       {/* 主入口：第三名出线计算器（独家资产，纯链接，与概率侧分屏隔离不冲突) */}
       <TrackedLink
-        href="/calculator"
+        href={localeHref(locale, "/calculator")}
         event="home_calc_cta_click"
         className="mb-4 block rounded-lg border border-green/40 bg-surface p-4 transition hover:border-green"
       >
@@ -88,13 +92,13 @@ export default async function Home({
         {t.hero.pointsBanner}
       </p>
       <div className="mb-6 flex justify-center gap-4 text-xs">
-        <Link href="/combo" className="text-muted hover:text-green">
+        <Link href={localeHref(locale, "/combo")} className="text-muted hover:text-green">
           {t.hero.comboLink}
         </Link>
-        <TrackedLink href="/watch" event="watch_link_clicked" className="text-muted hover:text-green">
+        <TrackedLink href={localeHref(locale, "/watch")} event="watch_link_clicked" className="text-muted hover:text-green">
           {t.hero.watchLink}
         </TrackedLink>
-        <Link href="/league" className="text-muted hover:text-green">
+        <Link href={localeHref(locale, "/league")} className="text-muted hover:text-green">
           {t.hero.leagueLink}
         </Link>
       </div>
@@ -110,7 +114,7 @@ export default async function Home({
         ).map(([k, label]) => (
           <Link
             key={k}
-            href={k === "all" ? "/" : `/?filter=${k}`}
+            href={localeHref(locale, k === "all" ? "/" : `/?filter=${k}`)}
             className={`rounded-pill border px-3 py-1 ${
               filter === k ? "border-green text-green" : "border-border text-muted"
             }`}

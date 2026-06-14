@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale } from "@/i18n/server";
+import { localeHref } from "@/i18n";
+import { localizedAlternates } from "@/lib/seo/canonical";
 
 // 观赛指南：按地区列官方转播/流媒体渠道（双语，随 locale 切换）。
 // 纯官方转播链接，无任何联盟/追踪链接。
@@ -113,7 +115,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: c.title,
     description: c.description,
-    alternates: { canonical: "https://www.wc2026.cool/watch" },
+    alternates: localizedAlternates("/watch", locale),
   };
 }
 
@@ -122,7 +124,7 @@ export default async function WatchPage() {
   const c = COPY[locale];
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-8">
-      <Link href="/" className="text-xs text-muted">
+      <Link href={localeHref(locale, "/")} className="text-xs text-muted">
         {c.back}
       </Link>
       <h1 className="font-head mt-3 text-2xl font-bold">📺 {c.h1}</h1>

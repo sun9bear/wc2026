@@ -10,7 +10,7 @@ import { Disclaimer } from "@/components/Disclaimer";
 import { Skeleton } from "@/components/Skeleton";
 import { LocalTime } from "@/components/LocalTime";
 import { useToast } from "@/components/Toast";
-import { getDict, type Locale } from "@/i18n";
+import { getDict, localeHref, type Locale } from "@/i18n";
 
 interface Sel {
   id: string;
@@ -155,7 +155,7 @@ export function ComboClient({ locale }: { locale: Locale }) {
     <main className="mx-auto w-full max-w-xl px-4 py-8">
       <div className="flex items-center justify-between">
         <h1 className="font-head text-2xl font-bold">{t.combo.title}</h1>
-        <Link href="/" className="text-xs text-muted">
+        <Link href={localeHref(locale, "/")} className="text-xs text-muted">
           {t.common.back}
         </Link>
       </div>

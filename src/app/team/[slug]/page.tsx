@@ -9,6 +9,8 @@ import { HeaderShare } from "@/components/HeaderShare";
 import { SetMyTeamButton } from "@/components/SetMyTeamButton";
 import { LocalTime } from "@/components/LocalTime";
 import { Disclaimer } from "@/components/Disclaimer";
+import { localeHref } from "@/i18n";
+import { localizedAlternates, selfUrl } from "@/lib/seo/canonical";
 
 export const maxDuration = 60;
 
@@ -88,12 +90,12 @@ export async function generateMetadata({
   if (!d) return {};
   const c = COPY[locale];
   const nm = locale === "zh" ? d.zh : d.name;
-  const og = `/api/og?team=${d.slug}&locale=${locale}&u=${encodeURIComponent(`/team/${d.slug}`)}`;
+  const og = `/api/og?team=${d.slug}&locale=${locale}&u=${encodeURIComponent(localeHref(locale, `/team/${d.slug}`))}`;
   return {
     title: c.title(nm),
     description: c.desc(nm, fmtP(d.pAdvance), fmtP(d.pChampion)),
-    alternates: { canonical: `${SITE}/team/${d.slug}` },
-    openGraph: { title: c.title(nm), images: [{ url: og, width: 1200, height: 630 }] },
+    alternates: localizedAlternates(`/team/${d.slug}`, locale),
+    openGraph: { title: c.title(nm), url: selfUrl(`/team/${d.slug}`, locale), images: [{ url: og, width: 1200, height: 630 }] },
     twitter: { card: "summary_large_image", images: [og] },
   };
 }
@@ -111,7 +113,7 @@ function ResultChip({
   const oppName = locale === "zh" ? r.oppZh : r.oppName;
   return (
     <Link
-      href={`/match/${r.matchId}`}
+      href={localeHref(locale, `/match/${r.matchId}`)}
       className="flex items-center justify-between rounded-md border border-border bg-surface-2 px-3 py-2 text-sm transition hover:border-green/50"
     >
       <span className="flex items-center gap-2">
@@ -143,7 +145,7 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
   const champ = fmtP(d.pChampion);
   const advHigh = (d.pAdvance > 1 ? d.pAdvance : d.pAdvance * 100) >= 50;
   const nextOpp = d.next ? (locale === "zh" ? d.next.oppZh : d.next.oppName) : "";
-  const ogUrl = `${SITE}/api/og?team=${d.slug}&locale=${locale}&u=${encodeURIComponent(`/team/${d.slug}`)}`;
+  const ogUrl = `${SITE}/api/og?team=${d.slug}&locale=${locale}&u=${encodeURIComponent(localeHref(locale, `/team/${d.slug}`))}`;
 
   // SportsTeam + 面包屑实体（只填真实字段；实力评分对外不写官方排名）。
   const teamJsonLd = {
@@ -151,16 +153,16 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
     "@graph": [
       {
         "@type": "SportsTeam",
-        "@id": `${SITE}/team/${d.slug}#team`,
+        "@id": `${selfUrl(`/team/${d.slug}`, locale)}#team`,
         name: d.name,
         sport: "Soccer",
-        url: `${SITE}/team/${d.slug}`,
+        url: selfUrl(`/team/${d.slug}`, locale),
       },
       {
         "@type": "BreadcrumbList",
         itemListElement: [
-          { "@type": "ListItem", position: 1, name: locale === "zh" ? "首页" : "Home", item: `${SITE}/` },
-          { "@type": "ListItem", position: 2, name: nm, item: `${SITE}/team/${d.slug}` },
+          { "@type": "ListItem", position: 1, name: locale === "zh" ? "首页" : "Home", item: selfUrl("/", locale) },
+          { "@type": "ListItem", position: 2, name: nm, item: selfUrl(`/team/${d.slug}`, locale) },
         ],
       },
     ],
@@ -170,12 +172,12 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
     <main className="mx-auto w-full max-w-xl px-4 py-8">
       <JsonLd data={teamJsonLd} />
       <div className="flex items-center justify-between">
-        <Link href="/" className="text-xs text-muted">
+        <Link href={localeHref(locale, "/")} className="text-xs text-muted">
           {c.back}
         </Link>
         <HeaderShare
           locale={locale}
-          shareUrl={`${SITE}/team/${d.slug}`}
+          shareUrl={selfUrl(`/team/${d.slug}`, locale)}
           text={c.shareText(nm, adv)}
           ogUrl={ogUrl}
           source="team"
@@ -229,7 +231,7 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
       <h2 className="font-head mb-2 mt-6 text-sm font-semibold">{c.next}</h2>
       {d.next ? (
         <Link
-          href={`/match/${d.next.matchId}`}
+          href={localeHref(locale, `/match/${d.next.matchId}`)}
           className="flex items-center justify-between rounded-lg border border-green/40 bg-surface p-3 text-sm transition hover:border-green"
         >
           <span className="flex items-center gap-2">
@@ -262,18 +264,18 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
 
       {/* 交叉链接：计算器 */}
       <Link
-        href={`/calculator?team=${d.slug}`}
+        href={localeHref(locale, `/calculator?team=${d.slug}`)}
         className="mt-6 block rounded-lg border border-border bg-surface p-3 text-sm text-green"
       >
         {c.calc(nm)}
       </Link>
       <Link
-        href={`/calculator/group/${d.letter.toLowerCase()}`}
+        href={localeHref(locale, `/calculator/group/${d.letter.toLowerCase()}`)}
         className="mt-2 block rounded-lg border border-border bg-surface p-3 text-sm text-muted"
       >
         {locale === "zh" ? `🧮 看 ${d.letter} 组完整出线形势 →` : `🧮 See full Group ${d.letter} scenarios →`}
       </Link>
-      <Link href="/rules" className="mt-2 block rounded-lg border border-border bg-surface p-3 text-sm text-muted">
+      <Link href={localeHref(locale, "/rules")} className="mt-2 block rounded-lg border border-border bg-surface p-3 text-sm text-muted">
         {locale === "zh" ? "📖 出线规则详解（第三名怎么算）" : "📖 How World Cup 2026 qualification works"}
       </Link>
 

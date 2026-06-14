@@ -11,6 +11,14 @@
 - https://www.wc2026.cool/watch — official broadcast guide
 - https://www.wc2026.cool/sitemap.xml — full index of every team and match page (48 teams + all fixtures, with per-team chance to advance/win and per-match prediction + most likely scores)
 
+## 中文页面 / Chinese pages (zh-Hans)
+- https://www.wc2026.cool/zh/ — 首页：今日比赛与预测
+- https://www.wc2026.cool/zh/forecast — 出线概率与夺冠概率（实时模型）
+- https://www.wc2026.cool/zh/forecast/best-thirds — 最佳第三名排名（前 8 晋级）
+- https://www.wc2026.cool/zh/calculator — 第三名出线场景计算器
+- https://www.wc2026.cool/zh/rules — 2026 世界杯赛制与出线规则详解（48 队，12 组，8 个最佳第三名）
+- https://www.wc2026.cool/zh/watch — 官方转播观赛指南
+
 ## Notes
 - All numbers are model estimates for entertainment, not advice.
 - Method: team strength ratings + public forecasting data, Poisson score model, 10,000 Monte Carlo runs, 2026 official tie-breakers.

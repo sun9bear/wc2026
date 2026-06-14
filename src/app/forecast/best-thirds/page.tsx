@@ -6,6 +6,8 @@ import { JsonLd } from "@/lib/seo/jsonLd";
 import { getSettledIndex } from "@/lib/seo/freshness";
 import { R32, allocateThirds } from "@/lib/prob/bracket";
 import { Disclaimer } from "@/components/Disclaimer";
+import { localeHref } from "@/i18n";
+import { localizedAlternates, selfUrl } from "@/lib/seo/canonical";
 
 export const maxDuration = 60; // 复用 getForecast() 共享缓存（含外部抓取 + 万次模拟）
 
@@ -74,7 +76,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: COPY[locale].title,
     description: COPY[locale].description,
-    alternates: { canonical: "https://www.wc2026.cool/forecast/best-thirds" },
+    alternates: localizedAlternates("/forecast/best-thirds", locale),
   };
 }
 
@@ -154,7 +156,7 @@ export default async function BestThirdsPage() {
     "@type": "ItemList",
     name: c.title,
     description: c.description,
-    url: "https://www.wc2026.cool/forecast/best-thirds",
+    url: selfUrl("/forecast/best-thirds", locale),
     numberOfItems: thirds.length,
     itemListOrder: "https://schema.org/ItemListOrderAscending",
     ...(idx?.all ? { dateModified: idx.all } : {}),
@@ -173,7 +175,7 @@ export default async function BestThirdsPage() {
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-8">
       <JsonLd data={itemListJsonLd} />
-      <Link href="/forecast" className="text-xs text-muted">
+      <Link href={localeHref(locale, "/forecast")} className="text-xs text-muted">
         {c.back}
       </Link>
       <h1 className="font-head mt-3 text-2xl font-bold">🥉 {c.h1}</h1>
@@ -203,7 +205,7 @@ export default async function BestThirdsPage() {
             return (
               <Link
                 key={t.id}
-                href={`/calculator/group/${t.letter.toLowerCase()}`}
+                href={localeHref(locale, `/calculator/group/${t.letter.toLowerCase()}`)}
                 className={`flex items-center justify-between py-1 text-sm transition hover:text-green ${
                   t.rank === 8 ? "border-b border-dashed border-green/60 pb-2" : ""
                 } ${t.rank > 8 ? "opacity-50" : ""}`}
@@ -238,7 +240,7 @@ export default async function BestThirdsPage() {
                     ? `${f.winner} 组第一 vs `
                     : `Winner Group ${f.winner} vs `}
                   <Link
-                    href={`/calculator/group/${f.source.toLowerCase()}`}
+                    href={localeHref(locale, `/calculator/group/${f.source.toLowerCase()}`)}
                     className="text-green transition hover:underline"
                   >
                     {zhFirst ? `${f.source} 组第三` : `3rd of Group ${f.source}`}
@@ -256,19 +258,19 @@ export default async function BestThirdsPage() {
         <p className="text-sm leading-relaxed text-text/90">{c.ctaBody}</p>
         <div className="mt-3 space-y-2">
           <Link
-            href="/calculator"
+            href={localeHref(locale, "/calculator")}
             className="block rounded-md border border-green/50 px-3 py-2 text-sm font-semibold text-green"
           >
             {c.calc}
           </Link>
           <Link
-            href="/forecast"
+            href={localeHref(locale, "/forecast")}
             className="block rounded-md border border-border px-3 py-2 text-sm text-text/90"
           >
             {c.forecast}
           </Link>
           <Link
-            href="/rules"
+            href={localeHref(locale, "/rules")}
             className="block rounded-md border border-border px-3 py-2 text-sm text-text/90"
           >
             {c.rules}

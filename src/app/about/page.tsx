@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getLocale } from "@/i18n/server";
+import { localeHref } from "@/i18n";
+import { localizedAlternates } from "@/lib/seo/canonical";
 
 const META = {
   zh: {
@@ -17,7 +19,7 @@ const META = {
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
-  return { ...META[locale], alternates: { canonical: "https://www.wc2026.cool/about" } };
+  return { ...META[locale], alternates: localizedAlternates("/about", locale) };
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -36,7 +38,7 @@ export default async function AboutPage() {
     // 英文版正文：禁词自查通过（无 odds/bet/wager/stake/payout/multiplier，倍率→reward rates）
     return (
       <main className="mx-auto w-full max-w-xl px-4 py-8">
-        <Link href="/" className="text-xs text-muted">
+        <Link href={localeHref(locale, "/")} className="text-xs text-muted">
           ← Back
         </Link>
         <h1 className="font-head mt-3 text-2xl font-bold">About &amp; How to Play</h1>
@@ -84,11 +86,11 @@ export default async function AboutPage() {
 
         <p className="mt-6 text-center text-[11px] text-muted">
           See also:{" "}
-          <Link href="/privacy" className="underline hover:text-text">
+          <Link href={localeHref(locale, "/privacy")} className="underline hover:text-text">
             Privacy
           </Link>
           {" · "}
-          <Link href="/disclaimer" className="underline hover:text-text">
+          <Link href={localeHref(locale, "/disclaimer")} className="underline hover:text-text">
             Disclaimer
           </Link>
         </p>
@@ -98,7 +100,7 @@ export default async function AboutPage() {
 
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-8">
-      <Link href="/" className="text-xs text-muted">
+      <Link href={localeHref(locale, "/")} className="text-xs text-muted">
         ← 返回
       </Link>
       <h1 className="font-head mt-3 text-2xl font-bold">关于 &amp; 玩法</h1>
@@ -144,11 +146,11 @@ export default async function AboutPage() {
 
       <p className="mt-6 text-center text-[11px] text-muted">
         另见：
-        <Link href="/privacy" className="underline hover:text-text">
+        <Link href={localeHref(locale, "/privacy")} className="underline hover:text-text">
           隐私政策
         </Link>
         {" · "}
-        <Link href="/disclaimer" className="underline hover:text-text">
+        <Link href={localeHref(locale, "/disclaimer")} className="underline hover:text-text">
           免责声明
         </Link>
       </p>

@@ -2,9 +2,13 @@
 // 把合规敏感的分享文案集中在单一审计点。type-only 引入 MatchSwing（编译期擦除，不进客户端包）。
 
 import type { MatchSwing } from "@/lib/prob/getMatchSwing";
+import { localeHref } from "@/i18n";
 
 export const SITE = "https://www.wc2026.cool";
-export const matchUrl = (matchId: string) => `${SITE}/match/${matchId}`;
+// matchId 比赛页的绝对分享 URL。locale 决定 /zh 前缀（en→/match/x，zh→/zh/match/x），
+// 让中文分享深链进 /zh/*。所有调用方（MatchSwingShare/SettleDrawer）手头都有 locale，可直接传。
+export const matchUrl = (matchId: string, locale: "zh" | "en") =>
+  `${SITE}${localeHref(locale, `/match/${matchId}`)}`;
 
 export interface SwingShareParts {
   title: string;

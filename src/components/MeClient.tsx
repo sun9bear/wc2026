@@ -10,7 +10,7 @@ import { fmtPoints } from "@/lib/format";
 import { copyText } from "@/lib/clipboard";
 import { Skeleton } from "@/components/Skeleton";
 import { defaultName } from "@/lib/identity/defaultName";
-import { getDict, type Locale } from "@/i18n";
+import { getDict, localeHref, type Locale } from "@/i18n";
 
 interface RecentBet {
   won: boolean;
@@ -176,7 +176,7 @@ export function MeClient({ locale }: { locale: Locale }) {
     <main className="mx-auto w-full max-w-xl px-4 py-8">
       <div className="flex items-center justify-between">
         <h1 className="font-head text-2xl font-bold">{t.me.title}</h1>
-        <Link href="/" className="text-xs text-muted">
+        <Link href={localeHref(locale, "/")} className="text-xs text-muted">
           {t.common.back}
         </Link>
       </div>
@@ -203,7 +203,7 @@ export function MeClient({ locale }: { locale: Locale }) {
         <div className="mt-16 text-center">
           <div className="text-5xl">🎯</div>
           <p className="mt-3 text-sm text-muted">{t.me.empty}</p>
-          <Link href="/" className="mt-3 inline-block text-sm text-green">
+          <Link href={localeHref(locale, "/")} className="mt-3 inline-block text-sm text-green">
             {t.me.emptyCta}
           </Link>
         </div>
@@ -301,7 +301,7 @@ export function MeClient({ locale }: { locale: Locale }) {
           )}
 
           <Link
-            href="/league"
+            href={localeHref(locale, "/league")}
             className="mt-3 block rounded-md border border-border bg-surface-2 px-4 py-2.5 text-sm text-muted transition hover:border-green hover:text-green"
           >
             {tx.league}

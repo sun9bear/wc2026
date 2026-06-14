@@ -2,6 +2,8 @@
 // 避免两处 querystring 漂移。kickoff 用浏览器本地时区格式化（静态图烤的是「分享者本地时间」）。
 // 合规：所有用户可控文本（队名/短评/比分行）由 /api/og 路由再过一道雷词闸 fail-closed，本文件只拼串。
 
+import { localeHref } from "@/i18n";
+
 const SITE = "https://www.wc2026.cool";
 
 export interface ScoreCell {
@@ -67,6 +69,6 @@ export function buildMatchOgUrl(p: MatchCardParams): string {
     (p.kickoffLabel ? `&t=${enc(p.kickoffLabel)}` : "") +
     (p.aiTake ? `&q=${enc(p.aiTake)}` : "") +
     (sl ? `&sl=${enc(sl)}` : "") +
-    (p.qrPath ? `&u=${enc(p.qrPath)}` : "")
+    (p.qrPath ? `&u=${enc(localeHref(p.locale, p.qrPath))}` : "")
   );
 }

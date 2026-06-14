@@ -3,11 +3,14 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { getDict, type Locale } from "@/i18n";
+import { getDict, localeHref, stripLocale, type Locale } from "@/i18n";
 import { SETTLE_NEW_EVENT, SETTLE_SEEN_EVENT } from "@/components/SettleDrawer";
 
 export function BottomNav({ locale }: { locale: Locale }) {
   const pathname = usePathname();
+  // /zh/* 是内部 rewrite，usePathname() 返回带前缀的公开路径；比对前先剥成裸路径，
+  // 否则 zh 树上所有 tab 都不会高亮（与 LangToggle 共用同一前缀真理点 stripLocale）。
+  const bare = stripLocale(pathname);
   const nav = getDict(locale).nav;
 
   // 新结算红点：SettleDrawer 发现新结果时写 localStorage + 派发事件，关闭抽屉即清除。
@@ -44,12 +47,12 @@ export function BottomNav({ locale }: { locale: Locale }) {
         {tabs.map((t) => {
           const active =
             t.href === "/"
-              ? pathname === "/" || pathname.startsWith("/match")
-              : pathname.startsWith(t.href);
+              ? bare === "/" || bare.startsWith("/match")
+              : bare.startsWith(t.href);
           return (
             <Link
               key={t.href}
-              href={t.href}
+              href={localeHref(locale, t.href)}
               className={`flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] ${
                 active ? "text-green" : "text-muted"
               }`}

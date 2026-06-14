@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale } from "@/i18n/server";
+import { localeHref } from "@/i18n";
+import { localizedAlternates } from "@/lib/seo/canonical";
 import { Disclaimer } from "@/components/Disclaimer";
 
 // 常青解释页：2026 新赛制 + 出线/第三名判据（最高需求×最低竞争长尾，最佳 AI 引用候选）。
@@ -97,7 +99,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: c.title,
     description: c.description,
-    alternates: { canonical: "https://www.wc2026.cool/rules" },
+    alternates: localizedAlternates("/rules", locale),
   };
 }
 
@@ -106,7 +108,7 @@ export default async function RulesPage() {
   const c = COPY[locale];
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-8">
-      <Link href="/" className="text-xs text-muted">
+      <Link href={localeHref(locale, "/")} className="text-xs text-muted">
         {c.back}
       </Link>
       <h1 className="font-head mt-3 text-2xl font-bold">{c.h1}</h1>
@@ -148,13 +150,13 @@ export default async function RulesPage() {
         <p className="text-sm leading-relaxed text-text/90">{c.ctaBody}</p>
         <div className="mt-3 space-y-2">
           <Link
-            href="/calculator"
+            href={localeHref(locale, "/calculator")}
             className="block rounded-md border border-green/50 px-3 py-2 text-sm font-semibold text-green"
           >
             {c.calc}
           </Link>
           <Link
-            href="/forecast"
+            href={localeHref(locale, "/forecast")}
             className="block rounded-md border border-border px-3 py-2 text-sm text-text/90"
           >
             {c.forecast}

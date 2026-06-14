@@ -2,6 +2,7 @@ import Link from "next/link";
 import { teamName, flagUrl } from "@/lib/football/teams";
 import { teamSlug } from "@/lib/prob/findTeam";
 import type { Locale } from "@/i18n";
+import { localeHref } from "@/i18n";
 
 // 队伍展示：真实国旗图片（跨平台）+ 按语言显示队名（zh 查表，en 直出 DB 英文原名）。
 // linkToTeam=true 时整块包成 → /team/[slug] 详情页链接（任务 B）。默认 false：
@@ -36,7 +37,7 @@ export function TeamBadge({
   );
   const cls = "flex w-24 flex-col items-center gap-2";
   return linkToTeam ? (
-    <Link href={`/team/${teamSlug(name)}`} className={`${cls} transition hover:opacity-80`}>
+    <Link href={localeHref(locale, `/team/${teamSlug(name)}`)} className={`${cls} transition hover:opacity-80`}>
       {inner}
     </Link>
   ) : (

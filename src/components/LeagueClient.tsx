@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+import { localeHref } from "@/i18n";
 import type { Locale } from "@/i18n";
 
 // 擂台首页（任务 5）：起昵称 → 创建擂台 / 输码加入；列出我已加入的擂台。
@@ -158,12 +159,12 @@ export function LeagueClient({ locale }: { locale: Locale }) {
 
   async function createLeague() {
     const j = await call("/api/league", { name: nameInput });
-    if (j) router.push(`/league/${j.code as string}`);
+    if (j) router.push(localeHref(locale, `/league/${j.code as string}`));
   }
 
   async function joinLeague() {
     const j = await call("/api/league/join", { code: codeInput });
-    if (j) router.push(`/league/${j.code as string}`);
+    if (j) router.push(localeHref(locale, `/league/${j.code as string}`));
   }
 
   const needNick = !nickname || editingNick;
@@ -172,7 +173,7 @@ export function LeagueClient({ locale }: { locale: Locale }) {
     <main className="mx-auto w-full max-w-xl px-4 py-8">
       <div className="flex items-center justify-between">
         <h1 className="font-head text-2xl font-bold">{t.title}</h1>
-        <Link href="/" className="text-xs text-muted">
+        <Link href={localeHref(locale, "/")} className="text-xs text-muted">
           ← {locale === "zh" ? "返回" : "Back"}
         </Link>
       </div>
@@ -274,7 +275,7 @@ export function LeagueClient({ locale }: { locale: Locale }) {
             {mine.map((l) => (
               <li key={l.code}>
                 <Link
-                  href={`/league/${l.code}`}
+                  href={localeHref(locale, `/league/${l.code}`)}
                   className="flex items-center justify-between rounded-md border border-border bg-surface-2 px-4 py-2.5 text-sm transition hover:border-green"
                 >
                   <span>{l.name}</span>

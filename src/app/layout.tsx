@@ -7,6 +7,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { Footer } from "@/components/Footer";
 import { ToastProvider } from "@/components/Toast";
 import { getLocale } from "@/i18n/server";
+import { LocaleProvider } from "@/i18n/LocaleContext";
 import { JsonLd } from "@/lib/seo/jsonLd";
 
 const oswald = Oswald({
@@ -112,11 +113,13 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-bg text-text font-body pb-16">
         <JsonLd data={siteJsonLd} />
-        <ToastProvider>
-          {children}
-          <Footer locale={locale} />
-          <BottomNav locale={locale} />
-        </ToastProvider>
+        <LocaleProvider locale={locale}>
+          <ToastProvider>
+            {children}
+            <Footer locale={locale} />
+            <BottomNav locale={locale} />
+          </ToastProvider>
+        </LocaleProvider>
         <Analytics />
         <Script
           async

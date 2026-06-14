@@ -4,6 +4,8 @@ import { useState } from "react";
 import { copyText } from "@/lib/clipboard";
 import { track } from "@/lib/track";
 import type { Locale } from "@/i18n";
+import { localeHref } from "@/i18n";
+import { selfUrl } from "@/lib/seo/canonical";
 
 // 计算器"先选我的队"入口 + 结论条 + 一键复制（CodeX 建议吸收版）。
 // 选队走整页跳转（/calculator?team=slug）——让 generateMetadata 同步出
@@ -65,7 +67,7 @@ export function CalculatorFocus({
   const label = (x: { name: string; zh: string }) => (locale === "zh" ? x.zh : x.name);
 
   const adv = focus ? ((focus.pAdvance > 1 ? focus.pAdvance : focus.pAdvance * 100)).toFixed(0) : "";
-  const url = focus ? `https://www.wc2026.cool/calculator?team=${focus.slug}` : "";
+  const url = focus ? selfUrl(`/calculator?team=${focus.slug}`, locale) : "";
 
   function doCopy(kind: "text" | "link") {
     if (!focus) return;
@@ -84,7 +86,7 @@ export function CalculatorFocus({
         {hot.map((x) => (
           <a
             key={x.slug}
-            href={`/calculator?team=${x.slug}`}
+            href={localeHref(locale, `/calculator?team=${x.slug}`)}
             onClick={() => track("calculator_team_selected", { team: x.slug, via: "chip" })}
             className={`shrink-0 rounded-pill border px-2.5 py-1 ${
               focus?.slug === x.slug ? "border-green text-green" : "border-border text-muted"
@@ -99,7 +101,7 @@ export function CalculatorFocus({
           onChange={(e) => {
             if (e.target.value) {
               track("calculator_team_selected", { team: e.target.value, via: "select" });
-              window.location.href = `/calculator?team=${e.target.value}`;
+              window.location.href = localeHref(locale, `/calculator?team=${e.target.value}`);
             }
           }}
         >

@@ -3,7 +3,7 @@ import type { FixtureMatch } from "@/lib/fixtures/matches";
 import { TeamBadge } from "@/components/TeamBadge";
 import { LocalTime } from "@/components/LocalTime";
 import { stageName, groupName } from "@/lib/football/teams";
-import { getDict, type Locale } from "@/i18n";
+import { getDict, localeHref, type Locale } from "@/i18n";
 
 export function MatchCard({ match, locale }: { match: FixtureMatch; locale: Locale }) {
   const t = getDict(locale);
@@ -13,7 +13,7 @@ export function MatchCard({ match, locale }: { match: FixtureMatch; locale: Loca
 
   return (
     <Link
-      href={`/match/${match.id}`}
+      href={localeHref(locale, `/match/${match.id}`)}
       className="fade-up block rounded-lg border border-border bg-surface p-4 transition duration-150 hover:-translate-y-0.5 hover:border-green/50"
     >
       <div className="mb-3 flex items-center justify-between text-[11px] text-muted">

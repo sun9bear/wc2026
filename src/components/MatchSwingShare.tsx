@@ -94,7 +94,7 @@ export function MatchSwingShare({
           saveErr: "Invalid name (2–20 chars, no banned words)",
         };
 
-  const shareUrl = matchUrl(matchId);
+  const shareUrl = matchUrl(matchId, locale);
 
   async function onShare() {
     if (typeof navigator !== "undefined" && navigator.share) {
