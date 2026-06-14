@@ -185,31 +185,31 @@ const COPY = {
     updated: "Zuletzt aktualisiert: Juni 2026",
     overviewH: "Überblick",
     overviewP:
-      "Diese Erklärung beschreibt, welche Informationen WorldCup Predictor (die „Website“) bei der Nutzung erfasst, wie diese Informationen verwendet werden, sowie Details zu Werbung von Drittanbietern und Cookies. Die Website ist ein kostenloses Spiel ohne Geldeinsatz zu Unterhaltungszwecken.",
+      "Diese Erklärung beschreibt, welche Informationen WorldCup Predictor (die „Website“) bei der Nutzung erfasst, wie diese Informationen verwendet werden, sowie Details zu Werbung von Drittanbietern und Cookies. Die Website ist ein kostenloses Unterhaltungsspiel, bei dem es nicht um echtes Geld geht.",
     collectH: "Welche Informationen wir erfassen",
     collectP1:
-      "Die Website verwendet eine anonyme Anmeldung und erfasst keine personenbezogenen Daten wie deinen Namen, deine E-Mail-Adresse oder Telefonnummer.",
+      "Die Website verwendet eine anonyme Anmeldung und erfasst keine personenbezogenen Daten wie deinen Namen, deine E-Mail-Adresse oder deine Telefonnummer.",
     collectP2:
       "Um das Spiel bereitzustellen, speichern wir mit deinem anonymen Konto verknüpfte Spieldaten (wie deine Vorhersagen, deinen Punktestand und deinen Check-in-Verlauf) sowie grundlegende Zugriffsprotokolle für Sicherheit und Statistik.",
     cookiesH: "Cookies & lokaler Speicher",
     cookiesP:
-      "Die Website verwendet Cookies / lokalen Browserspeicher, um dich angemeldet zu halten, Einstellungen zu speichern und dein Erlebnis zu verbessern. Du kannst diesen Speicher im Browser löschen oder einschränken, einige Funktionen könnten dann jedoch nicht mehr funktionieren.",
+      "Die Website verwendet Cookies / lokalen Browserspeicher, um dich angemeldet zu halten, Einstellungen zu speichern und dein Erlebnis zu verbessern. Du kannst diesen Speicher im Browser löschen oder einschränken, einige Funktionen stehen dann jedoch möglicherweise nicht mehr zur Verfügung.",
     adsH: "Werbung von Drittanbietern (Google AdSense)",
     adsP1: "Die Website nutzt den Drittanbieter Google AdSense, um Werbung anzuzeigen.",
     adsP2:
       "Google und andere Drittanbieter verwenden Cookies, um Werbung basierend auf deinen Besuchen dieser und anderer Websites auszuspielen.",
     adsBefore: "Du kannst die ",
     adsLink1: "Google-Anzeigeneinstellungen",
-    adsMid: " besuchen, um personalisierte Werbung zu deaktivieren, oder ",
+    adsMid: " aufrufen, um personalisierte Werbung zu deaktivieren, oder ",
     adsLink2: "aboutads.info",
     adsAfter: " besuchen, um zu erfahren, wie du die Werbe-Cookies von Drittanbietern deaktivierst.",
     storageH: "Datenspeicherung & Sicherheit",
     storageP1:
-      "Die Website wird auf ausländischen Cloud-Diensten (Vercel / Supabase) gehostet. Wir treffen angemessene Maßnahmen zum Schutz der Daten, doch keine Übertragung über das Internet kann als vollständig sicher garantiert werden.",
-    storageP2: "Die Website verkauft deine Informationen nicht an Dritte.",
+      "Die Website wird auf Cloud-Diensten im Ausland (Vercel / Supabase) gehostet. Wir treffen angemessene Maßnahmen zum Schutz der Daten, doch eine vollständig sichere Übertragung über das Internet kann nicht garantiert werden.",
+    storageP2: "Die Website verkauft deine Daten nicht an Dritte.",
     childrenH: "Kinder",
     childrenP:
-      "Die Website ist ein Unterhaltungsangebot für ein allgemeines Publikum und richtet sich nicht an Kinder unter 13 Jahren und erfasst keine Informationen von ihnen.",
+      "Die Website ist ein Unterhaltungsangebot für ein allgemeines Publikum. Sie richtet sich nicht an Kinder unter 13 Jahren und erfasst wissentlich keine Daten von ihnen.",
     updatesH: "Aktualisierungen & Kontakt",
     updatesP1: "Diese Erklärung kann von Zeit zu Zeit aktualisiert werden; Aktualisierungen werden auf dieser Seite veröffentlicht.",
     contact: "Fragen? Kontakt:",
@@ -220,31 +220,31 @@ const COPY = {
     updated: "Dernière mise à jour : juin 2026",
     overviewH: "Aperçu",
     overviewP:
-      "Cette politique explique quelles informations WorldCup Predictor (le « Site ») collecte lorsque vous l'utilisez, comment ces informations sont utilisées, ainsi que des détails sur la publicité tierce et les cookies. Le Site est un jeu gratuit, sans argent, à but de divertissement.",
+      "Cette politique explique quelles informations WorldCup Predictor (le « Site ») collecte lorsque vous l'utilisez, comment ces informations sont utilisées, ainsi que des détails sur la publicité tierce et les cookies. Le Site est un jeu gratuit, sans argent réel, à but de divertissement.",
     collectH: "Informations que nous collectons",
     collectP1:
-      "Le Site utilise une connexion anonyme et ne collecte pas d'informations personnelles identifiantes telles que votre nom, votre e-mail ou votre numéro de téléphone.",
+      "Le Site utilise une connexion anonyme et ne collecte pas de données personnelles permettant de vous identifier, telles que votre nom, votre adresse e-mail ou votre numéro de téléphone.",
     collectP2:
       "Pour fournir le jeu, nous conservons des données de jeu liées à votre compte anonyme (comme vos prédictions, votre solde de points virtuels et votre historique de connexion quotidienne), ainsi que des journaux d'accès de base utilisés pour la sécurité et les statistiques.",
     cookiesH: "Cookies et stockage local",
     cookiesP:
-      "Le Site utilise des cookies / le stockage local du navigateur pour vous garder connecté, mémoriser vos préférences et améliorer votre expérience. Vous pouvez effacer ou restreindre ce stockage dans votre navigateur, mais certaines fonctionnalités risquent de ne plus fonctionner.",
+      "Le Site utilise des cookies / le stockage local du navigateur pour vous maintenir connecté, mémoriser vos préférences et améliorer votre expérience. Vous pouvez effacer ou restreindre ce stockage dans votre navigateur, mais certaines fonctionnalités risquent de ne plus fonctionner.",
     adsH: "Publicité tierce (Google AdSense)",
     adsP1: "Le Site utilise le fournisseur de publicité tiers Google AdSense pour afficher des annonces.",
     adsP2:
       "Google et d'autres fournisseurs tiers utilisent des cookies pour diffuser des annonces en fonction de vos visites sur ce site et d'autres.",
-    adsBefore: "Vous pouvez visiter ",
+    adsBefore: "Vous pouvez consulter ",
     adsLink1: "les paramètres des annonces Google",
-    adsMid: " pour désactiver les annonces personnalisées, ou visiter ",
+    adsMid: " pour désactiver les annonces personnalisées, ou consulter ",
     adsLink2: "aboutads.info",
     adsAfter: " pour savoir comment désactiver les cookies publicitaires des fournisseurs tiers.",
     storageH: "Stockage et sécurité des données",
     storageP1:
-      "Le Site est hébergé sur des services cloud à l'étranger (Vercel / Supabase). Nous prenons des mesures raisonnables pour protéger les données, mais aucune transmission sur internet ne peut être garantie comme totalement sécurisée.",
+      "Le Site est hébergé sur des services cloud à l'étranger (Vercel / Supabase). Nous prenons des mesures raisonnables pour protéger les données, mais aucune transmission sur Internet ne peut être totalement sécurisée.",
     storageP2: "Le Site ne vend pas vos informations à des tiers.",
     childrenH: "Enfants",
     childrenP:
-      "Le Site est un produit de divertissement tout public et ne cible pas les enfants de moins de 13 ans ni ne collecte leurs informations.",
+      "Le Site est un produit de divertissement tout public ; il ne s'adresse pas aux enfants de moins de 13 ans et ne collecte pas leurs informations.",
     updatesH: "Mises à jour et contact",
     updatesP1: "Cette politique peut être mise à jour de temps à autre ; les mises à jour seront publiées sur cette page.",
     contact: "Des questions ? Contact :",

@@ -125,18 +125,18 @@ const COPY = {
     s1body: "Dies ist ein von Fans erstelltes Produkt, nur zum Spaß. Alle Funktionen und Inhalte dienen ausschließlich der Unterhaltung.",
     s2: "Virtuelle Punkte",
     s2body:
-      "Die Punkte auf dieser Website sind virtuelle Gegenstände ohne realen Wert. Sie beinhalten kein echtes Geld und können nicht gekauft, eingelöst, ausgezahlt oder übertragen werden.",
+      "Die Punkte auf dieser Website sind virtuelle Gegenstände ohne realen Wert. Sie sind nicht mit echtem Geld verbunden und können nicht gekauft, eingelöst, ausgezahlt oder übertragen werden.",
     s3: "KI & Daten",
     s3body1:
-      "Spielvorschauen, Höhepunkte und Zusammenfassungen werden automatisch von KI erstellt, und Punktebelohnungen werden aus Community-Daten berechnet – alles nur zur Unterhaltung und keinerlei Ratschlag.",
+      "Spielvorschauen, Höhepunkte und Zusammenfassungen werden automatisch von KI erstellt, und Punktebelohnungen werden aus Community-Daten berechnet – alles dient ausschließlich der Unterhaltung und stellt keine Beratung dar.",
     s3body2:
       "Spielpläne und Ergebnisse stammen aus öffentlichen Datenquellen und können verzögert oder fehlerhaft sein; offizielle Bekanntmachungen haben Vorrang.",
     s4: "Keine offizielle Verbindung",
     s4body:
-      "Dies ist ein inoffizielles, von Fans erstelltes Produkt. Es ist nicht mit der FIFA, der Weltmeisterschaft oder einem offiziellen Turniergremium, Team oder Sponsor verbunden, von ihnen autorisiert oder unterstützt. Solche Namen werden nur zur Beschreibung der Spiele verwendet.",
+      "Dies ist ein inoffizielles, von Fans erstelltes Produkt. Es steht in keiner Verbindung zur FIFA, zur Weltmeisterschaft oder zu offiziellen Turniergremien, Teams oder Sponsoren und wird von diesen weder autorisiert noch unterstützt. Entsprechende Namen werden ausschließlich zur Beschreibung der Spiele verwendet.",
     s5: "Haftungsbeschränkung",
     s5body:
-      "Soweit nach geltendem Recht zulässig, haftet diese Website nicht für direkte oder indirekte Schäden aus der Nutzung dieses Produkts. Durch die weitere Nutzung dieser Website bestätigst du, dass du die obigen Bedingungen gelesen hast und ihnen zustimmst.",
+      "Soweit nach geltendem Recht zulässig, übernehmen wir keine Haftung für direkte oder indirekte Schäden, die aus der Nutzung dieses Produkts entstehen. Durch die weitere Nutzung dieser Website bestätigst du, dass du die obigen Bedingungen gelesen hast und ihnen zustimmst.",
     seeAlso: "Siehe auch: ",
     about: "Über & Spielanleitung",
     privacy: "Datenschutzerklärung",
@@ -155,15 +155,15 @@ const COPY = {
       "Les points de ce site sont des objets virtuels sans valeur dans le monde réel. Ils n'impliquent aucun argent réel et ne peuvent être achetés, échangés, retirés ni transférés.",
     s3: "IA et données",
     s3body1:
-      "Les aperçus des matchs, les points forts et les résumés sont générés automatiquement par IA, et les récompenses de score sont calculées à partir de données communautaires — le tout uniquement à but de divertissement et ne constitue aucun conseil.",
+      "Les aperçus des matchs, les points forts et les résumés sont générés automatiquement par IA, et les récompenses de score sont calculées à partir de données communautaires — le tout sert uniquement au divertissement et ne constitue en aucun cas un conseil.",
     s3body2:
       "Les calendriers et les scores proviennent de sources de données publiques et peuvent être retardés ou inexacts ; les annonces officielles font foi.",
     s4: "Aucune affiliation officielle",
     s4body:
-      "Il s'agit d'un produit non officiel créé par des fans. Il n'est ni affilié, ni autorisé, ni approuvé par la FIFA, la Coupe du monde ou tout organisme officiel du tournoi, équipe ou sponsor. Ces noms sont utilisés uniquement pour décrire les matchs.",
+      "Il s'agit d'un produit non officiel créé par des fans. Il n'est ni affilié, ni autorisé, ni approuvé par la FIFA, la Coupe du monde ou tout organisme officiel du tournoi, toute équipe ou tout sponsor. Ces noms sont utilisés uniquement pour décrire les matchs.",
     s5: "Limitation de responsabilité",
     s5body:
-      "Dans la mesure permise par la loi applicable, ce site n'est pas responsable des pertes directes ou indirectes résultant de l'utilisation de ce produit. En continuant à utiliser ce site, vous confirmez avoir lu et accepté les conditions ci-dessus.",
+      "Dans la mesure permise par la loi applicable, nous déclinons toute responsabilité pour les dommages directs ou indirects résultant de l'utilisation de ce produit. En continuant à utiliser ce site, vous confirmez avoir lu et accepté les conditions ci-dessus.",
     seeAlso: "Voir aussi : ",
     about: "À propos et comment jouer",
     privacy: "Politique de confidentialité",
