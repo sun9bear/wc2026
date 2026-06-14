@@ -49,7 +49,7 @@
 | 6/13 | ~~Fubo 联盟申请（Impact，In Review）~~ **6/13 被拒且禁止再申请——路径已死**；W-8BEN + Wise 美元账户收款仍可用于其他 Impact 联盟 | — |
 | 6/13 | **The Odds API 实测**：免费 500 credits/月，1 credit 返回全部 70 场×24 机构 | **$30 档不用买**；key 在 .env.local |
 | 6/14 凌晨 | **概率引擎+页面全量上线**（30b8590, caabf9a, 93d01b0） | 见下节；109 个 vitest 全过 |
-| 6/14 | 快照持久化代码（7b68152，**已提交未部署**） | 等 0002 迁移完成后部署即自动攒历史 |
+| 6/14 | 快照持久化代码（7b68152） | **已部署在跑**：prob_*_snapshots 持续累积（6/14 实测 team 11,232 / match 15,600 行），出线趋势/摆动卡/战报卡数据源就绪 |
 | 6/13 | **全球受众改版上线**（结算自驱动+全站双语+本地时区+加载页+倍率种子） | 受众定位扩为全球球迷。①结算：runSettlement 抽库 + 首页/比赛页 after() 流量自驱动结算（10 分钟节流幂等），修复每日 cron 滞后 24h+；已手动清 3 场积压。②EN 视图全量可用：队名/赛段/按钮/免责声明双语，中文 AI 内容对 EN 折叠。③LocalTime 组件+客户端日期分组：全站按浏览器时区显示（带 GMT 标注）。④首页 hero：计算器主入口+今晚焦点+1000 积分横幅；底部导航"串关"→"出线"。⑤loading.tsx×3 加载页。⑥proxy.ts 首访写 NEXT_LOCALE/wc_country cookie（为小语种扩展备）。⑦scripts/seed-pools.ts 用市场共识概率灌注 69 场倍率（≈1/p）。⑧THE_ODDS_API_KEY 已入 Vercel 生产；.env.local 吞行已修。计划文档 docs/GROWTH-PLAN.md |
 | 6/13 | **任务 2-6 全量上线**（commit 5628c55，已部署生产+线上验证；备份 D:/wc2026-backup.bundle） | NEXT-SESSION 清单 2-6 一口气做完，121 vitest 全过。①**英文 AI 内容（Gemini Flash）**：新建 `src/lib/ai/gemini.ts`（REST v1beta，默认 `gemini-3.1-flash`，404 时 ListModels 自动选最新 flash），content.ts 加 EN prompts（r/soccer 梗味，雷词 fail-closed），getMatchDetail 增 previewEn/recapEn/sentimentEn，match 页 EN 优先英文平铺/无则折叠中文，settle 路由生成 recap_en（CAP 8→4），**新建 `/api/cron/gen-content`** 幂等回填（≤8 场/次，Gemini 只在 Vercel 端可达，本机 geo 拦截）。②**留存三件**：/api/me 增 recent/streak/bestStreak（按 kickoff 排序）+beatPct，SettleDrawer 结算揭晓抽屉（挂 / 与 /me，localStorage `last_seen_settled_at`+BottomNav 红点），MeClient emoji 战绩格复制+连胜头部。③**埋点**：0003_events.sql，`/api/track`（同源校验+内存限流），5 个客户端事件，@vercel/analytics（**需 Dashboard 手动 Enable**）。④**昵称+私人擂台**：0004_leagues.sql，/api/profile 昵称，/api/league 创建/加入/[code]（全 service key），/league+/league/[code] 双语页（noindex 仅私域），入擂台须先有昵称，口令容错（含漏横杠）。⑤**爆冷摆动卡**：/api/og 加 `mode=swing`（result 过雷词闸），scripts/swing-bake.ts 本地预烘焙。**对抗审查 36 agents 确认并修复 3 项**：OG result 雷词过滤、track 同源+限流、league code 容错。0003/0004 已隧道执行（service_role 已 GRANT）。**⚠ .env.local 的 CRON_SECRET 与生产不一致——调生产 cron 用 docs/secret/vercel.env 那个（len 39）** |
 
@@ -75,10 +75,7 @@ AI：DeepSeek 只写双语短评（夺冠 Top3 一句话），雷词 fail-closed
 ## 四、待办事项
 
 **P0（接手先做）**
-1. **执行 0002 迁移**（建 3 张概率历史表）。阻碍：本机连不通 Supabase Postgres 端口（直连 IPv6-only；各区域 pooler 被网络重置），Supabase 仪表盘因 GitHub OAuth 封禁登不上。两条路：
-   a. 走 D:\daili 的 v2ray 代理（美国出口）做 SOCKS5 本地端口转发 → `npx tsx scripts/migrate.ts supabase/migrations/0002_probabilities.sql`（连接串在 .env.local 的 SUPABASE_DB_URL；pg 不认 HTTP_PROXY，需写无依赖 SOCKS5 转发脚本；SOCKS 远端解析域名可顺便绕过 IPv6 问题）
-   b. GitHub 解封后登仪表盘 SQL Editor 直接粘贴执行
-   完成后 `npx vercel deploy --prod --yes` 部署快照写入（用户已授权部署），验证：anon GET `/rest/v1/prob_meta?select=key` 返回 200
+1. ~~**执行 0002 迁移**（建 3 张概率历史表）~~ **✅ 已完成（2026-06-14 核查确认，此前不知何时已应用）**：三张表 `prob_meta`/`prob_team_snapshots`/`prob_match_snapshots` 早已建好、RLS + 公开只读策略 + 显式 GRANT 全到位，且持久化代码已部署、在持续累积快照。anon REST 实测：`prob_meta` HTTP 200、`prob_team_snapshots` 11,232 行、`prob_match_snapshots` 15,600 行。**无需再走隧道**。出线异动趋势、爆冷摆动卡、赛后比分战报卡的数据源均已就绪。
 2. ~~把 THE_ODDS_API_KEY 加进 Vercel 生产环境变量~~ **已完成（6/13，CLI `vercel env add`+重新部署；DEEPSEEK_API_KEY 实测本就在生产）**
 3. **GitHub 申诉**（support.github.com）——解封后恢复：push 备份、Supabase 仪表盘、Git 自动部署链
 4. **UptimeRobot 监控**（一直没做！上次 54h 无人发现的事故不能重演）：监控 / 和 /leaderboard
