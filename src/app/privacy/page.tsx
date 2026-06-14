@@ -205,11 +205,11 @@ const COPY = {
     adsAfter: " besuchen, um zu erfahren, wie du die Werbe-Cookies von Drittanbietern deaktivierst.",
     storageH: "Datenspeicherung & Sicherheit",
     storageP1:
-      "Die Website wird auf Cloud-Diensten im Ausland (Vercel / Supabase) gehostet. Wir treffen angemessene Maßnahmen zum Schutz der Daten, doch eine vollständig sichere Übertragung über das Internet kann nicht garantiert werden.",
+      "Die Website wird über Cloud-Dienste (Vercel / Supabase) bereitgestellt, deren Server sich außerhalb der EU, unter anderem in den USA, befinden. Bei dieser Übermittlung in Drittländer stützen wir uns auf geeignete Garantien wie die Standardvertragsklauseln der EU-Kommission. Wir treffen angemessene Maßnahmen zum Schutz der Daten, doch eine vollständig sichere Übertragung über das Internet kann nicht garantiert werden.",
     storageP2: "Die Website verkauft deine Daten nicht an Dritte.",
     childrenH: "Kinder",
     childrenP:
-      "Die Website ist ein Unterhaltungsangebot für ein allgemeines Publikum. Sie richtet sich nicht an Kinder unter 13 Jahren und erfasst wissentlich keine Daten von ihnen.",
+      "Die Website ist ein Unterhaltungsangebot für ein allgemeines Publikum. Sie richtet sich nicht an Kinder unter 16 Jahren und erfasst wissentlich keine Daten von ihnen.",
     updatesH: "Aktualisierungen & Kontakt",
     updatesP1: "Diese Erklärung kann von Zeit zu Zeit aktualisiert werden; Aktualisierungen werden auf dieser Seite veröffentlicht.",
     contact: "Fragen? Kontakt:",
@@ -240,11 +240,11 @@ const COPY = {
     adsAfter: " pour savoir comment désactiver les cookies publicitaires des fournisseurs tiers.",
     storageH: "Stockage et sécurité des données",
     storageP1:
-      "Le Site est hébergé sur des services cloud à l'étranger (Vercel / Supabase). Nous prenons des mesures raisonnables pour protéger les données, mais aucune transmission sur Internet ne peut être totalement sécurisée.",
+      "Le Site est hébergé sur des services cloud (Vercel / Supabase) dont les serveurs sont situés hors de l'Union européenne, notamment aux États-Unis. Pour ces transferts vers des pays tiers, nous nous appuyons sur des garanties appropriées telles que les clauses contractuelles types de la Commission européenne. Nous prenons des mesures raisonnables pour protéger les données, mais aucune transmission sur Internet ne peut être totalement sécurisée.",
     storageP2: "Le Site ne vend pas vos informations à des tiers.",
     childrenH: "Enfants",
     childrenP:
-      "Le Site est un produit de divertissement tout public ; il ne s'adresse pas aux enfants de moins de 13 ans et ne collecte pas leurs informations.",
+      "Le Site est un produit de divertissement tout public ; il ne s'adresse pas aux enfants de moins de 15 ans et ne collecte pas leurs informations.",
     updatesH: "Mises à jour et contact",
     updatesP1: "Cette politique peut être mise à jour de temps à autre ; les mises à jour seront publiées sur cette page.",
     contact: "Des questions ? Contact :",

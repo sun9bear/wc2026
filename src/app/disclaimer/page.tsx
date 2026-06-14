@@ -136,7 +136,7 @@ const COPY = {
       "Dies ist ein inoffizielles, von Fans erstelltes Produkt. Es steht in keiner Verbindung zur FIFA, zur Weltmeisterschaft oder zu offiziellen Turniergremien, Teams oder Sponsoren und wird von diesen weder autorisiert noch unterstützt. Entsprechende Namen werden ausschließlich zur Beschreibung der Spiele verwendet.",
     s5: "Haftungsbeschränkung",
     s5body:
-      "Soweit nach geltendem Recht zulässig, übernehmen wir keine Haftung für direkte oder indirekte Schäden, die aus der Nutzung dieses Produkts entstehen. Durch die weitere Nutzung dieser Website bestätigst du, dass du die obigen Bedingungen gelesen hast und ihnen zustimmst.",
+      "Soweit nach geltendem Recht zulässig, übernehmen wir keine Haftung für direkte oder indirekte Schäden, die aus der Nutzung dieses Produkts entstehen. Unberührt bleibt die Haftung für Vorsatz und grobe Fahrlässigkeit sowie für Schäden aus der Verletzung des Lebens, des Körpers oder der Gesundheit. Durch die weitere Nutzung dieser Website bestätigst du, dass du die obigen Bedingungen gelesen hast und ihnen zustimmst.",
     seeAlso: "Siehe auch: ",
     about: "Über & Spielanleitung",
     privacy: "Datenschutzerklärung",
@@ -163,7 +163,7 @@ const COPY = {
       "Il s'agit d'un produit non officiel créé par des fans. Il n'est ni affilié, ni autorisé, ni approuvé par la FIFA, la Coupe du monde ou tout organisme officiel du tournoi, toute équipe ou tout sponsor. Ces noms sont utilisés uniquement pour décrire les matchs.",
     s5: "Limitation de responsabilité",
     s5body:
-      "Dans la mesure permise par la loi applicable, nous déclinons toute responsabilité pour les dommages directs ou indirects résultant de l'utilisation de ce produit. En continuant à utiliser ce site, vous confirmez avoir lu et accepté les conditions ci-dessus.",
+      "Dans la mesure permise par la loi applicable, nous déclinons toute responsabilité pour les dommages directs ou indirects résultant de l'utilisation de ce produit. Cette limitation ne s'applique pas en cas de faute intentionnelle ou de faute lourde, ni en cas de dommages corporels. En continuant à utiliser ce site, vous confirmez avoir lu et accepté les conditions ci-dessus.",
     seeAlso: "Voir aussi : ",
     about: "À propos et comment jouer",
     privacy: "Politique de confidentialité",
