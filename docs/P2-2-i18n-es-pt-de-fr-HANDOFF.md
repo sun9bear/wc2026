@@ -131,7 +131,8 @@
 - `src/lib/seo/indexnow.ts`、`public/llms.txt`：补 es/pt/de/fr 树 URL。
 
 ### A6. teams.ts / LocalTime / OG 卡
-- `src/lib/football/teams.ts`：`teamName/stageName/groupName` 签名 `"zh"|"en"` → `Locale`。**`NATIONS` 表结构从 `{zh,iso2}` 扩成含 es/pt/de/fr 名 → 48 国 ×4 语 = 192 条同步补全**（§4③，不回落英文），`teamName` 按 locale 取对应名。`stageName`/`groupName` 补 4 语赛段/组名（Group A → Grupo A / Grupo A / Gruppe A / Groupe A）。**这是 Phase A 第三块明确翻译量**（+约 0.5 人日 + 国名拼写母语校对，注意变音符 Türkiye/Côte d'Ivoire/Curaçao 等）。
+- `src/lib/football/teams.ts`：**✅ `NATIONS` 表已扩（2026-06-14，staged，commit `8…`）**——`Nation` 接口加 es/pt/de/fr **必填**字段（tsc 强制每条齐全），66 条（含别名）×4 名全部补全（§4③，不回落英文）；变音符已处理（Türkiye/Côte d'Ivoire/Curaçao/Ägypten/Österreich 等）。tsc 净、155 测试不受影响、eslint 0。建议母语者抽查拼写。
+  - **⬜ 激活时补**：`teamName/stageName/groupName` 签名 `"zh"|"en"` → `Locale`，`teamName` 改读 `NATIONS[name][locale]`；补 4 语赛段名（`STAGE_EN` → 多语表）+ 组名（Group A → Grupo A / Grupo A / Gruppe A / Groupe A）。
 - `src/components/LocalTime.tsx`：日期 locale 映射表（zh-CN/en-US/es-ES/pt-BR/de-DE/fr-FR）。
 - `src/app/api/og/route.tsx`（824 行，17 三元，**需精读后再动**）：把烤进图片的标题/副文案 locale 化。**德语文本偏长**——逐卡（match/team/swing/report/thirds）做**视觉 QA 防溢出**（截断/缩字号/换行）。share 库 `swingShare.ts`/`matchCard.ts` 的 locale 三元同步。这是 Phase A 第二重的活儿（仅次于法务页翻译）。
 
