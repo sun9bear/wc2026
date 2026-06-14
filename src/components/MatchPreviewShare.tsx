@@ -25,7 +25,8 @@ export function MatchPreviewShare({
   // 浏览器时区格式化 → 仅挂载后显示，避免 SSR(UTC)/客户端时区不一致的 hydration 漂移。
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
-  const kickStr = mounted ? formatKickoff(kickoff, locale) : "";
+  const k = mounted ? formatKickoff(kickoff, locale) : { date: "", time: "" };
+  const kickStr = k.date ? `${k.date} ${k.time}` : "";
 
   const c =
     locale === "zh"

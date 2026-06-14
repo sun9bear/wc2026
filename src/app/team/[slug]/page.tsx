@@ -95,7 +95,7 @@ export async function generateMetadata({
     title: c.title(nm),
     description: c.desc(nm, fmtP(d.pAdvance), fmtP(d.pChampion)),
     alternates: localizedAlternates(`/team/${d.slug}`, locale),
-    openGraph: { title: c.title(nm), url: selfUrl(`/team/${d.slug}`, locale), images: [{ url: og, width: 1200, height: 630 }] },
+    openGraph: { title: c.title(nm), url: selfUrl(`/team/${d.slug}`, locale), images: [{ url: og, width: 1080, height: 1440 }] },
     twitter: { card: "summary_large_image", images: [og] },
   };
 }

@@ -46,6 +46,7 @@ export function HeaderShare({
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  const k = mounted && match ? formatKickoff(match.kickoffIso, locale) : { date: "", time: "" };
   const imgUrl =
     ogUrl ??
     (match
@@ -56,7 +57,8 @@ export function HeaderShare({
           dp: match.dp,
           ap: match.ap,
           locale,
-          kickoffLabel: mounted ? formatKickoff(match.kickoffIso, locale) : "",
+          kickoffDate: k.date,
+          kickoffTime: k.time,
           homeFlag: match.homeFlag,
           awayFlag: match.awayFlag,
           aiTake: match.aiTake,

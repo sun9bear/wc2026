@@ -66,7 +66,7 @@ export async function generateMetadata({
         siteName: "wc2026.cool",
         title,
         description,
-        images: [{ url: "/og.png", width: 1200, height: 630 }],
+        images: [{ url: "/og.png", width: 1080, height: 1440 }],
       },
       twitter: { card: "summary_large_image", title, description, images: ["/og.png"] },
     };
@@ -101,7 +101,7 @@ export async function generateMetadata({
       siteName: "wc2026.cool",
       title,
       description,
-      images: [{ url: ogUrl, width: 1200, height: 630 }],
+      images: [{ url: ogUrl, width: 1080, height: 1440 }],
     },
     twitter: { card: "summary_large_image", title, description, images: [ogUrl] },
   };

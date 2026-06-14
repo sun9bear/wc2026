@@ -74,7 +74,7 @@ export async function generateMetadata({
           description: c.teamDesc(nm),
           // ?team= 变体合并到 /calculator（同一工具、不入 sitemap，避免近重复页）。
           alternates: localizedAlternates("/calculator", locale),
-          openGraph: { images: [{ url: og, width: 1200, height: 630 }] },
+          openGraph: { images: [{ url: og, width: 1080, height: 1440 }] },
           twitter: { card: "summary_large_image", images: [og] },
         };
       }

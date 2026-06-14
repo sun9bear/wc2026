@@ -2,15 +2,15 @@ import { ImageResponse } from "next/og";
 import QRCode from "qrcode";
 import { getForecast } from "@/lib/prob/pipeline";
 import { findTeam } from "@/lib/prob/findTeam";
-import { findBannedTerms, findBannedTermsStrict } from "@/lib/compliance/bannedTerms";
+import { findBannedTermsStrict } from "@/lib/compliance/bannedTerms";
 
 export const maxDuration = 60;
 
 const SITE = "https://www.wc2026.cool";
 
 // 动态 OG 图卡：/api/og?team=south-korea&locale=zh
-// 球队出线概率卡（1200×630）——Twitter/Discord/Telegram/WhatsApp 链接自动展开；
-// 微信场景由运营者直接打开本路由另存 PNG 投群。
+// 所有模式统一 3:4 竖版（1080×1440，对齐对阵卡）——小红书/微信存图发圈、IG Story；
+// 链接预览(Twitter/Discord/Telegram/WhatsApp)按竖版比例展开；微信场景运营者直接打开本路由另存 PNG。
 // 文案只用 出线概率/夺冠/chance/advance——双语面均零禁词。
 
 const pct = (x: number) => {
@@ -95,11 +95,13 @@ export async function GET(req: Request) {
     };
     const before = clamp(searchParams.get("before"));
     const after = clamp(searchParams.get("after"));
-    // 路由公开无鉴权——result 任意可控，必须过雷词闸（双语都查，参数不分语言地接受 ASCII/中文）。
-    // 命中则整段丢弃（fail-closed），绝不让品牌图卡渲染博彩词（与全站 §9.1 纵深防御一致）。
+    // 路由公开无鉴权——result 任意可控，必须过严格雷词闸（NFKC+去零宽+删分隔+子串，抗全角/拆分/驼峰绕过，
+    // 与同卡 by 同级；词边界版会被 BetKing/ｂｅｔ/b.e.t 绕过）。命中则整段丢弃（fail-closed），
+    // 绝不让品牌图卡渲染博彩词（与全站 §9.1 纵深防御一致）。
     const rawResult = (searchParams.get("result") ?? "").slice(0, 60);
     const result =
-      findBannedTerms(rawResult, "en").length === 0 && findBannedTerms(rawResult, "zh").length === 0
+      findBannedTermsStrict(rawResult, "en").length === 0 &&
+      findBannedTermsStrict(rawResult, "zh").length === 0
         ? rawResult
         : "";
     // 分享者署名（用户可控）：① 码点截断到 20（与昵称上限一致，且 Array.from 不拆断代理对，避免 �）；
@@ -122,18 +124,20 @@ export async function GET(req: Request) {
       let fonts: { name: string; data: ArrayBuffer; weight: 700 }[] = [];
       if (locale === "zh") {
         const f = await loadZhFont(
-          `${t.zh}${result}${by}出线概率万次蒙特卡洛模拟更新于0123456789.%→·若胜平负 by`
+          `${t.zh}${result}${by}出线概率万次蒙特卡洛模拟更新于赛前预测仅供娱乐0123456789.%·`
         );
         if (f) fonts = [{ name: "NotoSansSC", data: f, weight: 700 }];
         else locale = "en";
       }
       const L =
         locale === "zh"
-          ? { label: "出线概率", sims: "10,000 次蒙特卡洛模拟", updated: `更新于 ${updated} UTC` }
+          ? { label: "出线概率", from: "赛前", sims: "10,000 次蒙特卡洛模拟", updated: `更新于 ${updated} UTC`, disc: "预测仅供娱乐" }
           : {
               label: "Chance to advance",
+              from: "was",
               sims: "10,000 Monte Carlo simulations",
               updated: `Updated ${updated} UTC`,
+              disc: "For entertainment only",
             };
       const name = locale === "zh" ? t.zh : t.name;
       const up = after >= before;
@@ -144,78 +148,70 @@ export async function GET(req: Request) {
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        backgroundColor: "#0c1116",
-        color: "#e6edf3",
-        padding: 64,
+        backgroundColor: "#0A0E13",
+        color: "#E8EDF2",
+        padding: 84,
         fontFamily: fonts.length ? "NotoSansSC" : "sans-serif",
       };
       return new ImageResponse(
         (
           <div style={base}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+            {/* 顶部：队旗 + 队名 ｜ 品牌（长队名换行不挤压品牌） */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 28, flex: 1, minWidth: 0 }}>
                 {t.flag ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={t.flag.replace("/w80/", "/w160/")} width={120} height={84} style={{ borderRadius: 8, objectFit: "cover" }} />
+                  <img src={t.flag.replace("/w80/", "/w160/")} width={150} height={100} style={{ borderRadius: 10, objectFit: "cover" }} />
                 ) : (
-                  <div style={{ display: "flex", fontSize: 84 }}>⚽</div>
+                  <div style={{ display: "flex", fontSize: 96 }}>⚽</div>
                 )}
-                <div style={{ display: "flex", fontSize: 64, fontWeight: 700 }}>{name}</div>
+                <div style={{ display: "flex", flex: 1, minWidth: 0, fontSize: 56, fontWeight: 700, color: "#E8EDF2", lineHeight: 1.05 }}>{name}</div>
               </div>
-              <div style={{ display: "flex", fontSize: 32, color: "#3fb950" }}>wc2026.cool</div>
+              <div style={{ display: "flex", fontSize: 32, fontWeight: 700, color: "#1BE27F", flexShrink: 0 }}>wc2026.cool</div>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <div style={{ display: "flex", fontSize: 34, color: "#8b949e" }}>{L.label}</div>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 32 }}>
-                <div
-                  style={{
-                    display: "flex",
-                    fontSize: 96,
-                    fontWeight: 700,
-                    color: "#8b949e",
-                    textDecoration: "line-through",
-                  }}
-                >
+            {/* 中部：出线概率大数字（after）+ 赛前值（before 删除线） */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexGrow: 1, gap: 8 }}>
+              <div style={{ display: "flex", fontSize: 42, color: "#8A97A6" }}>{L.label}</div>
+              <div style={{ display: "flex", fontSize: 250, fontWeight: 700, lineHeight: 1, color: up ? "#1BE27F" : "#FF5436" }}>
+                {fmtPct(after)}%
+              </div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 16, marginTop: 8 }}>
+                <div style={{ display: "flex", fontSize: 40, color: "#5a6472" }}>{L.from}</div>
+                <div style={{ display: "flex", fontSize: 60, color: "#5a6472", textDecoration: "line-through" }}>
                   {fmtPct(before)}%
                 </div>
-                <div style={{ display: "flex", fontSize: 72, color: "#8b949e" }}>→</div>
-                <div
-                  style={{
-                    display: "flex",
-                    fontSize: 170,
-                    fontWeight: 700,
-                    lineHeight: 1,
-                    color: up ? "#3fb950" : "#f85149",
-                  }}
-                >
-                  {fmtPct(after)}%
-                </div>
               </div>
-              {result && (
-                <div style={{ display: "flex", fontSize: 36, color: "#e6edf3", marginTop: 8 }}>
-                  {result}
-                </div>
-              )}
-              {by && (
-                <div style={{ display: "flex", fontSize: 26, color: "#8b949e", marginTop: 6 }}>
-                  —— {by}
-                </div>
-              )}
             </div>
 
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 24, color: "#8b949e" }}>
-              <div style={{ display: "flex" }}>{L.sims}</div>
-              <div style={{ display: "flex" }}>{L.updated}</div>
+            {/* 结果文案 + 署名 */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+              {result ? (
+                <div style={{ display: "flex", width: "100%", justifyContent: "center", textAlign: "center", fontSize: 42, color: "#C9D2DC", lineHeight: 1.25 }}>
+                  {result}
+                </div>
+              ) : null}
+              {by ? (
+                <div style={{ display: "flex", fontSize: 30, color: "#8A97A6" }}>—— {by}</div>
+              ) : null}
+            </div>
+
+            {/* 底部 */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 26, color: "#5a6472" }}>
+                <div style={{ display: "flex" }}>{L.sims}</div>
+                <div style={{ display: "flex" }}>{L.updated}</div>
+              </div>
+              <div style={{ display: "flex", fontSize: 24, color: "#5a6472" }}>{`wc2026.cool · ${L.disc}`}</div>
             </div>
           </div>
         ),
-        { width: 1200, height: 630, fonts: fonts.length ? fonts : undefined }
+        { width: 1080, height: 1440, fonts: fonts.length ? fonts : undefined }
       );
     }
   }
 
-  // 比赛预览卡（mode=match）：对阵 + 模型胜/平/胜概率 + 开球时间 + AI 短评。3:4 竖版(默认)/1:1 方版。
+  // 比赛预览卡（mode=match）：对阵 + 模型胜/平/胜概率 + 开球时间 + AI 短评。统一 3:4 竖版（1080×1440）。
   // 概率/时间/短评全由调用方（比赛页客户端）传入——路由只渲染、不算数、不取当前时区（静态图无法逐观看者本地化）。
   // 安全：队名/时间/短评过雷词闸 fail-closed；队旗仅接受 flagcdn.com（防任意 <img src> 的 SSRF）。
   if (searchParams.get("mode") === "match") {
@@ -242,14 +238,14 @@ export async function GET(req: Request) {
     const ap = clampPct(searchParams.get("ap"));
     const hflag = flagOk(searchParams.get("hf"));
     const aflag = flagOk(searchParams.get("af"));
-    const kickoff = clean(searchParams.get("t"), 48);
+    const kdate = clean(searchParams.get("t"), 48);
+    const ktime = clean(searchParams.get("t2"), 48);
     const aitake = clean(searchParams.get("q"), 90);
-    const square = searchParams.get("fmt") === "square";
     if (home && away && hp !== null && dp !== null && ap !== null) {
       let mfonts: { name: string; data: ArrayBuffer; weight: 700 }[] = [];
       if (locale === "zh") {
         const f = await loadZhFont(
-          `${home}${away}${kickoff}${aitake}模型胜平局客胜概率万次蒙特卡洛模拟更新于预测仅供娱乐改一剩余比分自己算出线世界杯小组赛最可能扫码0123456789%·：、，。- `
+          `${home}${away}${kdate}${ktime}${aitake}模型胜平局客胜概率万次蒙特卡洛模拟更新于预测仅供娱乐改一剩余比分自己算出线世界杯小组赛最可能扫码0123456789%·：、，。- `
         );
         if (f) mfonts = [{ name: "NotoSansSC", data: f, weight: 700 }];
         else locale = "en";
@@ -274,7 +270,7 @@ export async function GET(req: Request) {
           ) : (
             <div style={{ display: "flex", width: 150, height: 100, borderRadius: 10, backgroundColor: "#1B232D" }} />
           )}
-          <div style={{ display: "flex", fontSize: 48, fontWeight: 700, color: "#E8EDF2" }}>{name}</div>
+          <div style={{ display: "flex", width: "100%", justifyContent: "center", textAlign: "center", fontSize: 48, fontWeight: 700, color: "#E8EDF2", lineHeight: 1.1 }}>{name}</div>
         </div>
       );
       const base: React.CSSProperties = {
@@ -285,7 +281,7 @@ export async function GET(req: Request) {
         justifyContent: "space-between",
         backgroundColor: "#0A0E13",
         color: "#E8EDF2",
-        padding: square ? 72 : 84,
+        padding: 84,
         fontFamily: mfonts.length ? "NotoSansSC" : "sans-serif",
       };
       return new ImageResponse(
@@ -299,14 +295,20 @@ export async function GET(req: Request) {
               <div style={{ display: "flex", fontSize: 30, fontWeight: 700, color: "#1BE27F" }}>wc2026.cool</div>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 20 }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
                 {team(home, hflag)}
                 <div style={{ display: "flex", fontSize: 44, fontWeight: 700, color: "#3a4654" }}>VS</div>
                 {team(away, aflag)}
               </div>
-              {kickoff ? (
-                <div style={{ display: "flex", fontSize: 28, color: "#8A97A6" }}>{kickoff}</div>
+              {/* 开球时间：紧贴 VS 下方，拆两行（日期+星期 / 时区+时间） */}
+              {kdate ? (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                  <div style={{ display: "flex", fontSize: 30, color: "#C9D2DC" }}>{kdate}</div>
+                  {ktime ? (
+                    <div style={{ display: "flex", fontSize: 26, color: "#8A97A6" }}>{ktime}</div>
+                  ) : null}
+                </div>
               ) : (
                 <div style={{ display: "flex" }} />
               )}
@@ -356,7 +358,7 @@ export async function GET(req: Request) {
             </div>
           </div>
         ),
-        { width: 1080, height: square ? 1080 : 1440, fonts: mfonts.length ? mfonts : undefined }
+        { width: 1080, height: 1440, fonts: mfonts.length ? mfonts : undefined }
       );
     }
   }
@@ -364,7 +366,7 @@ export async function GET(req: Request) {
   // 文案
   let fonts: { name: string; data: ArrayBuffer; weight: 700 }[] = [];
   const zhText = hit
-    ? `${hit.team.zh}组第名出线概率夺冠万次蒙特卡洛模拟更新于0123456789ABCDEFGHIJKL.%· `
+    ? `${hit.team.zh}组第名当前出线概率夺冠万次蒙特卡洛模拟更新于0123456789ABCDEFGHIJKL.%· `
     : "";
   // 署名标签（任务 C「我的主队」分享图）：用户经 slug 间接可控 → 过雷词闸 + 截断 fail-closed。
   const tagRaw = (searchParams.get("tag") ?? "").replace(/\s+/g, " ").slice(0, 24).trim();
@@ -376,7 +378,7 @@ export async function GET(req: Request) {
       : "";
   if (locale === "zh") {
     const f = await loadZhFont(
-      zhText + tag + "我的队还有戏吗世界杯出线计算器免费无需注册次蒙特卡洛模拟扫码自己算主队"
+      zhText + tag + "我的队还有戏吗？世界杯出线计算器免费无需注册次蒙特卡洛模拟扫码自己算主队"
     );
     if (f) fonts = [{ name: "NotoSansSC", data: f, weight: 700 }];
     else locale = "en"; // 字体取不到就出英文卡
@@ -412,35 +414,35 @@ export async function GET(req: Request) {
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
-    backgroundColor: "#0c1116",
-    color: "#e6edf3",
-    padding: 64,
+    backgroundColor: "#0A0E13",
+    color: "#E8EDF2",
+    padding: 84,
     fontFamily: fonts.length ? "NotoSansSC" : "sans-serif",
   };
 
   if (!hit) {
-    // 品牌兜底卡（无 team 参数或未匹配）
+    // 品牌兜底卡（无 team 参数或未匹配）—— 3:4 竖版
     return new ImageResponse(
       (
         <div style={base}>
-          <div style={{ display: "flex", fontSize: 40, color: "#3fb950" }}>⚽ wc2026.cool</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <div style={{ display: "flex", fontSize: 72, fontWeight: 700 }}>{L.hook}</div>
-            <div style={{ display: "flex", fontSize: 36, color: "#8b949e" }}>{L.sub}</div>
+          <div style={{ display: "flex", fontSize: 44, fontWeight: 700, color: "#1BE27F" }}>⚽ wc2026.cool</div>
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", flexGrow: 1, gap: 28 }}>
+            <div style={{ display: "flex", fontSize: 88, fontWeight: 700, color: "#E8EDF2", lineHeight: 1.15 }}>{L.hook}</div>
+            <div style={{ display: "flex", fontSize: 42, color: "#8A97A6", lineHeight: 1.3 }}>{L.sub}</div>
           </div>
           <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", fontSize: 24, color: "#8b949e" }}>{L.sims}</div>
+            <div style={{ display: "flex", fontSize: 26, color: "#5a6472" }}>{L.sims}</div>
             {qr ? (
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={qr} width={108} height={108} style={{ borderRadius: 8 }} />
-                <div style={{ display: "flex", fontSize: 18, color: "#8b949e" }}>{scanLabel}</div>
+                <img src={qr} width={150} height={150} style={{ borderRadius: 10 }} />
+                <div style={{ display: "flex", fontSize: 22, color: "#8A97A6" }}>{scanLabel}</div>
               </div>
             ) : null}
           </div>
         </div>
       ),
-      { width: 1200, height: 630, fonts: fonts.length ? fonts : undefined }
+      { width: 1080, height: 1440, fonts: fonts.length ? fonts : undefined }
     );
   }
 
@@ -448,60 +450,59 @@ export async function GET(req: Request) {
   const name = locale === "zh" ? t.zh : t.name;
   const adv = pct(t.pAdvance);
   const champ = pct(t.pChampion);
-  const advColor = (t.pAdvance > 1 ? t.pAdvance : t.pAdvance * 100) >= 50 ? "#3fb950" : "#d29922";
+  const advColor = (t.pAdvance > 1 ? t.pAdvance : t.pAdvance * 100) >= 50 ? "#1BE27F" : "#FFB02E";
 
   return new ImageResponse(
     (
       <div style={base}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+        {/* 顶部：队旗 + 队名/组别/主队标 ｜ 品牌（长队名换行不挤压品牌） */}
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 24 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 28, flex: 1, minWidth: 0 }}>
             {t.flag ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={t.flag.replace("/w80/", "/w160/")} width={120} height={84} style={{ borderRadius: 8, objectFit: "cover" }} />
+              <img src={t.flag.replace("/w80/", "/w160/")} width={150} height={100} style={{ borderRadius: 10, objectFit: "cover" }} />
             ) : (
-              <div style={{ display: "flex", fontSize: 84 }}>⚽</div>
+              <div style={{ display: "flex", fontSize: 96 }}>⚽</div>
             )}
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <div style={{ display: "flex", fontSize: 64, fontWeight: 700 }}>{name}</div>
-              <div style={{ display: "flex", fontSize: 28, color: "#8b949e" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
+              <div style={{ display: "flex", fontSize: 64, fontWeight: 700, color: "#E8EDF2", lineHeight: 1.05 }}>{name}</div>
+              <div style={{ display: "flex", fontSize: 30, color: "#8A97A6" }}>
                 {L.group(hit.letter, hit.rank)}
               </div>
               {tag ? (
-                <div style={{ display: "flex", fontSize: 26, color: "#3fb950", marginTop: 4 }}>⭐ {tag}</div>
+                <div style={{ display: "flex", fontSize: 28, color: "#1BE27F", marginTop: 4 }}>⭐ {tag}</div>
               ) : null}
             </div>
           </div>
-          <div style={{ display: "flex", fontSize: 32, color: "#3fb950" }}>wc2026.cool</div>
+          <div style={{ display: "flex", fontSize: 32, fontWeight: 700, color: "#1BE27F", flexShrink: 0 }}>wc2026.cool</div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "flex-end", gap: 48 }}>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <div style={{ display: "flex", fontSize: 32, color: "#8b949e" }}>{L.advance}</div>
-            <div style={{ display: "flex", fontSize: 160, fontWeight: 700, color: advColor, lineHeight: 1 }}>
-              {adv}%
-            </div>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", paddingBottom: 16 }}>
-            <div style={{ display: "flex", fontSize: 28, color: "#8b949e" }}>{L.champion}</div>
-            <div style={{ display: "flex", fontSize: 56, fontWeight: 700 }}>{champ}%</div>
+        {/* 中部：出线概率大数字 + 夺冠 */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexGrow: 1, gap: 4 }}>
+          <div style={{ display: "flex", fontSize: 42, color: "#8A97A6" }}>{L.advance}</div>
+          <div style={{ display: "flex", fontSize: 250, fontWeight: 700, lineHeight: 1, color: advColor }}>{adv}%</div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 16, marginTop: 28 }}>
+            <div style={{ display: "flex", fontSize: 34, color: "#8A97A6" }}>{L.champion}</div>
+            <div style={{ display: "flex", fontSize: 66, fontWeight: 700, color: "#E8EDF2" }}>{champ}%</div>
           </div>
         </div>
 
+        {/* 底部：模拟次数/更新时间 ｜ 二维码 */}
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 24 }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 24, color: "#8b949e" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 26, color: "#5a6472" }}>
             <div style={{ display: "flex" }}>{L.sims}</div>
             <div style={{ display: "flex" }}>{L.updated}</div>
           </div>
           {qr ? (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={qr} width={112} height={112} style={{ borderRadius: 8 }} />
-              <div style={{ display: "flex", fontSize: 18, color: "#8b949e" }}>{scanLabel}</div>
+              <img src={qr} width={150} height={150} style={{ borderRadius: 10 }} />
+              <div style={{ display: "flex", fontSize: 22, color: "#8A97A6" }}>{scanLabel}</div>
             </div>
           ) : null}
         </div>
       </div>
     ),
-    { width: 1200, height: 630, fonts: fonts.length ? fonts : undefined }
+    { width: 1080, height: 1440, fonts: fonts.length ? fonts : undefined }
   );
 }
