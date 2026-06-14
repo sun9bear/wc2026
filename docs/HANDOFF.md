@@ -113,6 +113,7 @@ AI：DeepSeek 只写双语短评（夺冠 Top3 一句话），雷词 fail-closed
 - /forecast 首次计算 ~8s → 用 cron-job.org 每小时预热缓存
 - 队名匹配失败目前静默降级（books=0）→ 加监控/日志
 - og 动态图卡（@vercel/og）：每场概率卡、摆动卡自动生成（分发素材自动化）
+- **【待做】OG 图卡改版（用户已拍板，spec 见 [`docs/OG-CARD-REDESIGN-HANDOFF.md`](OG-CARD-REDESIGN-HANDOFF.md)）**：按 locale 决定方向——zh 出 3:4 竖版(小红书/微信)、en 出 1.91:1 横版(X/FB)，四种模式各补另一方向版式；对阵卡日期时间行移到 VS 下方、自适应换行(横够一行/不够两行：日期+星期 / 时区+时间)；同步 `matchCard.ts` `formatKickoff` 出两段 + 全站 openGraph width/height 按 locale 给值。建议单独新会话冷启动做。
 
 ### 比分概率功能（6/13 新增，Phase A 已上线生产）
 > 背景：引擎早已算出每场 `topScores`（Dixon-Coles Top-5 比分概率）并持久化进 `prob_match_snapshots.top_scores`（生产 2254+ 行），但前端几乎没展示——/forecast 只露单个 top-1、/match 完全不展示。本次把它展示出来 + 写好实时进球重算的数学内核。
