@@ -1,6 +1,13 @@
 # P2-1：双语可爬性（per-locale URL + hreflang）— 新会话交接 spec
 
-> 产出：2026-06-14 ｜ 分支 feat/legal-pages ｜ 状态：未开始（Phase 1A/1B + Phase 2 P1 已上线）
+> ✅ **已交付（2026-06-14，commit a987623，部署 dpl_9iLcu58Yq6Ytmoae5WzbxiPqYg6y，线上已验证）**
+> 决策（用户确认）：URL=A（EN 根 + `/zh/`）；实现=**A2**（`proxy.ts` rewrite `/zh/*`→内部 + 注入 `x-locale` 头，`getLocale` 头优先）；首访**不跳转**（根永远 EN，靠 LangToggle 导航/中文 SERP 直达 `/zh`）；hreflang=`zh-Hans` + `x-default`→EN；扫描器覆盖扩到 b–l+privacy+disclaimer。
+> 实现：`src/i18n/{index.ts(localeHref/stripLocale),server.ts(x-locale 头优先),LocaleContext.tsx}`、`src/proxy.ts`、`src/lib/seo/canonical.ts(localizedAlternates/selfUrl)`、各页 `generateMetadata`+JSON-LD/OG locale 化、全站内链 `localeHref`、`sitemap.ts`(双 locale+reciprocal hreflang+fail-closed)、`seo-compliance-scan.ts`(扫真实 `/zh` 路径+redirect-collapse 加固)、`indexnow.ts`(+`/zh`)、`public/llms.txt`(zh 树)、`/privacy` 补英文版。
+> 验证：tsc 净 / 144 vitest 全过 / next build 净；21-agent 本地化 + 17-agent 5 维对抗评审（唯一 blocker=zh QR 双 `/zh` 前缀，已修；3 follow-up 全修）；线上：`/forecast`=200 无 301、`/zh/forecast` 无 Accept-Language 即返回中文+自指 canonical、reciprocal hreflang(en/zh-Hans/x-default)、sitemap 286 loc+858 xhtml:link、compliance scan en+zh 全 0 雷词。
+> **待用户**：GSC 对重点 `/zh` 页单独请求收录（中文树是全新暴露面）。
+> ——以下为原始 spec，留作背景——
+>
+> 产出：2026-06-14 ｜ 分支 feat/legal-pages ｜ 状态：~~未开始~~ 已交付（Phase 1A/1B + Phase 2 P1 已上线）
 > 用途：新会话凭本文件即可冷启动接手这件**最大且风险最高**的 SEO 工程。配合读 `docs/SEO-GEO-PLAN.md`（§一、§四 P2-1、§八）、`docs/HANDOFF.md`、Claude 记忆文件。
 > **强烈建议新会话做**（本任务工程量大）：长会话切 [1m] 会按长上下文费率重读全部历史，成本极高。
 
