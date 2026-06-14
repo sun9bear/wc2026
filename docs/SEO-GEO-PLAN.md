@@ -248,6 +248,13 @@
 - **待用户动作**：GSC URL Inspection 手动请求收录 12 个 group 页 + 重点 matchday-3 场次页（配额约十几条/天）。
 - **后续轮次**：Phase 1B（JSON-LD schema + /rules 常青页 + 内链）；Phase 2（IndexNow / best-thirds 页 / 意图重定向）；Phase 3（i18n + hreflang，谨慎并行轨）；Phase 4（只读 AI 侦察 /schedule；AdSense 通过后改脚本策略）。
 
+**Phase 2（P1）已上线（2026-06-14，`b015961`，dpl_AyenaGrtVbvg7ginnY6CfKkQrXRi，已线上验证）**：
+- **P1-1 `/forecast/best-thirds` 独立可索引页**：12 个小组第三名横排（前 8 晋级 + 出线分数线）+ FIFA Annex C 的 C(12,8)=495 行「第三名→小组第一」R32 对阵映射（`bracket.ts`）；复用 `getForecast()` 共享缓存零额外蒙卡成本；ItemList JSON-LD 只填真字段、dateModified 取真实 settled_at；EN-first 前置答案（2026+算出分数线）；可见「更新于」用 `getSettledIndex().all`；入 sitemap（真实 lastmod）+ 合规扫描 + 与 /forecast 互链。
+- **P1-2 IndexNow**（`src/lib/seo/indexnow.ts`）：结算后 `after()` fire-and-forget ping **仅 Bing/Yandex（绝不接 Google）**，只挂 `/api/cron/settle` 守 `newlySettled>0` 自去抖；全程 fail-soft（Promise.allSettled + 各端 5s AbortController）；公钥硬编码 + `public/6bdb6379e0b34e999e3d0dd720ba612f.txt` 字节匹配，无需 Vercel env。
+- **P1-3 标题意图重写**：组/队页标题前置 "who advances" / "Can [team] still advance?"（中英各 2），canonical/OG/desc 不动。
+- **闸门**：tsc 净、144 vitest、eslint 0、next build 净；5 维多 agent 对抗评审 safe-to-deploy（修 1 处脚注判据归属对齐 standings.ts）；线上验证 best-thirds/key 文件/sitemap/组页标题全过；合规扫描器 26/26 0 雷词。
+- **剩余**：P1-4 可嵌入 widget；P2 i18n+hreflang；P4 只读 AI 侦察。**待用户**：GSC 手动收录 `/forecast/best-thirds` + 重点 group/matchday-3 页（赶 6/22-27 窗口）。
+
 ---
 
 ## 附录：关键一手来源
