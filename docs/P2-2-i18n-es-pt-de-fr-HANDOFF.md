@@ -1,7 +1,7 @@
 # P2-2：多语种扩展（es / pt / de / fr）— 新会话交接 spec
 
 > 状态：**进行中（staged，未激活）**｜分支：`feat/legal-pages`｜产出 2026-06-14
-> 已落地并提交（全绿、行为零变化、未对用户暴露）：**A0** 工单（§12）、**A1** 路由配置驱动重构（locales.ts，commit d86e1be）、**A2** 4 语 UI 字典（satisfies Dict，未挂 dicts，commit 7cd7c78）、**A6 国名表** 192 条（NATIONS 必填字段，commit 86180e7）、**A3 rules+calculator+forecast+group+best-thirds**（5 页）4 语 COPY（staged）。
+> 已落地并提交（全绿、行为零变化、未对用户暴露）：**A0** 工单（§12）、**A1** 路由配置驱动重构（locales.ts，commit d86e1be）、**A2** 4 语 UI 字典（satisfies Dict，未挂 dicts，commit 7cd7c78）、**A6 国名表** 192 条（NATIONS 必填字段，commit 86180e7）、**A3 全部 6 个 COPY 页**（rules / calculator / forecast / group[letter] / best-thirds / team[slug]）4 语 COPY（staged，「纯增量绿」部分已 100% 清完）。
 > 剩余：**A3**（各页 COPY，含 about/rules + 法务页 privacy/disclaimer 需母语/法务校对）、**A4**（85 裸三元）、**A5**（canonical/sitemap/layout META）、**A6 余**（签名加宽 + 赛段/组名）、**A7**（合规扫描 + 部署）。这些多需「加宽 Locale」一次性激活（不可再增量绿），建议新会话冷启动集中做。
 > 用途：新会话凭本文件冷启动接手「把站点从中英双语扩成 6 语种（+西/葡/德/法）」。
 > 节奏（用户已定）：**先 A 后 B、四语一起上**。A=外壳本地化（UI+SEO 落地页全量翻译，AI 比赛短文新语种回落英文）；B=给 4 个新语种各自生成入库的 AI 比赛内容。
@@ -119,7 +119,8 @@
 - **⚠️ 结构发现（影响 A3/A4 排期）**：`about` 页**不是** `COPY[locale]` 字典——正文是 `if (locale==="en") return <整段英文 JSX> … return <整段中文 JSX>` 两段硬编码分支（仅 `META` 是字典）。新语种需**先把正文重构成模板/字典**（属 A4，且正文嵌 `<strong>`，改 SEO 页正文宜起服务渲染核对、不盲改）——留激活会话。**激活前需排查其它同类「整段 locale 分支」页**（grep `if (locale === "en")` / `return ( ... )` 双分支）。
 - 其余按 A0 的 tsc 错误清单逐文件给 `COPY` 补 `es/pt/de/fr` 块。重点长文：
   - **法务/说明页**：`privacy`/`disclaimer`（含法律免责声明，**德/法辖区建议过法务审或母语校对**）、`about`（需先重构正文结构，见上）。这是 Phase A 最重的纯翻译块。
-  - team 页 `COPY`（约 30 键，含 `title/desc/lead/shareText` 等函数式文案）——A3「纯增量绿」剩的最后一页（calculator/forecast/group/best-thirds 均已 staged ✅）。
+  - ~~team 页 `COPY`~~ ✅ **已 staged（2026-06-14）**：~24 键含 `title/desc/group/calc/lead/shareText` 函数键 + W/D/L/home/away 缩写（es/pt 用 V·E·D / C·F，de 用 S·U·N / H·A，fr 用 V·N·D / Dom·Ext）。**ResultChip 的 `locale: "zh"|"en"` 形参留 A0 加宽**；队名 nm/oppName、"看X组/规则"链接、SportsTeam/Breadcrumb JsonLd 仍三元，留 A4。
+  - **→ A3「纯增量绿」6 页全部 staged 完毕。** 余下 A3 文件（about 重构、privacy/disclaimer 法务页）均需「先重构/先审校」或随激活一起做，不再有可单独增量绿的页。
 - 修到 `npx tsc --noEmit` 净 = 模式 2 完成。
 
 ### A4. 裸三元清剿（grep 驱动，模式 3）
