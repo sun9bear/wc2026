@@ -1,6 +1,14 @@
 # P2-2：多语种扩展（es / pt / de / fr）— 新会话交接 spec
 
-> 状态：**进行中（staged，未激活）**｜分支：`feat/legal-pages`｜产出 2026-06-14
+> ✅ **Phase A 已激活并部署生产（2026-06-14，commit `f117ef2` @ feat/legal-pages）**。
+> `Locale` 已加宽到 6 值；`/es /pt /de /fr` 全树上线（每页 6 路 reciprocal hreflang + per-locale self-canonical）；
+> 验收全过：tsc 净 / vitest 157 / next build 净 / 生产六语树合规扫描 0 雷词 / 德语 OG 卡逐卡无溢出；
+> 生产抽查 `/forecast`=en、`/zh|es|pt|de|fr/forecast`=对应语种各 200 零 301。
+> **遗留（非阻断）**：① privacy/disclaimer 的 de/fr 法务文案为忠实翻译，建议过母语/法务复核再视为定稿；
+> ② MyTeamCard/SetMyTeamButton 既有 `react-hooks/set-state-in-effect` lint 债（非本卡引入）；③ Phase B 仍暂缓（§4④）。
+> 下方原 spec 保留作背景/Phase B 参考。
+>
+> 状态（历史）：~~进行中（staged，未激活）~~｜分支：`feat/legal-pages`｜产出 2026-06-14
 > 已落地并提交（全绿、行为零变化、未对用户暴露）：**A0** 工单（§12）、**A1** 路由配置驱动重构（locales.ts，commit d86e1be）、**A2** 4 语 UI 字典（satisfies Dict，未挂 dicts，commit 7cd7c78）、**A6 国名表** 192 条（NATIONS 必填字段，commit 86180e7）、**A3 全部 6 个 COPY 页**（rules / calculator / forecast / group[letter] / best-thirds / team[slug]）4 语 COPY（staged，「纯增量绿」部分已 100% 清完）。
 > 剩余：**A3 余**（仅 about 需重构 + 法务页 privacy/disclaimer 需母语/法务校对——6 个增量绿 COPY 页已封口）、**A4**（85 裸三元）、**A5**（canonical/sitemap/layout META）、**A6 余**（签名加宽 + 赛段/组名 + OG 卡 + LocalTime）、**A7**（合规扫描 + 部署）。这些多需「加宽 Locale」一次性激活（不可再增量绿），建议新会话冷启动集中做。**完成度快照见 §5 末尾「A 完成度快照」。**
 > 用途：新会话凭本文件冷启动接手「把站点从中英双语扩成 6 语种（+西/葡/德/法）」。
