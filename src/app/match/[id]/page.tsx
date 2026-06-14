@@ -19,6 +19,7 @@ import { stageName, teamName } from "@/lib/football/teams";
 import { getForecast } from "@/lib/prob/pipeline";
 import { findTeam, teamSlug } from "@/lib/prob/findTeam";
 import { getMatchSwing, swingOgPath } from "@/lib/prob/getMatchSwing";
+import { getMatchReport, reportOgPath } from "@/lib/prob/getMatchReport";
 import { getMatchScoreline } from "@/lib/prob/getMatchScoreline";
 import { JsonLd } from "@/lib/seo/jsonLd";
 import { getDict, localeHref } from "@/i18n";
@@ -78,7 +79,46 @@ export async function generateMetadata({
   } catch {
     swing = null;
   }
-  if (!swing) return base;
+  if (!swing) {
+    // 非爆冷的已结算场次：用「比分战报」卡作分享图（每场都有，触发频率高）。失败回退默认 og.png。
+    let report = null;
+    try {
+      report = await getMatchReport(id);
+    } catch {
+      report = null;
+    }
+    if (!report) return base;
+    const rOg = `${SITE}${reportOgPath(report, locale)}`;
+    const rHome = locale === "zh" ? report.homeZh : report.homeName;
+    const rAway = locale === "zh" ? report.awayZh : report.awayName;
+    const rScore = `${report.homeScore}-${report.awayScore}`;
+    const rTitle =
+      locale === "zh"
+        ? `${rHome} ${rScore} ${rAway} · 赛后战报 · wc2026.cool`
+        : `${rHome} ${rScore} ${rAway} · Full-time · wc2026.cool`;
+    const rDesc =
+      locale === "zh"
+        ? report.rank
+          ? `这个比分赛前是模型第 ${report.rank} 可能（${Math.round((report.scoreP ?? 0) * 100)}%）。世界杯 2026 实时模型，免费无需注册。`
+          : `这个比分赛前不在模型 Top-5（冷门）。世界杯 2026 实时模型，免费无需注册。`
+        : report.rank
+          ? `This scoreline was the model's #${report.rank} most likely pre-match (${Math.round((report.scoreP ?? 0) * 100)}%). Live World Cup 2026 model, free, no sign-up.`
+          : `This scoreline wasn't in the model's pre-match Top 5 (upset). Live World Cup 2026 model, free, no sign-up.`;
+    return {
+      ...base,
+      title: rTitle,
+      description: rDesc,
+      openGraph: {
+        type: "website",
+        url: canonical,
+        siteName: "wc2026.cool",
+        title: rTitle,
+        description: rDesc,
+        images: [{ url: rOg, width: 1080, height: 1440 }],
+      },
+      twitter: { card: "summary_large_image", title: rTitle, description: rDesc, images: [rOg] },
+    };
+  }
   const ogUrl = `${SITE}${swingOgPath(swing, locale)}`;
   const heroName = locale === "zh" ? swing.hero.zh : swing.hero.name;
   const bp = Math.round(swing.hero.before * 100);
@@ -128,6 +168,8 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
   const inPlay = !settled && started; // 已开赛未结算 = 进行中
   // 「爆冷瞬间」摆动卡：仅已结算且出线概率大摆动时返回非 null（缓存读快照，失败降级 null）。
   const swing = settled ? await getMatchSwing(id).catch(() => null) : null;
+  // 非爆冷的已结算场次取「比分战报」（每场都有），供页眉「保存图片卡」与分享图复用。
+  const report = settled && !swing ? await getMatchReport(id).catch(() => null) : null;
   // 比分分布：未结算即取赛前 Top-5（open 分支直接展示；进行中作为 LiveScoreProbs 实时未命中时的兜底）。
   const scoreline = !settled ? await getMatchScoreline(id).catch(() => null) : null;
 
@@ -173,7 +215,13 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
           qrPath: `/match/${id}`,
         }
       : null;
-  const headerOgUrl = !headerMatch && swing ? `${SITE}${swingOgPath(swing, locale)}` : null;
+  const headerOgUrl = !headerMatch
+    ? swing
+      ? `${SITE}${swingOgPath(swing, locale)}`
+      : report
+        ? `${SITE}${reportOgPath(report, locale)}`
+        : null
+    : null;
 
   // SportsEvent + 面包屑实体（实体/GEO 理解，非 Event 富结果；不编造 offers/location）。
   const evHome = teamName(m.home.name, locale);

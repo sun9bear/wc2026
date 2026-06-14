@@ -363,6 +363,186 @@ export async function GET(req: Request) {
     }
   }
 
+  // 赛后「比分战报」卡（mode=report）：终场比分 + 该比分赛前排第几/概率（不在 Top-5 = 冷门）+
+  // 赛前 Top-5 分布（实际高亮）+ 该结果赛前概率。每场都能出，触发频率远高于摆动卡，主打分享。
+  // 数值由 getMatchReport 经 reportOgPath 传入；用户可控文本过严格雷词闸 fail-closed；队旗仅 flagcdn。
+  if (searchParams.get("mode") === "report") {
+    const cleanR = (s: string | null, max: number) => {
+      const v = (s ?? "").replace(/\s+/g, " ").slice(0, max).trim();
+      return v &&
+        findBannedTermsStrict(v, "en").length === 0 &&
+        findBannedTermsStrict(v, "zh").length === 0
+        ? v
+        : "";
+    };
+    const intIn = (s: string | null, max: number) => {
+      const v = parseInt(s ?? "", 10);
+      return Number.isFinite(v) ? Math.min(max, Math.max(0, v)) : 0;
+    };
+    const flagOkR = (s: string | null) =>
+      s && /^https:\/\/flagcdn\.com\//i.test(s) ? s.replace("/w80/", "/w160/") : null;
+    const home = cleanR(searchParams.get("h"), 40);
+    const away = cleanR(searchParams.get("a"), 40);
+    const hs = intIn(searchParams.get("hs"), 30);
+    const as = intIn(searchParams.get("as"), 30);
+    const rk = intIn(searchParams.get("rk"), 5);
+    const sp = intIn(searchParams.get("sp"), 100);
+    const op = intIn(searchParams.get("op"), 100);
+    const oc = searchParams.get("oc");
+    const outcome = oc === "home" || oc === "draw" || oc === "away" ? oc : "draw";
+    const hflag = flagOkR(searchParams.get("hf"));
+    const aflag = flagOkR(searchParams.get("af"));
+    const rcells = (searchParams.get("sl") ?? "")
+      .split(",")
+      .slice(0, 5)
+      .map((s) => {
+        const mm = s.match(/^(\d{1,2})-(\d{1,2}):(\d{1,3})$/);
+        if (!mm) return null;
+        const h = +mm[1];
+        const a = +mm[2];
+        const p = +mm[3];
+        if (h > 20 || a > 20 || p < 1 || p > 100) return null;
+        return { h, a, p };
+      })
+      .filter((x): x is { h: number; a: number; p: number } => x !== null);
+    if (home && away) {
+      let rfonts: { name: string; data: ArrayBuffer; weight: 700 }[] = [];
+      if (locale === "zh") {
+        const f = await loadZhFont(
+          `${home}${away}世界杯赛后战报前第可能比分冷门都没有它模型给这一结果最更新于次蒙特卡洛模拟预测仅供娱乐扫码自己算改剩余出线看全部0123456789.%·-`
+        );
+        if (f) rfonts = [{ name: "NotoSansSC", data: f, weight: 700 }];
+        else locale = "en";
+      }
+      const cold = rk === 0;
+      const RL =
+        locale === "zh"
+          ? {
+              kicker: "世界杯 2026 · 赛后战报",
+              hook: cold ? "赛前 Top-5 都没有它 · 冷门" : `赛前第 ${rk} 可能比分 · ${sp}%`,
+              outcome: `模型赛前给这一结果 ${op}%`,
+              topH: "赛前最可能比分",
+              sims: "10,000 次蒙特卡洛模拟",
+              updated: `更新于 ${updated} UTC`,
+              disc: "预测仅供娱乐",
+              cta: "改剩余比分，自己算出线 →",
+              scan: "扫码自己算",
+            }
+          : {
+              kicker: "World Cup 2026 · Full-time",
+              hook: cold ? "Not in the pre-match Top 5 · upset" : `Pre-match #${rk} most likely · ${sp}%`,
+              outcome: `Model gave this result ${op}% pre-match`,
+              topH: "Pre-match most likely scores",
+              sims: "10,000 Monte Carlo simulations",
+              updated: `Updated ${updated} UTC`,
+              disc: "For entertainment only",
+              cta: "Flip remaining results yourself →",
+              scan: "",
+            };
+      const hookColor = cold ? "#FF5436" : rk <= 2 ? "#1BE27F" : "#FFB02E";
+      const qr = locale === "zh" && qrFlag !== "0" ? await qrDataUrl(uPath) : null;
+      const rteam = (nm: string, flag: string | null) => (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, width: 300 }}>
+          {flag ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={flag} width={130} height={87} style={{ borderRadius: 8, objectFit: "cover" }} />
+          ) : (
+            <div style={{ display: "flex", width: 130, height: 87, borderRadius: 8, backgroundColor: "#1B232D" }} />
+          )}
+          <div style={{ display: "flex", width: "100%", justifyContent: "center", textAlign: "center", fontSize: 40, fontWeight: 700, color: "#E8EDF2", lineHeight: 1.1 }}>
+            {nm}
+          </div>
+        </div>
+      );
+      const rbase: React.CSSProperties = {
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        backgroundColor: "#0A0E13",
+        color: "#E8EDF2",
+        padding: 72,
+        fontFamily: rfonts.length ? "NotoSansSC" : "sans-serif",
+      };
+      return new ImageResponse(
+        (
+          <div style={rbase}>
+            {/* 顶部 */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{ display: "flex", width: 14, height: 14, borderRadius: 7, backgroundColor: "#1BE27F" }} />
+                <div style={{ display: "flex", fontSize: 28, color: "#8A97A6" }}>{RL.kicker}</div>
+              </div>
+              <div style={{ display: "flex", fontSize: 30, fontWeight: 700, color: "#1BE27F" }}>wc2026.cool</div>
+            </div>
+
+            {/* 对阵 + 终场比分 */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              {rteam(home, hflag)}
+              <div style={{ display: "flex", alignItems: "center", gap: 18, fontSize: 120, fontWeight: 700, lineHeight: 1 }}>
+                <div style={{ display: "flex", color: outcome === "home" ? "#1BE27F" : "#E8EDF2" }}>{hs}</div>
+                <div style={{ display: "flex", fontSize: 64, color: "#3a4654" }}>-</div>
+                <div style={{ display: "flex", color: outcome === "away" ? "#1BE27F" : "#E8EDF2" }}>{as}</div>
+              </div>
+              {rteam(away, aflag)}
+            </div>
+
+            {/* 故事钩子：赛前排第几 / 冷门 */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 104, borderRadius: 14, border: `2px solid ${hookColor}`, backgroundColor: "#0F1620" }}>
+              <div style={{ display: "flex", fontSize: 40, fontWeight: 700, color: hookColor }}>{RL.hook}</div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "center", fontSize: 28, color: "#C9D2DC" }}>{RL.outcome}</div>
+
+            {/* 赛前 Top-5（实际比分高亮） */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ display: "flex", fontSize: 26, color: "#8A97A6" }}>{RL.topH}</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {rcells.map((c, i) => {
+                  const isActual = c.h === hs && c.a === as;
+                  return (
+                    <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: 48, paddingLeft: 14, paddingRight: 14, borderRadius: 8, backgroundColor: isActual ? "#10241B" : "#11161D" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                        <div style={{ display: "flex", width: 28, fontSize: 24, color: "#5a6472" }}>{i + 1}</div>
+                        <div style={{ display: "flex", fontSize: 30, fontWeight: 700, color: isActual ? "#1BE27F" : "#E8EDF2" }}>{`${c.h}-${c.a}`}</div>
+                        {isActual ? <div style={{ display: "flex", width: 14, height: 14, borderRadius: 7, backgroundColor: "#1BE27F" }} /> : null}
+                      </div>
+                      <div style={{ display: "flex", fontSize: 28, color: isActual ? "#1BE27F" : "#8A97A6" }}>{c.p}%</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* CTA */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 74, borderRadius: 14, border: "2px solid #1BE27F", backgroundColor: "#0F2018" }}>
+              <div style={{ display: "flex", fontSize: 28, fontWeight: 700, color: "#1BE27F" }}>{RL.cta}</div>
+            </div>
+
+            {/* 底部 */}
+            <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 24 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, flexGrow: 1, color: "#5a6472" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", width: "100%", fontSize: 22 }}>
+                  <div style={{ display: "flex" }}>{RL.sims}</div>
+                  <div style={{ display: "flex" }}>{RL.updated}</div>
+                </div>
+                <div style={{ display: "flex", fontSize: 21 }}>{`wc2026.cool · ${RL.disc}`}</div>
+              </div>
+              {qr ? (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={qr} width={110} height={110} style={{ borderRadius: 10 }} />
+                  <div style={{ display: "flex", fontSize: 19, color: "#8A97A6" }}>{RL.scan}</div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        ),
+        { width: 1080, height: 1440, fonts: rfonts.length ? rfonts : undefined }
+      );
+    }
+  }
+
   // 最佳第三名 OC 数据图（mode=thirds）：12 组第三名横排 + 前 8 晋级分数线。
   // 数据 = getForecast().thirds（已按 2026 判据 pts→gd→gf 排名）；出线概率关联小组表。
   // 纯数据图、零博彩词——给 Reddit r/worldcup / 国家队 sub 的 OC 素材；6/22-27 末轮峰值需求。
