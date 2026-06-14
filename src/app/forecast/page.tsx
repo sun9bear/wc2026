@@ -137,6 +137,7 @@ export default async function ForecastPage() {
     url: selfUrl("/forecast", locale),
     creator: { "@type": "Organization", name: "wc2026.cool", url: `${SITE_ORIGIN}/` },
     isAccessibleForFree: true,
+    license: selfUrl("/disclaimer", locale), // GSC 推荐字段：数据使用条款（指向免责声明/条款页，locale 化）
     variableMeasured: zhFirst
       ? ["出线概率", "夺冠概率"]
       : ["chance to advance", "chance to win the title"],
