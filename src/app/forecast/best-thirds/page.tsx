@@ -6,7 +6,8 @@ import { JsonLd } from "@/lib/seo/jsonLd";
 import { getSettledIndex } from "@/lib/seo/freshness";
 import { R32, allocateThirds } from "@/lib/prob/bracket";
 import { Disclaimer } from "@/components/Disclaimer";
-import { localeHref } from "@/i18n";
+import { localeHref, type Locale, BCP47_LOCALE } from "@/i18n";
+import { teamName } from "@/lib/football/teams";
 import { localizedAlternates, selfUrl } from "@/lib/seo/canonical";
 
 export const maxDuration = 60; // 复用 getForecast() 共享缓存（含外部抓取 + 万次模拟）
@@ -192,10 +193,10 @@ function pct(p: number, digits = 0): string {
 
 function TeamName({
   t,
-  zhFirst,
+  locale,
 }: {
   t: { name: string; zh: string; flag: string | null };
-  zhFirst: boolean;
+  locale: Locale;
 }) {
   return (
     <span className="inline-flex items-center gap-1.5">
@@ -203,7 +204,7 @@ function TeamName({
         // eslint-disable-next-line @next/next/no-img-element
         <img src={t.flag} alt="" className="h-3 w-4 rounded-[2px] object-cover" />
       )}
-      {zhFirst ? t.zh : t.name}
+      {locale === "zh" ? t.zh : teamName(t.name, locale)}
     </span>
   );
 }
@@ -211,7 +212,6 @@ function TeamName({
 export default async function BestThirdsPage() {
   const locale = await getLocale();
   const c = COPY[locale];
-  const zhFirst = locale === "zh";
   let data: ForecastData | null = null;
   try {
     data = await getForecast();
@@ -269,14 +269,34 @@ export default async function BestThirdsPage() {
     itemListElement: thirds.map((t) => ({
       "@type": "ListItem",
       position: t.rank,
-      name: zhFirst ? t.zh : t.name,
+      name: locale === "zh" ? t.zh : teamName(t.name, locale),
     })),
   };
 
   const leader = thirds[0];
-  const leaderName = zhFirst ? leader.zh : leader.name;
+  const leaderName = locale === "zh" ? leader.zh : teamName(leader.name, locale);
   const cut = thirds.find((t) => t.rank === 8);
-  const cutName = cut ? (zhFirst ? cut.zh : cut.name) : c.na;
+  const cutName = cut ? (locale === "zh" ? cut.zh : teamName(cut.name, locale)) : c.na;
+
+  // Annex C 槽位对阵行标签（"X 组第一 vs Y 组第三"）的本地化。
+  const winnerLabel: Record<Locale, (g: string) => string> = {
+    zh: (g) => `${g} 组第一 vs `,
+    en: (g) => `Winner Group ${g} vs `,
+    es: (g) => `Primero del Grupo ${g} vs `,
+    pt: (g) => `Primeiro do Grupo ${g} vs `,
+    de: (g) => `Erster Gruppe ${g} vs `,
+    fr: (g) => `Premier du Groupe ${g} vs `,
+  };
+  const thirdLabel: Record<Locale, (g: string) => string> = {
+    zh: (g) => `${g} 组第三`,
+    en: (g) => `3rd of Group ${g}`,
+    es: (g) => `3.º del Grupo ${g}`,
+    pt: (g) => `3º do Grupo ${g}`,
+    de: (g) => `Dritter Gruppe ${g}`,
+    fr: (g) => `3e du Groupe ${g}`,
+  };
+  const winLabel = winnerLabel[locale] ?? winnerLabel.en;
+  const thrdLabel = thirdLabel[locale] ?? thirdLabel.en;
 
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-8">
@@ -287,16 +307,23 @@ export default async function BestThirdsPage() {
       <h1 className="font-head mt-3 text-2xl font-bold">🥉 {c.h1}</h1>
       {idx?.all && (
         <p className="mt-1 text-[11px] text-muted">
-          {c.updated} {new Date(idx.all).toLocaleString(zhFirst ? "zh-CN" : "en-US")}
+          {c.updated} {new Date(idx.all).toLocaleString(BCP47_LOCALE[locale] ?? "en-US")}
         </p>
       )}
 
       {/* 前置可提取答案（GEO：答案前置 + 统计数字 + 年份信号；EN-first，爬虫见英文）。 */}
       {cut && (
         <p className="mt-3 rounded-lg border border-green/30 bg-surface p-4 text-sm leading-relaxed">
-          {zhFirst
-            ? `2026 世界杯最佳第三名排名：${leaderName} 目前以 ${leader.pts} 分领跑 12 个小组第三名；成绩最好的 8 支晋级 32 强，当前出线分数线为 ${cut.pts} 分（${cutName}）。`
-            : `At the 2026 World Cup, ${leaderName} currently leads the 12 third-placed teams with ${leader.pts} points; the best 8 advance to the Round of 32, with the cut-off at ${cut.pts} points (${cutName}).`}
+          {(
+            {
+              zh: `2026 世界杯最佳第三名排名：${leaderName} 目前以 ${leader.pts} 分领跑 12 个小组第三名；成绩最好的 8 支晋级 32 强，当前出线分数线为 ${cut.pts} 分（${cutName}）。`,
+              en: `At the 2026 World Cup, ${leaderName} currently leads the 12 third-placed teams with ${leader.pts} points; the best 8 advance to the Round of 32, with the cut-off at ${cut.pts} points (${cutName}).`,
+              es: `Mundial 2026, mejores terceros: ${leaderName} encabeza actualmente los 12 terceros de grupo con ${leader.pts} puntos; los 8 mejores avanzan a los dieciseisavos, con el corte en ${cut.pts} puntos (${cutName}).`,
+              pt: `Copa 2026, melhores terceiros: ${leaderName} lidera atualmente os 12 terceiros de grupo com ${leader.pts} pontos; os 8 melhores avançam aos 16-avos, com o corte em ${cut.pts} pontos (${cutName}).`,
+              de: `WM 2026, beste Gruppendritte: ${leaderName} führt derzeit die 12 Gruppendritten mit ${leader.pts} Punkten an; die besten 8 erreichen das Sechzehntelfinale, die Grenze liegt bei ${cut.pts} Punkten (${cutName}).`,
+              fr: `Mondial 2026, meilleurs troisièmes : ${leaderName} est actuellement en tête des 12 troisièmes de groupe avec ${leader.pts} points ; les 8 meilleurs se qualifient pour les seizièmes, avec la barre à ${cut.pts} points (${cutName}).`,
+            } as Record<Locale, string>
+          )[locale]}
         </p>
       )}
 
@@ -318,7 +345,7 @@ export default async function BestThirdsPage() {
               >
                 <span className="inline-flex items-center gap-2">
                   <span className="font-head w-5 text-right text-xs text-muted">{t.rank}</span>
-                  <TeamName t={t} zhFirst={zhFirst} />
+                  <TeamName t={t} locale={locale} />
                   <span className="text-[10px] text-muted">{t.letter}</span>
                 </span>
                 <span className="text-[11px] text-muted">
@@ -342,14 +369,12 @@ export default async function BestThirdsPage() {
             {thirdFixtures.map((f) => (
               <div key={f.match} className="flex items-center justify-between py-0.5">
                 <span>
-                  {zhFirst
-                    ? `${f.winner} 组第一 vs `
-                    : `Winner Group ${f.winner} vs `}
+                  {winLabel(f.winner)}
                   <Link
                     href={localeHref(locale, `/calculator/group/${f.source.toLowerCase()}`)}
                     className="text-green transition hover:underline"
                   >
-                    {zhFirst ? `${f.source} 组第三` : `3rd of Group ${f.source}`}
+                    {thrdLabel(f.source)}
                   </Link>
                 </span>
                 <span className="font-head text-[10px] text-muted">M{f.match}</span>

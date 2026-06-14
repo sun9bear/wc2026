@@ -46,13 +46,29 @@ export default async function Home({
     <main className="mx-auto w-full max-w-5xl px-4 py-8">
       <header className="mb-5">
         <h1 className="font-head text-2xl font-bold tracking-wide">
-          {locale === "en" ? (
+          {locale === "zh" ? (
             <>
-              World Cup <span className="text-green">Predictor</span> · 2026
+              环球足球<span className="text-green">预测</span> · 2026
+            </>
+          ) : locale === "es" ? (
+            <>
+              Predictor del <span className="text-green">Mundial</span> · 2026
+            </>
+          ) : locale === "pt" ? (
+            <>
+              Predictor da <span className="text-green">Copa</span> · 2026
+            </>
+          ) : locale === "de" ? (
+            <>
+              WM-<span className="text-green">Predictor</span> · 2026
+            </>
+          ) : locale === "fr" ? (
+            <>
+              Predictor de la <span className="text-green">Coupe</span> · 2026
             </>
           ) : (
             <>
-              环球足球<span className="text-green">预测</span> · 2026
+              World Cup <span className="text-green">Predictor</span> · 2026
             </>
           )}
         </h1>

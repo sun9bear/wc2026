@@ -5,8 +5,9 @@
 // 合规：标题「实时最终比分预测 / Live final-score forecast」，概率条，零博彩词。
 
 import { useEffect, useRef, useState } from "react";
-import { teamZh } from "@/lib/football/teams";
+import { teamName } from "@/lib/football/teams";
 import { ScoreProbs } from "@/components/ScoreProbs";
+import type { Locale } from "@/i18n";
 import type { MatchScoreline } from "@/lib/prob/getMatchScoreline";
 
 interface LiveResp {
@@ -18,7 +19,10 @@ interface LiveResp {
   p?: { home: number; draw: number; away: number };
 }
 
-const COPY = {
+const COPY: Record<
+  Locale,
+  { title: string; sub: string; other: string; pre: string; note: string; nodata: string }
+> = {
   zh: {
     title: "实时最终比分预测",
     sub: "进球后自动更新",
@@ -35,16 +39,48 @@ const COPY = {
     note: "Refreshes ~every 30s; Poisson model from current score and time left.",
     nodata: "Match in progress — live data connecting…",
   },
-} as const;
+  es: {
+    title: "Previsión del marcador final en vivo",
+    sub: "se actualiza tras los goles",
+    other: "Otros resultados",
+    pre: "Previsión de marcador previa (partido en curso)",
+    note: "Se actualiza cada ~30 s; modelo de Poisson según el marcador actual y el tiempo restante.",
+    nodata: "Partido en curso — conectando datos en vivo…",
+  },
+  pt: {
+    title: "Previsão do placar final ao vivo",
+    sub: "atualiza após os gols",
+    other: "Outros placares",
+    pre: "Previsão de placar pré-jogo (partida em andamento)",
+    note: "Atualiza a cada ~30 s; modelo de Poisson com base no placar atual e no tempo restante.",
+    nodata: "Partida em andamento — conectando dados ao vivo…",
+  },
+  de: {
+    title: "Live-Prognose Endstand",
+    sub: "aktualisiert nach Toren",
+    other: "Andere Ergebnisse",
+    pre: "Endstand-Prognose vor dem Spiel (Spiel läuft)",
+    note: "Aktualisiert ~alle 30 s; Poisson-Modell aus aktuellem Stand und Restzeit.",
+    nodata: "Spiel läuft — Live-Daten werden verbunden…",
+  },
+  fr: {
+    title: "Prévision du score final en direct",
+    sub: "mise à jour après les buts",
+    other: "Autres scores",
+    pre: "Prévision de score d'avant-match (match en cours)",
+    note: "Mise à jour ~toutes les 30 s ; modèle de Poisson selon le score actuel et le temps restant.",
+    nodata: "Match en cours — connexion des données en direct…",
+  },
+};
 
-function Side({ name, flag, locale }: { name: string; flag: string | null; locale: "zh" | "en" }) {
+function Side({ name, flag, locale }: { name: string; flag: string | null; locale: Locale }) {
   return (
     <span className="inline-flex items-center gap-1.5">
       {flag && (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={flag} alt="" className="h-3 w-4 rounded-[2px] object-cover" />
       )}
-      <span className="truncate">{locale === "zh" ? teamZh(name) : name}</span>
+      <span className="truncate">{teamName(name, locale)}</span>
     </span>
   );
 }
@@ -59,10 +95,10 @@ export function LiveScoreProbs({
   matchId: string;
   home: { name: string; flag: string | null };
   away: { name: string; flag: string | null };
-  locale: "zh" | "en";
+  locale: Locale;
   fallback: MatchScoreline | null;
 }) {
-  const c = COPY[locale];
+  const c = COPY[locale] ?? COPY.en;
   const [data, setData] = useState<LiveResp | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 

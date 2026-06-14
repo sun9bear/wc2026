@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale } from "@/i18n/server";
-import { localeHref } from "@/i18n";
+import { localeHref, type Locale } from "@/i18n";
+import { teamName } from "@/lib/football/teams";
 import { localizedAlternates, selfUrl } from "@/lib/seo/canonical";
 import { getForecast } from "@/lib/prob/pipeline";
 import { findTeam, teamSlug } from "@/lib/prob/findTeam";
@@ -113,7 +114,7 @@ export async function generateMetadata({
       const data = await getForecast();
       const hit = findTeam(data, team);
       if (hit) {
-        const nm = locale === "zh" ? hit.team.zh : hit.team.name;
+        const nm = locale === "zh" ? hit.team.zh : teamName(hit.team.name, locale);
         const og = `/api/og?team=${teamSlug(hit.team.name)}&locale=${locale}`;
         return {
           title: c.teamTitle(nm),
@@ -170,13 +171,27 @@ export default async function CalculatorPage({
   const shareUrl = focusSlug
     ? selfUrl(`/calculator?team=${focusSlug}`, locale)
     : selfUrl("/calculator", locale);
-  const shareText = hit
-    ? locale === "zh"
-      ? `${hit.team.zh}出线概率 ${(hit.team.pAdvance > 1 ? hit.team.pAdvance : hit.team.pAdvance * 100).toFixed(0)}% · 自己改一版剩余赛果`
-      : `${hit.team.name} chance to advance — flip remaining results yourself`
-    : locale === "zh"
-      ? "2026 世界杯出线计算器（我的队还有戏吗）"
-      : "World Cup 2026 scenario calculator";
+  const advPct = hit
+    ? (hit.team.pAdvance > 1 ? hit.team.pAdvance : hit.team.pAdvance * 100).toFixed(0)
+    : "";
+  const nmShare = hit ? (locale === "zh" ? hit.team.zh : teamName(hit.team.name, locale)) : "";
+  const SHARE_HIT: Record<Locale, string> = {
+    zh: `${nmShare}出线概率 ${advPct}% · 自己改一版剩余赛果`,
+    en: `${nmShare} chance to advance — flip remaining results yourself`,
+    es: `${nmShare}: probabilidad de avanzar ${advPct}% · cambia tú los resultados restantes`,
+    pt: `${nmShare}: chance de avançar ${advPct}% · mude você os resultados restantes`,
+    de: `${nmShare}: Chance aufs Weiterkommen ${advPct}% · ändere selbst die Restergebnisse`,
+    fr: `${nmShare} : probabilité de qualification ${advPct}% · modifie toi-même les résultats restants`,
+  };
+  const SHARE_GENERIC: Record<Locale, string> = {
+    zh: "2026 世界杯出线计算器（我的队还有戏吗）",
+    en: "World Cup 2026 scenario calculator",
+    es: "Calculadora de escenarios del Mundial 2026",
+    pt: "Calculadora de cenários da Copa 2026",
+    de: "WM-2026-Szenario-Rechner",
+    fr: "Calculateur de scénarios du Mondial 2026",
+  };
+  const shareText = hit ? SHARE_HIT[locale] : SHARE_GENERIC[locale];
   const shareOg = focusSlug
     ? `${SITE}/api/og?team=${focusSlug}&locale=${locale}&u=${encodeURIComponent(localeHref(locale, `/calculator?team=${focusSlug}`))}`
     : null;

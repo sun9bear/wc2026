@@ -1,11 +1,25 @@
 import { zh } from "./messages/zh";
 import { en } from "./messages/en";
+import { es } from "./messages/es";
+import { pt } from "./messages/pt";
+import { de } from "./messages/de";
+import { fr } from "./messages/fr";
 import type { Locale } from "./locales";
 
 // locale 配置/工具集中在叶子模块 ./locales（无字典依赖，中间件 proxy.ts 可安全引入）。
 // 此处重新导出，保持 `@/i18n` 为全站统一入口（既有 39 处 import 路径不变）。
 export type { Locale } from "./locales";
-export { DEFAULT_LOCALE, LOCALES, PREFIXED_LOCALES, isLocale, localeHref, stripLocale } from "./locales";
+export {
+  DEFAULT_LOCALE,
+  LOCALES,
+  PREFIXED_LOCALES,
+  BCP47_LOCALE,
+  NATIVE_LABEL,
+  isLocale,
+  localeFromAcceptLanguage,
+  localeHref,
+  stripLocale,
+} from "./locales";
 
 export interface Dict {
   appName: string;
@@ -101,8 +115,8 @@ export interface Dict {
 }
 
 // Record<Locale, Dict> 强制各 locale 文案结构完整一致（缺键即编译报错）。
-const dicts: Record<Locale, Dict> = { zh, en };
+const dicts: Record<Locale, Dict> = { zh, en, es, pt, de, fr };
 
 export function getDict(locale: Locale): Dict {
-  return dicts[locale] ?? dicts.zh;
+  return dicts[locale] ?? dicts.en;
 }

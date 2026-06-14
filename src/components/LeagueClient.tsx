@@ -10,7 +10,26 @@ import type { Locale } from "@/i18n";
 // 擂台首页（任务 5）：起昵称 → 创建擂台 / 输码加入；列出我已加入的擂台。
 // 仅微信/私域分发，绝不出现在 Reddit；EN 文案用 League/Challenge，避开 pool。
 
-const TXT = {
+interface LeagueCopy {
+  title: string;
+  desc: string;
+  nickLabel: string;
+  nickPlaceholder: string;
+  nickSave: string;
+  nickSaved: string;
+  nickCurrent: (n: string) => string;
+  nickEdit: string;
+  createTitle: string;
+  createPlaceholder: string;
+  createBtn: string;
+  joinTitle: string;
+  joinPlaceholder: string;
+  joinBtn: string;
+  mine: string;
+  busy: string;
+  errors: Record<string, string>;
+}
+const TXT: Record<Locale, LeagueCopy> = {
   zh: {
     title: "🛡 好友擂台",
     desc: "建个房间拉朋友进来，看小组赛结束谁是真懂球帝。积分同步全站战绩，零门槛。",
@@ -38,7 +57,7 @@ const TXT = {
       code_invalid: "口令格式不对（WC-XXXX）",
       league_not_found: "没找到这个擂台，检查口令",
       generic: "操作失败，稍后再试",
-    } as Record<string, string>,
+    },
   },
   en: {
     title: "🛡 Friends League",
@@ -67,12 +86,128 @@ const TXT = {
       code_invalid: "Code format looks wrong (WC-XXXX)",
       league_not_found: "League not found — double-check the code",
       generic: "Something went wrong, try again",
-    } as Record<string, string>,
+    },
   },
-} as const;
+  es: {
+    title: "🛡 Liga de amigos",
+    desc: "Crea una liga privada, invita a tus amigos y descubre quién sabe de verdad de fútbol. Los puntos se sincronizan con tu historial del sitio.",
+    nickLabel: "Elige un nombre primero (se muestra en la tabla)",
+    nickPlaceholder: "2-20 caracteres",
+    nickSave: "Guardar nombre",
+    nickSaved: "Guardado ✓",
+    nickCurrent: (n: string) => `Tu nombre: ${n}`,
+    nickEdit: "Editar",
+    createTitle: "Crear una liga",
+    createPlaceholder: "Nombre de la liga, p. ej. Copa de la oficina",
+    createBtn: "Crear y obtener el código",
+    joinTitle: "¿Tienes un código? Únete a una liga",
+    joinPlaceholder: "WC-XXXX",
+    joinBtn: "Unirse",
+    mine: "Mis ligas",
+    busy: "Procesando…",
+    errors: {
+      nickname_length: "El nombre debe tener 2-20 caracteres",
+      nickname_invalid: "El nombre contiene caracteres no permitidos",
+      nickname_banned: "El nombre contiene palabras no permitidas",
+      nickname_required: "Primero define tu nombre arriba",
+      league_name_invalid: "El nombre de la liga debe tener 2-24 caracteres",
+      league_name_banned: "El nombre de la liga contiene palabras no permitidas",
+      code_invalid: "El formato del código parece incorrecto (WC-XXXX)",
+      league_not_found: "Liga no encontrada — revisa el código",
+      generic: "Algo salió mal, inténtalo de nuevo",
+    },
+  },
+  pt: {
+    title: "🛡 Liga de amigos",
+    desc: "Crie uma liga privada, convide seus amigos e veja quem realmente entende de futebol. Os pontos sincronizam com seu histórico do site.",
+    nickLabel: "Escolha um nome primeiro (aparece na tabela)",
+    nickPlaceholder: "2-20 caracteres",
+    nickSave: "Salvar nome",
+    nickSaved: "Salvo ✓",
+    nickCurrent: (n: string) => `Seu nome: ${n}`,
+    nickEdit: "Editar",
+    createTitle: "Criar uma liga",
+    createPlaceholder: "Nome da liga, ex. Copa do escritório",
+    createBtn: "Criar e pegar o código",
+    joinTitle: "Tem um código? Entre numa liga",
+    joinPlaceholder: "WC-XXXX",
+    joinBtn: "Entrar",
+    mine: "Minhas ligas",
+    busy: "Processando…",
+    errors: {
+      nickname_length: "O nome deve ter 2-20 caracteres",
+      nickname_invalid: "O nome contém caracteres não permitidos",
+      nickname_banned: "O nome contém palavras não permitidas",
+      nickname_required: "Defina seu nome acima primeiro",
+      league_name_invalid: "O nome da liga deve ter 2-24 caracteres",
+      league_name_banned: "O nome da liga contém palavras não permitidas",
+      code_invalid: "O formato do código parece errado (WC-XXXX)",
+      league_not_found: "Liga não encontrada — confira o código",
+      generic: "Algo deu errado, tente de novo",
+    },
+  },
+  de: {
+    title: "🛡 Freunde-Liga",
+    desc: "Erstelle eine private Liga, lade deine Freunde ein und sieh, wer wirklich etwas von Fußball versteht. Punkte werden mit deiner Seitenbilanz synchronisiert.",
+    nickLabel: "Wähle zuerst einen Namen (in der Tabelle sichtbar)",
+    nickPlaceholder: "2-20 Zeichen",
+    nickSave: "Namen speichern",
+    nickSaved: "Gespeichert ✓",
+    nickCurrent: (n: string) => `Dein Name: ${n}`,
+    nickEdit: "Bearbeiten",
+    createTitle: "Liga erstellen",
+    createPlaceholder: "Liganame, z. B. Büro-Cup",
+    createBtn: "Erstellen & Code holen",
+    joinTitle: "Hast du einen Code? Liga beitreten",
+    joinPlaceholder: "WC-XXXX",
+    joinBtn: "Beitreten",
+    mine: "Meine Ligen",
+    busy: "Wird verarbeitet…",
+    errors: {
+      nickname_length: "Der Name muss 2-20 Zeichen haben",
+      nickname_invalid: "Der Name enthält nicht erlaubte Zeichen",
+      nickname_banned: "Der Name enthält nicht erlaubte Wörter",
+      nickname_required: "Lege zuerst oben deinen Namen fest",
+      league_name_invalid: "Der Liganame muss 2-24 Zeichen haben",
+      league_name_banned: "Der Liganame enthält nicht erlaubte Wörter",
+      code_invalid: "Code-Format scheint falsch (WC-XXXX)",
+      league_not_found: "Liga nicht gefunden — prüfe den Code",
+      generic: "Etwas ist schiefgelaufen, versuch es erneut",
+    },
+  },
+  fr: {
+    title: "🛡 Ligue entre amis",
+    desc: "Crée une ligue privée, invite tes amis et vois qui s'y connaît vraiment en football. Les points se synchronisent avec ton historique du site.",
+    nickLabel: "Choisis d'abord un nom (affiché dans le classement)",
+    nickPlaceholder: "2-20 caractères",
+    nickSave: "Enregistrer le nom",
+    nickSaved: "Enregistré ✓",
+    nickCurrent: (n: string) => `Ton nom : ${n}`,
+    nickEdit: "Modifier",
+    createTitle: "Créer une ligue",
+    createPlaceholder: "Nom de la ligue, p. ex. Coupe du bureau",
+    createBtn: "Créer et obtenir le code",
+    joinTitle: "Tu as un code ? Rejoins une ligue",
+    joinPlaceholder: "WC-XXXX",
+    joinBtn: "Rejoindre",
+    mine: "Mes ligues",
+    busy: "Traitement…",
+    errors: {
+      nickname_length: "Le nom doit faire 2-20 caractères",
+      nickname_invalid: "Le nom contient des caractères non autorisés",
+      nickname_banned: "Le nom contient des mots non autorisés",
+      nickname_required: "Définis d'abord ton nom ci-dessus",
+      league_name_invalid: "Le nom de la ligue doit faire 2-24 caractères",
+      league_name_banned: "Le nom de la ligue contient des mots non autorisés",
+      code_invalid: "Le format du code semble incorrect (WC-XXXX)",
+      league_not_found: "Ligue introuvable — vérifie le code",
+      generic: "Une erreur est survenue, réessaie",
+    },
+  },
+};
 
 export function LeagueClient({ locale }: { locale: Locale }) {
-  const t = TXT[locale];
+  const t = TXT[locale] ?? TXT.en;
   const router = useRouter();
   const [nickname, setNickname] = useState<string | null>(null);
   const [editingNick, setEditingNick] = useState(false);
@@ -168,13 +303,21 @@ export function LeagueClient({ locale }: { locale: Locale }) {
   }
 
   const needNick = !nickname || editingNick;
+  const backLabel: Record<Locale, string> = {
+    zh: "返回",
+    en: "Back",
+    es: "Volver",
+    pt: "Voltar",
+    de: "Zurück",
+    fr: "Retour",
+  };
 
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-8">
       <div className="flex items-center justify-between">
         <h1 className="font-head text-2xl font-bold">{t.title}</h1>
         <Link href={localeHref(locale, "/")} className="text-xs text-muted">
-          ← {locale === "zh" ? "返回" : "Back"}
+          ← {backLabel[locale] ?? "Back"}
         </Link>
       </div>
       <p className="mt-2 text-sm text-muted">{t.desc}</p>

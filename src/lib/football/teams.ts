@@ -1,6 +1,8 @@
+import type { Locale } from "@/i18n/locales";
+
 // 英文队名（football-data.org 拼写）→ 各语种译名 + ISO2 国家码（用于国旗图片）。
 // 国旗用图片（flagcdn）而非 emoji——Windows 不支持国旗 emoji。
-// P2-2：es/pt/de/fr 名为必填字段（tsc 强制每条齐全）；teamName 暂仍只读 zh/en，激活（Locale 加宽）时再按 locale 取。
+// P2-2 已激活：teamName 按 locale 读 NATIONS[name][locale]（en 直出 football-data 原名）。
 interface Nation {
   zh: string;
   es: string;
@@ -84,36 +86,46 @@ export function teamZh(name: string): string {
   return NATIONS[name]?.zh ?? name;
 }
 
-/** 按语言取队名：DB 存的就是英文原名（football-data 拼写），en 直出、zh 查表。 */
-export function teamName(name: string, locale: "zh" | "en"): string {
-  return locale === "en" ? name : teamZh(name);
+/** 按语言取队名：DB 存的就是英文原名（football-data 拼写），en 直出、其余查 NATIONS 表（未知回落英文原名）。 */
+export function teamName(name: string, locale: Locale): string {
+  if (locale === "en") return name;
+  return NATIONS[name]?.[locale] ?? name;
 }
 
-// DB 的 stage/grp 存中文（如 "小组赛"、"A 组"）——en 视图在渲染层反查，不动库。
-const STAGE_EN: Record<string, string> = {
-  小组赛: "Group Stage",
-  "32强": "Round of 32",
-  "1/16决赛": "Round of 32",
-  "1/8决赛": "Round of 16",
-  "16强": "Round of 16",
-  "1/4决赛": "Quarter-final",
-  "8强": "Quarter-final",
-  半决赛: "Semi-final",
-  季军赛: "Third place",
-  决赛: "Final",
+// DB 的 stage/grp 存中文（如 "小组赛"、"A 组"）——非 zh 视图在渲染层反查，不动库。
+// key = 去空白后的 zh 赛段名；值含全部非-zh locale。32 队淘汰赛 = Round of 32（2026 新制）。
+type NonZhLocale = Exclude<Locale, "zh">;
+const STAGE_NAMES: Record<string, Record<NonZhLocale, string>> = {
+  小组赛: { en: "Group Stage", es: "Fase de grupos", pt: "Fase de grupos", de: "Gruppenphase", fr: "Phase de groupes" },
+  "32强": { en: "Round of 32", es: "Dieciseisavos de final", pt: "16 avos de final", de: "Sechzehntelfinale", fr: "Seizièmes de finale" },
+  "1/16决赛": { en: "Round of 32", es: "Dieciseisavos de final", pt: "16 avos de final", de: "Sechzehntelfinale", fr: "Seizièmes de finale" },
+  "1/8决赛": { en: "Round of 16", es: "Octavos de final", pt: "Oitavas de final", de: "Achtelfinale", fr: "Huitièmes de finale" },
+  "16强": { en: "Round of 16", es: "Octavos de final", pt: "Oitavas de final", de: "Achtelfinale", fr: "Huitièmes de finale" },
+  "1/4决赛": { en: "Quarter-final", es: "Cuartos de final", pt: "Quartas de final", de: "Viertelfinale", fr: "Quarts de finale" },
+  "8强": { en: "Quarter-final", es: "Cuartos de final", pt: "Quartas de final", de: "Viertelfinale", fr: "Quarts de finale" },
+  半决赛: { en: "Semi-final", es: "Semifinal", pt: "Semifinal", de: "Halbfinale", fr: "Demi-finale" },
+  季军赛: { en: "Third place", es: "Tercer puesto", pt: "Terceiro lugar", de: "Spiel um Platz 3", fr: "Match pour la 3e place" },
+  决赛: { en: "Final", es: "Final", pt: "Final", de: "Finale", fr: "Finale" },
 };
 
-/** 赛段名（zh 原样；en 反查表，未知原样返回）。 */
-export function stageName(stage: string, locale: "zh" | "en"): string {
+/** 赛段名（zh 原样；其余查表，未知原样返回）。 */
+export function stageName(stage: string, locale: Locale): string {
   if (locale === "zh") return stage;
-  return STAGE_EN[stage.replace(/\s/g, "")] ?? stage;
+  return STAGE_NAMES[stage.replace(/\s/g, "")]?.[locale] ?? stage;
 }
 
-/** 组名（"A 组" ↔ "Group A"，按 A-L 字母提取）。 */
-export function groupName(grp: string, locale: "zh" | "en"): string {
+/** 组名（"A 组" ↔ "Group A / Grupo A / Gruppe A / Groupe A"，按 A-L 字母提取）。 */
+const GROUP_PREFIX: Record<NonZhLocale, string> = {
+  en: "Group",
+  es: "Grupo",
+  pt: "Grupo",
+  de: "Gruppe",
+  fr: "Groupe",
+};
+export function groupName(grp: string, locale: Locale): string {
   const letter = grp.match(/[A-L]/)?.[0];
   if (!letter) return grp;
-  return locale === "en" ? `Group ${letter}` : `${letter} 组`;
+  return locale === "zh" ? `${letter} 组` : `${GROUP_PREFIX[locale]} ${letter}`;
 }
 
 /** 英文队名 → 国旗图片 URL（未知返回 null）。 */

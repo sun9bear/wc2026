@@ -7,6 +7,7 @@ import { track } from "@/lib/track";
 import { swingShareParts, matchUrl } from "@/lib/share/swingShare";
 import { defaultName } from "@/lib/identity/defaultName";
 import type { MatchSwing } from "@/lib/prob/getMatchSwing";
+import type { Locale } from "@/i18n";
 
 // 「爆冷瞬间」分享模块（摆动 OG 图卡前端入口）：页内还原摆动视觉 + 原生分享 + 个人押中炫耀 + 署名。
 // 分享 url = 本场比赛页（og:image 为通用摆动卡）；「保存图片卡」直链带 ?by=<署名> 的 OG PNG
@@ -20,7 +21,7 @@ export function MatchSwingShare({
 }: {
   swing: MatchSwing;
   matchId: string;
-  locale: "zh" | "en";
+  locale: Locale;
   ogPath: string;
 }) {
   const [personalWin, setPersonalWin] = useState(false);
@@ -67,32 +68,103 @@ export function MatchSwingShare({
   const heroColor = up ? "#1be27f" : "#ff5436";
   const ogWithBy = effectiveName ? `${ogPath}&by=${encodeURIComponent(effectiveName)}` : ogPath;
 
-  const c =
-    locale === "zh"
-      ? {
-          headline: personalWin ? "🎯 你猜中了这场爆冷" : "🔥 爆冷瞬间",
-          shareBtn: "🔗 分享这一刻",
-          saveImg: "保存图片卡",
-          copied: "已复制，去粘贴分享 👍",
-          copyFail: "复制失败，可截图分享",
-          as: "署名",
-          rename: "✎ 改名",
-          save: "保存",
-          cancel: "取消",
-          saveErr: "名字不合法（2–20 字、无敏感词）",
-        }
-      : {
-          headline: personalWin ? "🎯 You called this upset" : "🔥 Upset moment",
-          shareBtn: "🔗 Share this",
-          saveImg: "Save image card",
-          copied: "Copied — paste to share 👍",
-          copyFail: "Copy failed — screenshot to share",
-          as: "as",
-          rename: "✎ Rename",
-          save: "Save",
-          cancel: "Cancel",
-          saveErr: "Invalid name (2–20 chars, no banned words)",
-        };
+  const C: Record<
+    Locale,
+    {
+      win: string;
+      upset: string;
+      shareBtn: string;
+      saveImg: string;
+      copied: string;
+      copyFail: string;
+      as: string;
+      rename: string;
+      save: string;
+      cancel: string;
+      saveErr: string;
+    }
+  > = {
+    zh: {
+      win: "🎯 你猜中了这场爆冷",
+      upset: "🔥 爆冷瞬间",
+      shareBtn: "🔗 分享这一刻",
+      saveImg: "保存图片卡",
+      copied: "已复制，去粘贴分享 👍",
+      copyFail: "复制失败，可截图分享",
+      as: "署名",
+      rename: "✎ 改名",
+      save: "保存",
+      cancel: "取消",
+      saveErr: "名字不合法（2–20 字、无敏感词）",
+    },
+    en: {
+      win: "🎯 You called this upset",
+      upset: "🔥 Upset moment",
+      shareBtn: "🔗 Share this",
+      saveImg: "Save image card",
+      copied: "Copied — paste to share 👍",
+      copyFail: "Copy failed — screenshot to share",
+      as: "as",
+      rename: "✎ Rename",
+      save: "Save",
+      cancel: "Cancel",
+      saveErr: "Invalid name (2–20 chars, no banned words)",
+    },
+    es: {
+      win: "🎯 Acertaste esta sorpresa",
+      upset: "🔥 Momento sorpresa",
+      shareBtn: "🔗 Compartir esto",
+      saveImg: "Guardar tarjeta",
+      copied: "Copiado — pega para compartir 👍",
+      copyFail: "Error al copiar — comparte una captura",
+      as: "como",
+      rename: "✎ Cambiar nombre",
+      save: "Guardar",
+      cancel: "Cancelar",
+      saveErr: "Nombre no válido (2–20 caracteres, sin palabras prohibidas)",
+    },
+    pt: {
+      win: "🎯 Você acertou essa zebra",
+      upset: "🔥 Momento de zebra",
+      shareBtn: "🔗 Compartilhar",
+      saveImg: "Salvar cartão",
+      copied: "Copiado — cole para compartilhar 👍",
+      copyFail: "Falha ao copiar — compartilhe uma captura",
+      as: "como",
+      rename: "✎ Renomear",
+      save: "Salvar",
+      cancel: "Cancelar",
+      saveErr: "Nome inválido (2–20 caracteres, sem palavras proibidas)",
+    },
+    de: {
+      win: "🎯 Diese Überraschung getippt",
+      upset: "🔥 Überraschungsmoment",
+      shareBtn: "🔗 Teilen",
+      saveImg: "Bildkarte speichern",
+      copied: "Kopiert — zum Teilen einfügen 👍",
+      copyFail: "Kopieren fehlgeschlagen — Screenshot teilen",
+      as: "als",
+      rename: "✎ Umbenennen",
+      save: "Speichern",
+      cancel: "Abbrechen",
+      saveErr: "Ungültiger Name (2–20 Zeichen, keine gesperrten Wörter)",
+    },
+    fr: {
+      win: "🎯 Vous aviez prédit cette surprise",
+      upset: "🔥 Moment de surprise",
+      shareBtn: "🔗 Partager",
+      saveImg: "Enregistrer la carte",
+      copied: "Copié — collez pour partager 👍",
+      copyFail: "Échec de la copie — partagez une capture",
+      as: "sous",
+      rename: "✎ Renommer",
+      save: "Enregistrer",
+      cancel: "Annuler",
+      saveErr: "Nom invalide (2–20 caractères, sans mots interdits)",
+    },
+  };
+  const t = C[locale] ?? C.en;
+  const c = { ...t, headline: personalWin ? t.win : t.upset };
 
   const shareUrl = matchUrl(matchId, locale);
 

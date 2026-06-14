@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { copyText } from "@/lib/clipboard";
 import { track } from "@/lib/track";
 import { buildMatchOgUrl, formatKickoff, type ScoreCell } from "@/lib/share/matchCard";
+import type { Locale } from "@/i18n";
 
 // 页眉右上角分享入口（任务 A）：图片卡按钮醒目（绿色发光呼吸边框），链接按钮弱化（ghost）。
 // 比赛页与计算器页眉复用同一组件。reduced-motion 由 globals.css 文末媒体查询统一关停呼吸动画。
@@ -33,7 +34,7 @@ export function HeaderShare({
 }: {
   shareUrl: string;
   text: string;
-  locale: "zh" | "en";
+  locale: Locale;
   /** 预构造的图片卡 URL（计算器/球队卡用）。与 match 二选一。 */
   ogUrl?: string | null;
   /** 比赛卡参数（比赛页用）：组件在客户端用浏览器时区构造图片卡 URL。 */
@@ -67,10 +68,15 @@ export function HeaderShare({
         })
       : null);
 
-  const c =
-    locale === "zh"
-      ? { img: "图片卡", link: "链接", copied: "已复制 ✓", fail: "复制失败" }
-      : { img: "Image", link: "Link", copied: "Copied ✓", fail: "Copy failed" };
+  const C: Record<Locale, { img: string; link: string; copied: string; fail: string; imgAria: string; linkAria: string }> = {
+    zh: { img: "图片卡", link: "链接", copied: "已复制 ✓", fail: "复制失败", imgAria: "保存分享图片卡", linkAria: "分享链接" },
+    en: { img: "Image", link: "Link", copied: "Copied ✓", fail: "Copy failed", imgAria: "Save share image card", linkAria: "Share link" },
+    es: { img: "Imagen", link: "Enlace", copied: "Copiado ✓", fail: "Error al copiar", imgAria: "Guardar tarjeta de imagen", linkAria: "Compartir enlace" },
+    pt: { img: "Imagem", link: "Link", copied: "Copiado ✓", fail: "Falha ao copiar", imgAria: "Salvar cartão de imagem", linkAria: "Compartilhar link" },
+    de: { img: "Bild", link: "Link", copied: "Kopiert ✓", fail: "Kopieren fehlgeschlagen", imgAria: "Bildkarte speichern", linkAria: "Link teilen" },
+    fr: { img: "Image", link: "Lien", copied: "Copié ✓", fail: "Échec de la copie", imgAria: "Enregistrer la carte image", linkAria: "Partager le lien" },
+  };
+  const c = C[locale] ?? C.en;
 
   async function onLink() {
     if (typeof navigator !== "undefined" && navigator.share) {
@@ -96,7 +102,7 @@ export function HeaderShare({
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => track("header_share_image", { source })}
-          aria-label={locale === "zh" ? "保存分享图片卡" : "Save share image card"}
+          aria-label={c.imgAria}
           className="breathe-glow inline-flex items-center gap-1 rounded-md border border-green bg-green/10 px-2.5 py-1 text-xs font-semibold text-green transition hover:bg-green/20"
         >
           <span aria-hidden>🖼</span>
@@ -106,7 +112,7 @@ export function HeaderShare({
       <button
         type="button"
         onClick={onLink}
-        aria-label={locale === "zh" ? "分享链接" : "Share link"}
+        aria-label={c.linkAria}
         className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs text-muted transition hover:border-green/60 hover:text-text"
       >
         <span aria-hidden>🔗</span>

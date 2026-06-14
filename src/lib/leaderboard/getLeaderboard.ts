@@ -1,6 +1,7 @@
 import { getServerSupabase } from "@/lib/supabase/server";
 import { rankTier } from "@/lib/ranks/rankTier";
 import { defaultName } from "@/lib/identity/defaultName";
+import type { Locale } from "@/i18n/locales";
 
 export interface LeaderRow {
   rank: number;
@@ -18,7 +19,7 @@ interface ProfileRow {
 
 // 服务端读取（service_role 绕过 RLS），按积分降序排名。
 // locale 决定无昵称用户的趣味默认名语言——英文访客/Googlebot 必须拿英文名（不能漏中文到可索引页）。
-export async function getLeaderboard(locale: "zh" | "en", limit = 50): Promise<LeaderRow[]> {
+export async function getLeaderboard(locale: Locale, limit = 50): Promise<LeaderRow[]> {
   const { data } = await getServerSupabase()
     .from("profiles")
     .select("user_id, nickname, points_balance")

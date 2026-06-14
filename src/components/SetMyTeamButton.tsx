@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { track } from "@/lib/track";
+import type { Locale } from "@/i18n";
 
 // 「设为我的主队」（任务 C）：localStorage 起步，零 DDL。/me 的主队卡读同一 key。
 export const MY_TEAM_KEY = "my_team";
 export const MY_TEAM_EVENT = "my-team-changed";
 
-export function SetMyTeamButton({ slug, locale }: { slug: string; locale: "zh" | "en" }) {
+export function SetMyTeamButton({ slug, locale }: { slug: string; locale: Locale }) {
   const [isMine, setIsMine] = useState(false);
 
   useEffect(() => {
@@ -35,10 +36,15 @@ export function SetMyTeamButton({ slug, locale }: { slug: string; locale: "zh" |
     }
   }
 
-  const c =
-    locale === "zh"
-      ? { set: "⭐ 设为我的主队", done: "✓ 已是我的主队（点击取消）" }
-      : { set: "⭐ Set as my team", done: "✓ Your team (tap to unset)" };
+  const C: Record<Locale, { set: string; done: string }> = {
+    zh: { set: "⭐ 设为我的主队", done: "✓ 已是我的主队（点击取消）" },
+    en: { set: "⭐ Set as my team", done: "✓ Your team (tap to unset)" },
+    es: { set: "⭐ Marcar como mi equipo", done: "✓ Tu equipo (toca para quitar)" },
+    pt: { set: "⭐ Definir como meu time", done: "✓ Seu time (toque para remover)" },
+    de: { set: "⭐ Als mein Team festlegen", done: "✓ Dein Team (zum Entfernen tippen)" },
+    fr: { set: "⭐ Définir comme mon équipe", done: "✓ Votre équipe (touchez pour retirer)" },
+  };
+  const c = C[locale] ?? C.en;
 
   return (
     <button

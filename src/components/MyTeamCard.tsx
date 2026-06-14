@@ -8,6 +8,7 @@ import { LocalTime } from "@/components/LocalTime";
 import { MY_TEAM_KEY, MY_TEAM_EVENT } from "@/components/SetMyTeamButton";
 import type { Locale } from "@/i18n";
 import { localeHref } from "@/i18n";
+import { teamName } from "@/lib/football/teams";
 
 // 「我的主队」卡（任务 C）：读 localStorage my_team → /api/team/[slug] → 出线/夺冠/评分 + 下一场 + 分享图。
 // 主队由球队详情页的「设为主队」按钮设定；本卡随 my-team-changed 事件刷新。
@@ -81,30 +82,88 @@ export function MyTeamCard({ locale }: { locale: Locale }) {
     };
   }, [slug]);
 
-  const c =
-    locale === "zh"
-      ? {
-          title: "⭐ 我的主队",
-          advance: "出线",
-          champion: "夺冠",
-          rating: "评分",
-          detail: "详情 →",
-          empty: "⭐ 点任意球队的国旗/队名进详情页「设为主队」，这里看 TA 的出线/夺冠概率",
-          next: "下一场 vs",
-          shareText: (nm: string, adv: string) => `${nm}是我的主队 · 出线概率 ${adv}%（2026 世界杯模型）`,
-          tag: (nm: string) => `${nm}的主队`,
-        }
-      : {
-          title: "⭐ My team",
-          advance: "Advance",
-          champion: "Title",
-          rating: "Rating",
-          detail: "Details →",
-          empty: "⭐ Tap any team's flag/name to open its page and set it as your team — chances show up here",
-          next: "Next vs",
-          shareText: (nm: string, adv: string) => `${nm} is my team · ${adv}% to advance (World Cup 2026 model)`,
-          tag: (nm: string) => `${nm}'s team`,
-        };
+  const C: Record<
+    Locale,
+    {
+      title: string;
+      advance: string;
+      champion: string;
+      rating: string;
+      detail: string;
+      empty: string;
+      next: string;
+      shareText: (nm: string, adv: string) => string;
+      tag: (nm: string) => string;
+    }
+  > = {
+    zh: {
+      title: "⭐ 我的主队",
+      advance: "出线",
+      champion: "夺冠",
+      rating: "评分",
+      detail: "详情 →",
+      empty: "⭐ 点任意球队的国旗/队名进详情页「设为主队」，这里看 TA 的出线/夺冠概率",
+      next: "下一场 vs",
+      shareText: (nm: string, adv: string) => `${nm}是我的主队 · 出线概率 ${adv}%（2026 世界杯模型）`,
+      tag: (nm: string) => `${nm}的主队`,
+    },
+    en: {
+      title: "⭐ My team",
+      advance: "Advance",
+      champion: "Title",
+      rating: "Rating",
+      detail: "Details →",
+      empty: "⭐ Tap any team's flag/name to open its page and set it as your team — chances show up here",
+      next: "Next vs",
+      shareText: (nm: string, adv: string) => `${nm} is my team · ${adv}% to advance (World Cup 2026 model)`,
+      tag: (nm: string) => `${nm}'s team`,
+    },
+    es: {
+      title: "⭐ Mi equipo",
+      advance: "Avanzar",
+      champion: "Título",
+      rating: "Valoración",
+      detail: "Detalles →",
+      empty: "⭐ Toca la bandera/nombre de cualquier equipo para abrir su página y marcarlo como tuyo — las probabilidades aparecen aquí",
+      next: "Próximo vs",
+      shareText: (nm: string, adv: string) => `${nm} es mi equipo · ${adv}% de avanzar (modelo Mundial 2026)`,
+      tag: (nm: string) => `Equipo de ${nm}`,
+    },
+    pt: {
+      title: "⭐ Meu time",
+      advance: "Avançar",
+      champion: "Título",
+      rating: "Nota",
+      detail: "Detalhes →",
+      empty: "⭐ Toque na bandeira/nome de qualquer time para abrir a página e defini-lo como seu — as chances aparecem aqui",
+      next: "Próximo vs",
+      shareText: (nm: string, adv: string) => `${nm} é o meu time · ${adv}% de avançar (modelo Copa 2026)`,
+      tag: (nm: string) => `Time de ${nm}`,
+    },
+    de: {
+      title: "⭐ Mein Team",
+      advance: "Weiter",
+      champion: "Titel",
+      rating: "Bewertung",
+      detail: "Details →",
+      empty: "⭐ Tippe auf Flagge/Name eines Teams, um seine Seite zu öffnen und es als deins festzulegen — die Chancen erscheinen hier",
+      next: "Nächstes vs",
+      shareText: (nm: string, adv: string) => `${nm} ist mein Team · ${adv}% aufs Weiterkommen (WM-2026-Modell)`,
+      tag: (nm: string) => `${nm}-Team`,
+    },
+    fr: {
+      title: "⭐ Mon équipe",
+      advance: "Qualif.",
+      champion: "Titre",
+      rating: "Note",
+      detail: "Détails →",
+      empty: "⭐ Touchez le drapeau/nom d'une équipe pour ouvrir sa page et la définir comme la vôtre — les probabilités s'affichent ici",
+      next: "Prochain vs",
+      shareText: (nm: string, adv: string) => `${nm} est mon équipe · ${adv}% de qualification (modèle Coupe du monde 2026)`,
+      tag: (nm: string) => `Équipe de ${nm}`,
+    },
+  };
+  const c = C[locale] ?? C.en;
 
   if (state === "none") {
     return (
@@ -121,10 +180,10 @@ export function MyTeamCard({ locale }: { locale: Locale }) {
     return <Skeleton className="mt-3 h-28 w-full" />;
   }
 
-  const nm = locale === "zh" ? d.zh : d.name;
+  const nm = locale === "zh" ? d.zh : teamName(d.name, locale);
   const adv = fmtP(d.pAdvance);
   const champ = fmtP(d.pChampion);
-  const nextOpp = d.next ? (locale === "zh" ? d.next.oppZh : d.next.oppName) : "";
+  const nextOpp = d.next ? (locale === "zh" ? d.next.oppZh : teamName(d.next.oppName, locale)) : "";
   const ogUrl =
     `${SITE}/api/og?team=${d.slug}&locale=${locale}` +
     `&tag=${encodeURIComponent(c.tag(nm))}&u=${encodeURIComponent(`/team/${d.slug}`)}`;

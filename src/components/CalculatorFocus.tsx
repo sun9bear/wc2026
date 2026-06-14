@@ -6,6 +6,7 @@ import { track } from "@/lib/track";
 import type { Locale } from "@/i18n";
 import { localeHref } from "@/i18n";
 import { selfUrl } from "@/lib/seo/canonical";
+import { teamName } from "@/lib/football/teams";
 
 // 计算器"先选我的队"入口 + 结论条 + 一键复制（CodeX 建议吸收版）。
 // 选队走整页跳转（/calculator?team=slug）——让 generateMetadata 同步出
@@ -22,34 +23,87 @@ export interface FocusTeam {
   slug: string;
 }
 
-const TXT = {
+const ORD = (r: number) => ["st", "nd", "rd"][r - 1] ?? "th";
+// conclusion/share 收预解析好的本地化队名 nm（由组件按 locale 经 teamName 取），文案各语避博彩词。
+interface FocusCopy {
+  pick: string;
+  all: string;
+  copyText: string;
+  copyLink: string;
+  shareNow: string;
+  shareImg: string;
+  copied: string;
+  conclusion: (nm: string, t: FocusTeam, adv: string) => string;
+  share: (nm: string, adv: string, url: string) => string;
+}
+const TXT: Record<Locale, FocusCopy> = {
   zh: {
     pick: "选你的队：",
     all: "全部球队…",
-    conclusion: (t: FocusTeam, adv: string) =>
-      `${t.zh}：${t.letter} 组当前第 ${t.rank} · 模型出线概率 ${adv}%`,
     copyText: "📋 复制结论",
     copyLink: "🔗 复制链接",
     shareNow: "🔗 分享",
     shareImg: "🖼 分享图卡",
     copied: "已复制 ✓",
-    share: (t: FocusTeam, adv: string, url: string) =>
-      `${t.zh}目前出线概率 ${adv}%（万次模拟）——自己改一版剩余赛果看走势：${url}`,
+    conclusion: (nm, t, adv) => `${nm}：${t.letter} 组当前第 ${t.rank} · 模型出线概率 ${adv}%`,
+    share: (nm, adv, url) => `${nm}目前出线概率 ${adv}%（万次模拟）——自己改一版剩余赛果看走势：${url}`,
   },
   en: {
     pick: "Pick your team:",
     all: "All teams…",
-    conclusion: (t: FocusTeam, adv: string) =>
-      `${t.name}: ${t.rank}${["st", "nd", "rd"][t.rank - 1] ?? "th"} in Group ${t.letter} · ${adv}% chance to advance`,
     copyText: "📋 Copy result",
     copyLink: "🔗 Copy link",
     shareNow: "🔗 Share",
     shareImg: "🖼 Share image",
     copied: "Copied ✓",
-    share: (t: FocusTeam, adv: string, url: string) =>
-      `${t.name} has a ${adv}% chance to advance (10,000 sims) — flip any remaining result yourself: ${url}`,
+    conclusion: (nm, t, adv) => `${nm}: ${t.rank}${ORD(t.rank)} in Group ${t.letter} · ${adv}% chance to advance`,
+    share: (nm, adv, url) => `${nm} has a ${adv}% chance to advance (10,000 sims) — flip any remaining result yourself: ${url}`,
   },
-} as const;
+  es: {
+    pick: "Elige tu equipo:",
+    all: "Todos los equipos…",
+    copyText: "📋 Copiar resultado",
+    copyLink: "🔗 Copiar enlace",
+    shareNow: "🔗 Compartir",
+    shareImg: "🖼 Compartir imagen",
+    copied: "Copiado ✓",
+    conclusion: (nm, t, adv) => `${nm}: actualmente ${t.rank}.º del Grupo ${t.letter} · ${adv}% de probabilidad de avanzar`,
+    share: (nm, adv, url) => `${nm} tiene un ${adv}% de probabilidad de avanzar (10 000 simulaciones) — cambia tú cualquier resultado restante: ${url}`,
+  },
+  pt: {
+    pick: "Escolha seu time:",
+    all: "Todos os times…",
+    copyText: "📋 Copiar resultado",
+    copyLink: "🔗 Copiar link",
+    shareNow: "🔗 Compartilhar",
+    shareImg: "🖼 Compartilhar imagem",
+    copied: "Copiado ✓",
+    conclusion: (nm, t, adv) => `${nm}: atualmente em ${t.rank}º no Grupo ${t.letter} · ${adv}% de chance de avançar`,
+    share: (nm, adv, url) => `${nm} tem ${adv}% de chance de avançar (10.000 simulações) — mude você mesmo qualquer resultado restante: ${url}`,
+  },
+  de: {
+    pick: "Wähle dein Team:",
+    all: "Alle Teams…",
+    copyText: "📋 Ergebnis kopieren",
+    copyLink: "🔗 Link kopieren",
+    shareNow: "🔗 Teilen",
+    shareImg: "🖼 Bild teilen",
+    copied: "Kopiert ✓",
+    conclusion: (nm, t, adv) => `${nm}: aktuell Platz ${t.rank} in Gruppe ${t.letter} · ${adv}% Chance aufs Weiterkommen`,
+    share: (nm, adv, url) => `${nm} hat ${adv}% Chance aufs Weiterkommen (10.000 Simulationen) — ändere selbst ein beliebiges Restergebnis: ${url}`,
+  },
+  fr: {
+    pick: "Choisis ton équipe :",
+    all: "Toutes les équipes…",
+    copyText: "📋 Copier le résultat",
+    copyLink: "🔗 Copier le lien",
+    shareNow: "🔗 Partager",
+    shareImg: "🖼 Partager l'image",
+    copied: "Copié ✓",
+    conclusion: (nm, t, adv) => `${nm} : actuellement ${t.rank}e du Groupe ${t.letter} · ${adv}% de chances de se qualifier`,
+    share: (nm, adv, url) => `${nm} a ${adv}% de chances de se qualifier (10 000 simulations) — modifiez vous-même n'importe quel résultat restant : ${url}`,
+  },
+};
 
 export function CalculatorFocus({
   locale,
@@ -62,16 +116,16 @@ export function CalculatorFocus({
   all: { name: string; zh: string; slug: string }[];
   focus: FocusTeam | null;
 }) {
-  const t = TXT[locale];
+  const t = TXT[locale] ?? TXT.en;
   const [done, setDone] = useState<"text" | "link" | null>(null);
-  const label = (x: { name: string; zh: string }) => (locale === "zh" ? x.zh : x.name);
+  const label = (x: { name: string; zh: string }) => (locale === "zh" ? x.zh : teamName(x.name, locale));
 
   const adv = focus ? ((focus.pAdvance > 1 ? focus.pAdvance : focus.pAdvance * 100)).toFixed(0) : "";
   const url = focus ? selfUrl(`/calculator?team=${focus.slug}`, locale) : "";
 
   function doCopy(kind: "text" | "link") {
     if (!focus) return;
-    const ok = copyText(kind === "link" ? url : t.share(focus, adv, url));
+    const ok = copyText(kind === "link" ? url : t.share(label(focus), adv, url));
     if (ok) {
       track("calculator_share_copy", { kind, team: focus.slug });
       setDone(kind);
@@ -121,7 +175,7 @@ export function CalculatorFocus({
               // eslint-disable-next-line @next/next/no-img-element
               <img src={focus.flag} alt="" className="h-4 w-6 rounded-[2px] object-cover" />
             )}
-            <span className="font-medium">{t.conclusion(focus, adv)}</span>
+            <span className="font-medium">{t.conclusion(label(focus), focus, adv)}</span>
           </div>
           <div className="mt-2 flex flex-wrap gap-2 text-xs">
             <button

@@ -60,6 +60,114 @@ const COPY = {
     about: "About & how to play",
     privacy: "Privacy policy",
   },
+  es: {
+    title: "Aviso legal · World Cup Predictor 2026",
+    description:
+      "Aviso legal de World Cup Predictor: un producto de entretenimiento gratuito hecho por aficionados. Los puntos virtuales no tienen valor real y no son canjeables. No está afiliado ni respaldado por la FIFA ni por ninguna organización oficial del Mundial.",
+    back: "← Volver",
+    h1: "Aviso legal",
+    sub: "World Cup Predictor · 2026",
+    s1: "Solo para entretenimiento",
+    s1body: "Este es un producto hecho por aficionados, solo por diversión. Todas las funciones y contenidos son únicamente para entretenimiento.",
+    s2: "Puntos virtuales",
+    s2body:
+      "Los puntos de este sitio son objetos virtuales sin valor en el mundo real. No implican dinero real y no se pueden comprar, canjear, retirar ni transferir.",
+    s3: "IA y datos",
+    s3body1:
+      "Los avances de los partidos, los puntos de interés y los resúmenes se generan automáticamente con IA, y las recompensas de puntuación se calculan a partir de datos de la comunidad; todo es solo para entretenimiento y no constituye ningún tipo de consejo.",
+    s3body2:
+      "Los calendarios y marcadores provienen de fuentes de datos públicas y pueden tener retrasos o errores; prevalecen los anuncios oficiales.",
+    s4: "Sin afiliación oficial",
+    s4body:
+      "Este es un producto no oficial hecho por aficionados. No está afiliado, autorizado ni respaldado por la FIFA, el Mundial ni ningún organismo oficial del torneo, equipo o patrocinador. Dichos nombres se usan solo para describir los partidos.",
+    s5: "Limitación de responsabilidad",
+    s5body:
+      "En la medida permitida por la ley aplicable, este sitio no se hace responsable de ninguna pérdida directa o indirecta derivada del uso de este producto. Al seguir usando este sitio, confirmas que has leído y aceptas los términos anteriores.",
+    seeAlso: "Ver también: ",
+    about: "Acerca de y cómo jugar",
+    privacy: "Política de privacidad",
+  },
+  pt: {
+    title: "Aviso legal · World Cup Predictor 2026",
+    description:
+      "Aviso legal do World Cup Predictor: um produto de entretenimento gratuito feito por torcedores. Os pontos virtuais não têm valor real e não são resgatáveis. Não é afiliado nem endossado pela FIFA ou por qualquer organização oficial da Copa.",
+    back: "← Voltar",
+    h1: "Aviso legal",
+    sub: "World Cup Predictor · 2026",
+    s1: "Apenas para entretenimento",
+    s1body: "Este é um produto feito por torcedores, só por diversão. Todos os recursos e conteúdos são apenas para entretenimento.",
+    s2: "Pontos virtuais",
+    s2body:
+      "Os pontos deste site são itens virtuais sem valor no mundo real. Não envolvem dinheiro real e não podem ser comprados, resgatados, sacados nem transferidos.",
+    s3: "IA e dados",
+    s3body1:
+      "As prévias dos jogos, os destaques e os resumos são gerados automaticamente por IA, e as recompensas de pontuação são calculadas a partir de dados da comunidade — tudo apenas para entretenimento e não constitui qualquer tipo de aconselhamento.",
+    s3body2:
+      "As tabelas e os placares vêm de fontes de dados públicas e podem ter atrasos ou imprecisões; os anúncios oficiais prevalecem.",
+    s4: "Sem afiliação oficial",
+    s4body:
+      "Este é um produto não oficial feito por torcedores. Não é afiliado, autorizado nem endossado pela FIFA, pela Copa do Mundo ou por qualquer órgão oficial do torneio, time ou patrocinador. Esses nomes são usados apenas para descrever os jogos.",
+    s5: "Limitação de responsabilidade",
+    s5body:
+      "Na medida permitida pela lei aplicável, este site não se responsabiliza por qualquer perda direta ou indireta decorrente do uso deste produto. Ao continuar a usar este site, você confirma que leu e concorda com os termos acima.",
+    seeAlso: "Veja também: ",
+    about: "Sobre e como jogar",
+    privacy: "Política de Privacidade",
+  },
+  de: {
+    title: "Haftungsausschluss · World Cup Predictor 2026",
+    description:
+      "Haftungsausschluss von World Cup Predictor: ein kostenloses, von Fans erstelltes Unterhaltungsprodukt. Virtuelle Punkte haben keinen realen Wert und sind nicht einlösbar. Nicht mit der FIFA oder einer offiziellen WM-Organisation verbunden oder von ihr unterstützt.",
+    back: "← Zurück",
+    h1: "Haftungsausschluss",
+    sub: "World Cup Predictor · 2026",
+    s1: "Nur zur Unterhaltung",
+    s1body: "Dies ist ein von Fans erstelltes Produkt, nur zum Spaß. Alle Funktionen und Inhalte dienen ausschließlich der Unterhaltung.",
+    s2: "Virtuelle Punkte",
+    s2body:
+      "Die Punkte auf dieser Website sind virtuelle Gegenstände ohne realen Wert. Sie beinhalten kein echtes Geld und können nicht gekauft, eingelöst, ausgezahlt oder übertragen werden.",
+    s3: "KI & Daten",
+    s3body1:
+      "Spielvorschauen, Höhepunkte und Zusammenfassungen werden automatisch von KI erstellt, und Punktebelohnungen werden aus Community-Daten berechnet – alles nur zur Unterhaltung und keinerlei Ratschlag.",
+    s3body2:
+      "Spielpläne und Ergebnisse stammen aus öffentlichen Datenquellen und können verzögert oder fehlerhaft sein; offizielle Bekanntmachungen haben Vorrang.",
+    s4: "Keine offizielle Verbindung",
+    s4body:
+      "Dies ist ein inoffizielles, von Fans erstelltes Produkt. Es ist nicht mit der FIFA, der Weltmeisterschaft oder einem offiziellen Turniergremium, Team oder Sponsor verbunden, von ihnen autorisiert oder unterstützt. Solche Namen werden nur zur Beschreibung der Spiele verwendet.",
+    s5: "Haftungsbeschränkung",
+    s5body:
+      "Soweit nach geltendem Recht zulässig, haftet diese Website nicht für direkte oder indirekte Schäden aus der Nutzung dieses Produkts. Durch die weitere Nutzung dieser Website bestätigst du, dass du die obigen Bedingungen gelesen hast und ihnen zustimmst.",
+    seeAlso: "Siehe auch: ",
+    about: "Über & Spielanleitung",
+    privacy: "Datenschutzerklärung",
+  },
+  fr: {
+    title: "Mentions légales · World Cup Predictor 2026",
+    description:
+      "Mentions légales de World Cup Predictor : un produit de divertissement gratuit créé par des fans. Les points virtuels n'ont aucune valeur réelle et ne sont pas échangeables. Non affilié ni approuvé par la FIFA ou toute organisation officielle de la Coupe du monde.",
+    back: "← Retour",
+    h1: "Mentions légales",
+    sub: "World Cup Predictor · 2026",
+    s1: "À but de divertissement uniquement",
+    s1body: "Il s'agit d'un produit créé par des fans, juste pour le plaisir. Toutes les fonctionnalités et tous les contenus sont uniquement à but de divertissement.",
+    s2: "Points virtuels",
+    s2body:
+      "Les points de ce site sont des objets virtuels sans valeur dans le monde réel. Ils n'impliquent aucun argent réel et ne peuvent être achetés, échangés, retirés ni transférés.",
+    s3: "IA et données",
+    s3body1:
+      "Les aperçus des matchs, les points forts et les résumés sont générés automatiquement par IA, et les récompenses de score sont calculées à partir de données communautaires — le tout uniquement à but de divertissement et ne constitue aucun conseil.",
+    s3body2:
+      "Les calendriers et les scores proviennent de sources de données publiques et peuvent être retardés ou inexacts ; les annonces officielles font foi.",
+    s4: "Aucune affiliation officielle",
+    s4body:
+      "Il s'agit d'un produit non officiel créé par des fans. Il n'est ni affilié, ni autorisé, ni approuvé par la FIFA, la Coupe du monde ou tout organisme officiel du tournoi, équipe ou sponsor. Ces noms sont utilisés uniquement pour décrire les matchs.",
+    s5: "Limitation de responsabilité",
+    s5body:
+      "Dans la mesure permise par la loi applicable, ce site n'est pas responsable des pertes directes ou indirectes résultant de l'utilisation de ce produit. En continuant à utiliser ce site, vous confirmez avoir lu et accepté les conditions ci-dessus.",
+    seeAlso: "Voir aussi : ",
+    about: "À propos et comment jouer",
+    privacy: "Politique de confidentialité",
+  },
 } as const;
 
 export async function generateMetadata(): Promise<Metadata> {

@@ -7,7 +7,8 @@ import { Sparkline } from "@/components/Sparkline";
 import { TrackedLink } from "@/components/TrackedLink";
 import { JsonLd } from "@/lib/seo/jsonLd";
 import { getSettledIndex } from "@/lib/seo/freshness";
-import { localeHref } from "@/i18n";
+import { localeHref, type Locale, BCP47_LOCALE } from "@/i18n";
+import { teamName, groupName } from "@/lib/football/teams";
 import { localizedAlternates, selfUrl, SITE_ORIGIN } from "@/lib/seo/canonical";
 
 export const maxDuration = 60; // 首次计算含外部抓取+万次模拟
@@ -186,10 +187,10 @@ function Bar({ p }: { p: { home: number; draw: number; away: number } }) {
 
 function TeamName({
   t,
-  zhFirst,
+  locale,
 }: {
   t: { name: string; zh: string; flag: string | null };
-  zhFirst: boolean;
+  locale: Locale;
 }) {
   return (
     <span className="inline-flex items-center gap-1.5">
@@ -197,7 +198,7 @@ function TeamName({
         // eslint-disable-next-line @next/next/no-img-element
         <img src={t.flag} alt="" className="h-3 w-4 rounded-[2px] object-cover" />
       )}
-      {zhFirst ? t.zh : t.name}
+      {locale === "zh" ? t.zh : teamName(t.name, locale)}
     </span>
   );
 }
@@ -236,9 +237,16 @@ export default async function ForecastPage() {
     creator: { "@type": "Organization", name: "wc2026.cool", url: `${SITE_ORIGIN}/` },
     isAccessibleForFree: true,
     license: selfUrl("/disclaimer", locale), // GSC 推荐字段：数据使用条款（指向免责声明/条款页，locale 化）
-    variableMeasured: zhFirst
-      ? ["出线概率", "夺冠概率"]
-      : ["chance to advance", "chance to win the title"],
+    variableMeasured: (
+      {
+        zh: ["出线概率", "夺冠概率"],
+        en: ["chance to advance", "chance to win the title"],
+        es: ["probabilidad de avanzar", "probabilidad de ganar el título"],
+        pt: ["chance de avançar", "chance de ganhar o título"],
+        de: ["Chance aufs Weiterkommen", "Chance auf den Titel"],
+        fr: ["probabilité de se qualifier", "probabilité de gagner le titre"],
+      } as Record<Locale, string[]>
+    )[locale],
     ...(idx?.all ? { dateModified: idx.all } : {}),
   };
 
@@ -265,22 +273,27 @@ export default async function ForecastPage() {
       <JsonLd data={datasetJsonLd} />
       <h1 className="font-head text-2xl font-bold">📊 {c.h1}</h1>
       <p className="mt-1 text-[11px] text-muted">
-        {c.updated} {new Date(data.updatedAt).toLocaleString(zhFirst ? "zh-CN" : "en-US")}
+        {c.updated} {new Date(data.updatedAt).toLocaleString(BCP47_LOCALE[locale] ?? "en-US")}
       </p>
 
       {/* 前置可提取答案（GEO：答案前置 + 统计数字 + 年份信号；EN-first，爬虫见英文）。 */}
       {data.simOk && data.champions[0] && (() => {
         const top = data.champions[0];
-        const topName = zhFirst ? top.zh : top.name;
+        const topName = locale === "zh" ? top.zh : teamName(top.name, locale);
+        const tp = pct(top.p, 1);
         const nAdv = data.groups
           .flatMap((g) => g.table)
           .filter((t) => (t.pAdvance > 1 ? t.pAdvance : t.pAdvance * 100) >= 50).length;
+        const GEO: Record<Locale, string> = {
+          zh: `2026 世界杯小组赛阶段：万次蒙特卡洛模拟显示 ${topName} 以 ${tp} 夺冠概率领跑，目前 ${nAdv} 支球队出线（晋级 32 强）概率超过 50%。`,
+          en: `At the 2026 World Cup group stage, a 10,000-run Monte Carlo simulation puts ${topName} on top with a ${tp} chance to win the title; ${nAdv} teams currently have a 50%+ chance to reach the Round of 32.`,
+          es: `Fase de grupos del Mundial 2026: una simulación de Montecarlo de 10.000 corridas sitúa a ${topName} en cabeza con un ${tp} de probabilidad de ganar el título; ${nAdv} selecciones tienen ahora un 50%+ de probabilidad de alcanzar los dieciseisavos.`,
+          pt: `Fase de grupos da Copa 2026: uma simulação de Monte Carlo de 10.000 rodadas coloca ${topName} na liderança com ${tp} de chance de ganhar o título; ${nAdv} seleções têm agora 50%+ de chance de chegar aos 16-avos.`,
+          de: `Gruppenphase der WM 2026: Eine Monte-Carlo-Simulation mit 10.000 Durchläufen sieht ${topName} mit ${tp} Titelchance vorn; ${nAdv} Teams haben derzeit über 50% Chance, das Sechzehntelfinale zu erreichen.`,
+          fr: `Phase de groupes du Mondial 2026 : une simulation de Monte-Carlo de 10 000 tirages place ${topName} en tête avec ${tp} de probabilité de remporter le titre ; ${nAdv} équipes ont actuellement plus de 50% de chances d'atteindre les seizièmes.`,
+        };
         return (
-          <p className="mt-3 text-sm leading-relaxed">
-            {zhFirst
-              ? `2026 世界杯小组赛阶段：万次蒙特卡洛模拟显示 ${topName} 以 ${pct(top.p, 1)} 夺冠概率领跑，目前 ${nAdv} 支球队出线（晋级 32 强）概率超过 50%。`
-              : `At the 2026 World Cup group stage, a 10,000-run Monte Carlo simulation puts ${topName} on top with a ${pct(top.p, 1)} chance to win the title; ${nAdv} teams currently have a 50%+ chance to reach the Round of 32.`}
-          </p>
+          <p className="mt-3 text-sm leading-relaxed">{GEO[locale] ?? GEO.en}</p>
         );
       })()}
 
@@ -298,7 +311,7 @@ export default async function ForecastPage() {
             {data.champions.map((t) => (
               <div key={t.id} className="flex items-center gap-2 text-sm">
                 <span className="w-32 shrink-0 truncate">
-                  <TeamName t={t} zhFirst={zhFirst} />
+                  <TeamName t={t} locale={locale} />
                 </span>
                 <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-surface-2">
                   <div
@@ -331,7 +344,7 @@ export default async function ForecastPage() {
                   className="flex items-center gap-2.5 rounded-lg border border-border bg-surface p-2.5"
                 >
                   <span className="min-w-0 flex-1 truncate text-xs">
-                    <TeamName t={team} zhFirst={zhFirst} />
+                    <TeamName t={team} locale={locale} />
                   </span>
                   <span className="shrink-0">
                     <Sparkline lines={[{ values: series, color }]} width={88} height={28} />
@@ -363,16 +376,16 @@ export default async function ForecastPage() {
               className="block rounded-lg border border-border bg-surface p-3 transition-colors hover:border-green/50"
             >
               <div className="mb-1.5 flex items-center justify-between text-xs">
-                <TeamName t={m.home} zhFirst={zhFirst} />
+                <TeamName t={m.home} locale={locale} />
                 <span className="text-[10px] text-muted">
-                  {new Date(m.kickoff).toLocaleString(zhFirst ? "zh-CN" : "en-US", {
+                  {new Date(m.kickoff).toLocaleString(BCP47_LOCALE[locale] ?? "en-US", {
                     month: "2-digit",
                     day: "2-digit",
                     hour: "2-digit",
                     minute: "2-digit",
                   })}
                 </span>
-                <TeamName t={m.away} zhFirst={zhFirst} />
+                <TeamName t={m.away} locale={locale} />
               </div>
               <Bar p={m.p} />
               <div className="mt-1 flex justify-between text-[10px] text-muted">
@@ -417,7 +430,7 @@ export default async function ForecastPage() {
             >
               <span className="inline-flex items-center gap-2">
                 <span className="font-head w-5 text-right text-xs text-muted">{t.rank}</span>
-                <TeamName t={t} zhFirst={zhFirst} />
+                <TeamName t={t} locale={locale} />
                 <span className="text-[10px] text-muted">{t.letter}</span>
               </span>
               <span className="text-[11px] text-muted">
@@ -448,12 +461,12 @@ export default async function ForecastPage() {
             {data.groups.map((g) => (
               <div key={g.letter} className="rounded-lg border border-border bg-surface p-3">
                 <div className="font-head mb-1.5 text-xs font-semibold text-muted">
-                  Group {g.letter}
+                  {groupName(g.letter, locale)}
                 </div>
                 {g.table.map((t) => (
                   <div key={t.id} className="flex items-center justify-between py-0.5 text-sm">
                     <span className="truncate">
-                      <TeamName t={t} zhFirst={zhFirst} />
+                      <TeamName t={t} locale={locale} />
                     </span>
                     <span className="shrink-0 text-[11px]">
                       <span className="text-muted">{t.pts}pts · </span>

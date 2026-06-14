@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Locale } from "@/i18n";
+import { type Locale, BCP47_LOCALE } from "@/i18n";
 
 // 开赛时间统一用浏览器本地时区渲染（修复：服务端 toLocaleString 按 Vercel UTC 渲染，
 // 与客户端组件的本地时间互相矛盾）。挂载前渲染占位避免 hydration 不一致。
@@ -20,7 +20,7 @@ export function LocalTime({
 
   useEffect(() => {
     const d = new Date(iso);
-    const lc = locale === "en" ? "en-US" : "zh-CN";
+    const lc = BCP47_LOCALE[locale] ?? "en-US";
     const opts: Intl.DateTimeFormatOptions =
       mode === "datetime"
         ? { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }

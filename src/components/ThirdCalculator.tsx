@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { Locale } from "@/i18n";
+import { teamName, groupName } from "@/lib/football/teams";
 import { rankGroup, rankThirds, mulberry32 } from "@/lib/prob/standings";
 import type { GroupResult } from "@/lib/prob/types";
 
@@ -21,7 +22,22 @@ export interface CalcMatch {
   likely: "h" | "d" | "a";
 }
 
-const TXT = {
+const TXT: Record<
+  Locale,
+  {
+    intro: string;
+    convention: string;
+    qualified: string;
+    out: string;
+    thirds: string;
+    first: string;
+    second: string;
+    h: string;
+    d: string;
+    a: string;
+    locked: string;
+  }
+> = {
   zh: {
     intro: "点选每场剩余小组赛的结果，实时看 12 个小组排名和哪 8 个第三名晋级。",
     convention: "比分按 主胜1-0 / 平1-1 / 客胜0-1 估算净胜球；判据按 2026 官方新规（不含公平竞赛分）。",
@@ -48,7 +64,59 @@ const TXT = {
     a: "Away",
     locked: "Finished matches are locked at the real score; edit only remaining picks",
   },
-} as const;
+  es: {
+    intro: "Elige el resultado de cada partido de grupo restante y mira en vivo las 12 tablas y la carrera por el mejor tercero.",
+    convention: "Marcadores aproximados como 1-0 / 1-1 / 0-1; desempates oficiales 2026 (sin fair play).",
+    qualified: "PASA",
+    out: "FUERA",
+    thirds: "Clasificación de los mejores terceros (los 8 primeros avanzan)",
+    first: "1.º",
+    second: "2.º",
+    h: "Local",
+    d: "Empate",
+    a: "Visitante",
+    locked: "Los partidos jugados están fijados en el marcador real; solo puedes cambiar los restantes",
+  },
+  pt: {
+    intro: "Escolha o resultado de cada jogo de grupo restante e veja ao vivo as 12 tabelas e a disputa do melhor terceiro.",
+    convention: "Placares aproximados como 1-0 / 1-1 / 0-1; critérios oficiais 2026 (sem fair play).",
+    qualified: "PASSA",
+    out: "FORA",
+    thirds: "Ranking dos melhores terceiros (os 8 primeiros avançam)",
+    first: "1º",
+    second: "2º",
+    h: "Casa",
+    d: "Empate",
+    a: "Fora",
+    locked: "Jogos encerrados ficam fixados no placar real; edite apenas os restantes",
+  },
+  de: {
+    intro: "Wähle das Ergebnis jedes verbleibenden Gruppenspiels und sieh live alle 12 Tabellen und das Rennen um den besten Dritten.",
+    convention: "Ergebnisse genähert als 1-0 / 1-1 / 0-1; offizielle Kriterien 2026 (ohne Fair-Play).",
+    qualified: "DRIN",
+    out: "RAUS",
+    thirds: "Rangliste der besten Dritten (Top 8 weiter)",
+    first: "1.",
+    second: "2.",
+    h: "Heim",
+    d: "Remis",
+    a: "Auswärts",
+    locked: "Beendete Spiele sind auf das echte Ergebnis fixiert; nur verbleibende änderbar",
+  },
+  fr: {
+    intro: "Choisis le résultat de chaque match de groupe restant et suis en direct les 12 classements et la course au meilleur troisième.",
+    convention: "Scores approximés en 1-0 / 1-1 / 0-1 ; départages officiels 2026 (sans fair-play).",
+    qualified: "PASSE",
+    out: "SORTI",
+    thirds: "Classement des meilleurs troisièmes (les 8 premiers se qualifient)",
+    first: "1er",
+    second: "2e",
+    h: "Domicile",
+    d: "Nul",
+    a: "Extérieur",
+    locked: "Les matchs joués sont figés au score réel ; modifie seulement les restants",
+  },
+};
 
 const SCORE: Record<"h" | "d" | "a", [number, number]> = { h: [1, 0], d: [1, 1], a: [0, 1] };
 
@@ -67,7 +135,7 @@ export function ThirdCalculator({
   rating: Record<string, number>;
   focusLetter?: string | null;
 }) {
-  const t = TXT[locale];
+  const t = TXT[locale] ?? TXT.en;
   const [picks, setPicks] = useState<Record<string, "h" | "d" | "a">>(() =>
     Object.fromEntries(remaining.map((m) => [m.id, m.likely]))
   );
@@ -102,7 +170,7 @@ export function ThirdCalculator({
   }, [groups, played, remaining, picks, rating]);
 
   const label = (tm: CalcTeam | undefined) =>
-    tm ? (locale === "zh" ? tm.zh : tm.name) : "?";
+    tm ? (locale === "zh" ? tm.zh : teamName(tm.name, locale)) : "?";
   const qualified = new Set(thirdsRanked.slice(0, 8));
   const groupsWithMatches = new Set(
     remaining.map((m) => groups.find((g) => g.teams.some((x) => x.id === m.homeId))?.letter)
@@ -126,7 +194,7 @@ export function ThirdCalculator({
             return (
               <div key={g.letter} className="rounded-lg border border-border bg-surface p-3">
                 <div className="font-head mb-2 text-xs font-semibold text-muted">
-                  Group {g.letter} ·{" "}
+                  {groupName(g.letter, locale)} ·{" "}
                   <span className="text-green">
                     {t.first} {label(teamById.get(table[0]?.teamId))} · {t.second}{" "}
                     {label(teamById.get(table[1]?.teamId))}

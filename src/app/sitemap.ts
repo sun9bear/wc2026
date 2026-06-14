@@ -2,7 +2,8 @@ import type { MetadataRoute } from "next";
 import { supabase } from "@/lib/supabase/client";
 import { teamSlug } from "@/lib/prob/findTeam";
 import { getSettledIndex } from "@/lib/seo/freshness";
-import { localeHref } from "@/i18n";
+import { LOCALES, localeHref } from "@/i18n";
+import { hreflangLanguages } from "@/lib/seo/canonical";
 
 const BASE = "https://www.wc2026.cool";
 const LEGAL_LASTMOD = "2026-06-13"; // 法务/静态页内容最后修订（真实旧固定日期，与赛事新鲜页对比）
@@ -15,21 +16,20 @@ type Entry = {
   lastModified?: string;
 };
 
-// 每个逻辑页展开成 en(根) + zh(/zh) 两条 URL，互带 reciprocal hreflang（en / zh-Hans / x-default→en 根）。
+// 每个逻辑页展开成 6 条 URL（en 根 + zh/es/pt/de/fr 前缀），互带 6 路 reciprocal hreflang。
 // Next 会把 alternates.languages 序列化为 <xhtml:link rel="alternate" hreflang=...>。
 function expand(entries: Entry[]): MetadataRoute.Sitemap {
   const out: MetadataRoute.Sitemap = [];
   for (const e of entries) {
-    const enUrl = BASE + localeHref("en", e.path);
-    const zhUrl = BASE + localeHref("zh", e.path);
     const common = {
       changeFrequency: e.changeFrequency,
       priority: e.priority,
       ...(e.lastModified ? { lastModified: e.lastModified } : {}),
-      alternates: { languages: { en: enUrl, "zh-Hans": zhUrl, "x-default": enUrl } },
+      alternates: { languages: hreflangLanguages(e.path) },
     };
-    out.push({ url: enUrl, ...common });
-    out.push({ url: zhUrl, ...common });
+    for (const l of LOCALES) {
+      out.push({ url: BASE + localeHref(l, e.path), ...common });
+    }
   }
   return out;
 }

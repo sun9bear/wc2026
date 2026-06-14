@@ -9,7 +9,8 @@ import { HeaderShare } from "@/components/HeaderShare";
 import { SetMyTeamButton } from "@/components/SetMyTeamButton";
 import { LocalTime } from "@/components/LocalTime";
 import { Disclaimer } from "@/components/Disclaimer";
-import { localeHref } from "@/i18n";
+import { localeHref, type Locale, BCP47_LOCALE } from "@/i18n";
+import { teamName } from "@/lib/football/teams";
 import { localizedAlternates, selfUrl } from "@/lib/seo/canonical";
 
 export const maxDuration = 60;
@@ -195,7 +196,7 @@ export async function generateMetadata({
   const d = await getTeamDetail(slug).catch(() => null);
   if (!d) return {};
   const c = COPY[locale];
-  const nm = locale === "zh" ? d.zh : d.name;
+  const nm = locale === "zh" ? d.zh : teamName(d.name, locale);
   const og = `/api/og?team=${d.slug}&locale=${locale}&u=${encodeURIComponent(localeHref(locale, `/team/${d.slug}`))}`;
   return {
     title: c.title(nm),
@@ -213,10 +214,10 @@ function ResultChip({
 }: {
   r: TeamResult;
   c: { home: string; away: string; W: string; D: string; L: string };
-  locale: "zh" | "en";
+  locale: Locale;
 }) {
   const color = r.outcome === "W" ? "text-green" : r.outcome === "L" ? "text-red" : "text-amber";
-  const oppName = locale === "zh" ? r.oppZh : r.oppName;
+  const oppName = locale === "zh" ? r.oppZh : teamName(r.oppName, locale);
   return (
     <Link
       href={localeHref(locale, `/match/${r.matchId}`)}
@@ -246,12 +247,37 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
   const idx = await getSettledIndex().catch(() => null);
   const lastResult = idx?.byTeam[d.id] ?? null; // 真实 settled_at，非伪新鲜
   const c = COPY[locale];
-  const nm = locale === "zh" ? d.zh : d.name;
+  const nm = locale === "zh" ? d.zh : teamName(d.name, locale);
   const adv = fmtP(d.pAdvance);
   const champ = fmtP(d.pChampion);
   const advHigh = (d.pAdvance > 1 ? d.pAdvance : d.pAdvance * 100) >= 50;
-  const nextOpp = d.next ? (locale === "zh" ? d.next.oppZh : d.next.oppName) : "";
+  const nextOpp = d.next ? (locale === "zh" ? d.next.oppZh : teamName(d.next.oppName, locale)) : "";
   const ogUrl = `${SITE}/api/og?team=${d.slug}&locale=${locale}&u=${encodeURIComponent(localeHref(locale, `/team/${d.slug}`))}`;
+
+  const HOME_LABEL: Record<Locale, string> = {
+    zh: "首页",
+    en: "Home",
+    es: "Inicio",
+    pt: "Início",
+    de: "Startseite",
+    fr: "Accueil",
+  };
+  const GROUP_LINK: Record<Locale, string> = {
+    zh: `🧮 看 ${d.letter} 组完整出线形势 →`,
+    en: `🧮 See full Group ${d.letter} scenarios →`,
+    es: `🧮 Ver escenarios completos del Grupo ${d.letter} →`,
+    pt: `🧮 Ver cenários completos do Grupo ${d.letter} →`,
+    de: `🧮 Alle Szenarien der Gruppe ${d.letter} ansehen →`,
+    fr: `🧮 Voir tous les scénarios du Groupe ${d.letter} →`,
+  };
+  const RULES_LINK: Record<Locale, string> = {
+    zh: "📖 出线规则详解（第三名怎么算）",
+    en: "📖 How World Cup 2026 qualification works",
+    es: "📖 Cómo funciona la clasificación del Mundial 2026",
+    pt: "📖 Como funciona a classificação da Copa 2026",
+    de: "📖 So funktioniert die WM-2026-Qualifikation",
+    fr: "📖 Comment fonctionne la qualification du Mondial 2026",
+  };
 
   // SportsTeam + 面包屑实体（只填真实字段；实力评分对外不写官方排名）。
   const teamJsonLd = {
@@ -267,7 +293,7 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
       {
         "@type": "BreadcrumbList",
         itemListElement: [
-          { "@type": "ListItem", position: 1, name: locale === "zh" ? "首页" : "Home", item: selfUrl("/", locale) },
+          { "@type": "ListItem", position: 1, name: HOME_LABEL[locale] ?? "Home", item: selfUrl("/", locale) },
           { "@type": "ListItem", position: 2, name: nm, item: selfUrl(`/team/${d.slug}`, locale) },
         ],
       },
@@ -308,7 +334,7 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
       <p className="mt-3 text-sm leading-relaxed">{c.lead(nm, adv, champ, d.letter)}</p>
       {lastResult && (
         <p className="mt-1 text-[11px] text-muted">
-          {c.latest} · {new Date(lastResult).toLocaleDateString(locale === "zh" ? "zh-CN" : "en-US")}
+          {c.latest} · {new Date(lastResult).toLocaleDateString(BCP47_LOCALE[locale] ?? "en-US")}
         </p>
       )}
 
@@ -379,10 +405,10 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
         href={localeHref(locale, `/calculator/group/${d.letter.toLowerCase()}`)}
         className="mt-2 block rounded-lg border border-border bg-surface p-3 text-sm text-muted"
       >
-        {locale === "zh" ? `🧮 看 ${d.letter} 组完整出线形势 →` : `🧮 See full Group ${d.letter} scenarios →`}
+        {GROUP_LINK[locale] ?? GROUP_LINK.en}
       </Link>
       <Link href={localeHref(locale, "/rules")} className="mt-2 block rounded-lg border border-border bg-surface p-3 text-sm text-muted">
-        {locale === "zh" ? "📖 出线规则详解（第三名怎么算）" : "📖 How World Cup 2026 qualification works"}
+        {RULES_LINK[locale] ?? RULES_LINK.en}
       </Link>
 
       <p className="mt-4 text-[10px] text-muted">{c.sims}</p>

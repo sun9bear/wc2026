@@ -3,12 +3,12 @@
 import { useSyncExternalStore } from "react";
 import type { FixtureMatch } from "@/lib/fixtures/matches";
 import { MatchCard } from "@/components/MatchCard";
-import { getDict, type Locale } from "@/i18n";
+import { getDict, type Locale, BCP47_LOCALE } from "@/i18n";
 
 // 客户端按"用户本地日期"分组（修复：服务端按 UTC 分组导致北美用户日期标题错位）。
 // 排序：今天及未来的日期组在前（升序），已过去的日期组放最后（降序、最近的在前）。
 function groupByLocalDate(matches: FixtureMatch[], locale: Locale) {
-  const lc = locale === "en" ? "en-US" : "zh-CN";
+  const lc = BCP47_LOCALE[locale] ?? "en-US";
   const todayKey = new Date().toDateString();
   const map = new Map<string, { date: string; ts: number; items: FixtureMatch[] }>();
   for (const m of matches) {

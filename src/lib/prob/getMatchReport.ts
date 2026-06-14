@@ -5,7 +5,8 @@
 
 import { unstable_cache } from "next/cache";
 import { supabase } from "@/lib/supabase/client";
-import { teamZh, flagUrl } from "@/lib/football/teams";
+import { teamZh, teamName, flagUrl } from "@/lib/football/teams";
+import type { Locale } from "@/i18n/locales";
 
 export interface ScoreCell {
   h: number;
@@ -113,7 +114,7 @@ export const getMatchReport = unstable_cache(computeMatchReport, ["match-report-
 });
 
 /** 战报 OG 图卡路径（metadata 与客户端分享共用）。所有字符串由 OG 路由再过雷词闸。 */
-export function reportOgPath(r: MatchReport, locale: "zh" | "en"): string {
+export function reportOgPath(r: MatchReport, locale: Locale): string {
   const sl = r.top
     .slice(0, 5)
     .map((c) => `${c.h}-${c.a}:${Math.round(c.p * 100)}`)
@@ -121,8 +122,8 @@ export function reportOgPath(r: MatchReport, locale: "zh" | "en"): string {
     .join(",");
   const qs = new URLSearchParams({
     mode: "report",
-    h: locale === "zh" ? r.homeZh : r.homeName,
-    a: locale === "zh" ? r.awayZh : r.awayName,
+    h: locale === "zh" ? r.homeZh : teamName(r.homeName, locale),
+    a: locale === "zh" ? r.awayZh : teamName(r.awayName, locale),
     hs: String(r.homeScore),
     as: String(r.awayScore),
     rk: String(r.rank ?? 0),

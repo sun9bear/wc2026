@@ -37,14 +37,29 @@ interface MeData {
 // 世界杯开幕日（matchday 计数锚点，按用户本地日期算）
 const DAY1 = "2026-06-11";
 
-const TXT = {
+interface MeCopy {
+  streakLine: (s: number, b: number) => string;
+  copyRecord: string;
+  copied: string;
+  shareTitle: (n: number) => string;
+  streakTag: (s: number) => string;
+  beat: (p: number) => string;
+  site: string;
+  league: string;
+  nameLabel: string;
+  rename: string;
+  save: string;
+  cancel: string;
+  nameErr: string;
+}
+const TXT: Record<Locale, MeCopy> = {
   zh: {
-    streakLine: (s: number, b: number) => `🔥 当前 ${s} 连中 · 历史最佳 ${b}`,
+    streakLine: (s, b) => `🔥 当前 ${s} 连中 · 历史最佳 ${b}`,
     copyRecord: "📋 复制战绩",
     copied: "已复制 ✓",
-    shareTitle: (n: number) => `⚽ WC2026 竞猜战绩 · 第${n}比赛日`,
-    streakTag: (s: number) => `🔥 连中${s}场`,
-    beat: (p: number) => `💪 击败 ${p}% 玩家`,
+    shareTitle: (n) => `⚽ WC2026 竞猜战绩 · 第${n}比赛日`,
+    streakTag: (s) => `🔥 连中${s}场`,
+    beat: (p) => `💪 击败 ${p}% 玩家`,
     site: "搜 wc2026.cool",
     league: "🛡 好友擂台 · 建房间拉朋友比一比 →",
     nameLabel: "我的名字",
@@ -54,12 +69,12 @@ const TXT = {
     nameErr: "名字不合法（2–20 字、无敏感词）",
   },
   en: {
-    streakLine: (s: number, b: number) => `🔥 Current streak ${s} · best ${b}`,
+    streakLine: (s, b) => `🔥 Current streak ${s} · best ${b}`,
     copyRecord: "📋 Copy my record",
     copied: "Copied ✓",
-    shareTitle: (n: number) => `⚽ WC2026 picks · Matchday ${n}`,
-    streakTag: (s: number) => `🔥 ${s}-win streak`,
-    beat: (p: number) => `💪 Better than ${p}% of players`,
+    shareTitle: (n) => `⚽ WC2026 picks · Matchday ${n}`,
+    streakTag: (s) => `🔥 ${s}-win streak`,
+    beat: (p) => `💪 Better than ${p}% of players`,
     site: "wc2026.cool",
     league: "🛡 Friends league · challenge your friends →",
     nameLabel: "My name",
@@ -68,12 +83,72 @@ const TXT = {
     cancel: "Cancel",
     nameErr: "Invalid name (2–20 chars, no banned words)",
   },
-} as const;
+  es: {
+    streakLine: (s, b) => `🔥 Racha actual ${s} · mejor ${b}`,
+    copyRecord: "📋 Copiar mi historial",
+    copied: "Copiado ✓",
+    shareTitle: (n) => `⚽ Predicciones WC2026 · Jornada ${n}`,
+    streakTag: (s) => `🔥 racha de ${s}`,
+    beat: (p) => `💪 Mejor que el ${p}% de los jugadores`,
+    site: "wc2026.cool",
+    league: "🛡 Liga de amigos · reta a tus amigos →",
+    nameLabel: "Mi nombre",
+    rename: "Cambiar nombre",
+    save: "Guardar",
+    cancel: "Cancelar",
+    nameErr: "Nombre no válido (2–20 caracteres, sin palabras prohibidas)",
+  },
+  pt: {
+    streakLine: (s, b) => `🔥 Sequência atual ${s} · melhor ${b}`,
+    copyRecord: "📋 Copiar meu histórico",
+    copied: "Copiado ✓",
+    shareTitle: (n) => `⚽ Previsões WC2026 · Rodada ${n}`,
+    streakTag: (s) => `🔥 sequência de ${s}`,
+    beat: (p) => `💪 Melhor que ${p}% dos jogadores`,
+    site: "wc2026.cool",
+    league: "🛡 Liga de amigos · desafie seus amigos →",
+    nameLabel: "Meu nome",
+    rename: "Renomear",
+    save: "Salvar",
+    cancel: "Cancelar",
+    nameErr: "Nome inválido (2–20 caracteres, sem palavras proibidas)",
+  },
+  de: {
+    streakLine: (s, b) => `🔥 Aktuelle Serie ${s} · Bestwert ${b}`,
+    copyRecord: "📋 Meine Bilanz kopieren",
+    copied: "Kopiert ✓",
+    shareTitle: (n) => `⚽ WC2026-Tipps · Spieltag ${n}`,
+    streakTag: (s) => `🔥 ${s}er-Serie`,
+    beat: (p) => `💪 Besser als ${p}% der Spieler`,
+    site: "wc2026.cool",
+    league: "🛡 Freunde-Liga · fordere deine Freunde heraus →",
+    nameLabel: "Mein Name",
+    rename: "Umbenennen",
+    save: "Speichern",
+    cancel: "Abbrechen",
+    nameErr: "Ungültiger Name (2–20 Zeichen, keine gesperrten Wörter)",
+  },
+  fr: {
+    streakLine: (s, b) => `🔥 Série en cours ${s} · meilleure ${b}`,
+    copyRecord: "📋 Copier mon historique",
+    copied: "Copié ✓",
+    shareTitle: (n) => `⚽ Prédictions WC2026 · Journée ${n}`,
+    streakTag: (s) => `🔥 série de ${s}`,
+    beat: (p) => `💪 Meilleur que ${p}% des joueurs`,
+    site: "wc2026.cool",
+    league: "🛡 Ligue entre amis · défie tes amis →",
+    nameLabel: "Mon nom",
+    rename: "Renommer",
+    save: "Enregistrer",
+    cancel: "Annuler",
+    nameErr: "Nom invalide (2–20 caractères, sans mots interdits)",
+  },
+};
 
 // emoji 战绩格（任务 3）：按用户本地日期取最近一个比赛日的已结算注单。
 function buildRecordCard(recent: RecentBet[], streak: number, beatPct: number | null | undefined, locale: Locale): string | null {
   if (recent.length === 0) return null;
-  const t = TXT[locale];
+  const t = TXT[locale] ?? TXT.en;
   const localDate = (iso: string) => new Date(iso).toLocaleDateString("en-CA"); // YYYY-MM-DD
   const latestDay = recent.map((b) => localDate(b.kickoff)).sort().at(-1)!;
   const day = recent.filter((b) => localDate(b.kickoff) === latestDay);
@@ -99,7 +174,7 @@ function Tile({ value, label, color = "text-text" }: { value: string | number; l
 
 export function MeClient({ locale }: { locale: Locale }) {
   const t = getDict(locale);
-  const tx = TXT[locale];
+  const tx = TXT[locale] ?? TXT.en;
   const [data, setData] = useState<MeData | null>(null);
   const [state, setState] = useState<"loading" | "none" | "ready">("loading");
   const [copied, setCopied] = useState(false);

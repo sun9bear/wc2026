@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLocale } from "@/i18n/server";
-import { localeHref } from "@/i18n";
+import { localeHref, type Locale, BCP47_LOCALE } from "@/i18n";
+import { teamName } from "@/lib/football/teams";
 import { localizedAlternates } from "@/lib/seo/canonical";
 import { getForecast } from "@/lib/prob/pipeline";
 import { getSettledIndex } from "@/lib/seo/freshness";
@@ -158,23 +159,46 @@ export default async function GroupPage({
   const lastResult = idx?.byGroup[X] ?? null; // 真实 settled_at（该组最近一场结算），非伪新鲜
   const ids = new Set(group.table.map((t) => t.id));
   const fixtures = data.matches.filter((m) => ids.has(m.homeId) && ids.has(m.awayId));
-  const name = (t: { name: string; zh: string }) => (locale === "zh" ? t.zh : t.name);
+  const name = (t: { name: string; zh: string }) =>
+    locale === "zh" ? t.zh : teamName(t.name, locale);
   const pct = (x: number) => `${((x > 1 ? x : x * 100)).toFixed(0)}%`;
 
   // ItemList 实体：该组出线概率排名（只填真实字段）。
+  const JSONLD_NAME: Record<Locale, string> = {
+    zh: `2026 世界杯 ${X} 组出线形势`,
+    en: `World Cup 2026 Group ${X} — chance to advance`,
+    es: `Mundial 2026 Grupo ${X} — probabilidad de avanzar`,
+    pt: `Copa 2026 Grupo ${X} — chance de avançar`,
+    de: `WM 2026 Gruppe ${X} — Chance aufs Weiterkommen`,
+    fr: `Mondial 2026 Groupe ${X} — probabilité de se qualifier`,
+  };
+  const advDesc: Record<Locale, (p: string) => string> = {
+    zh: (p) => `出线概率 ${p}`,
+    en: (p) => `${p} chance to advance`,
+    es: (p) => `${p} de probabilidad de avanzar`,
+    pt: (p) => `${p} de chance de avançar`,
+    de: (p) => `${p} Chance aufs Weiterkommen`,
+    fr: (p) => `${p} de probabilité de se qualifier`,
+  };
   const groupJsonLd = {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    name:
-      locale === "zh"
-        ? `2026 世界杯 ${X} 组出线形势`
-        : `World Cup 2026 Group ${X} — chance to advance`,
+    name: JSONLD_NAME[locale] ?? JSONLD_NAME.en,
     itemListElement: group.table.map((t, i) => ({
       "@type": "ListItem",
       position: i + 1,
       name: name(t),
-      description: locale === "zh" ? `出线概率 ${pct(t.pAdvance)}` : `${pct(t.pAdvance)} chance to advance`,
+      description: (advDesc[locale] ?? advDesc.en)(pct(t.pAdvance)),
     })),
+  };
+
+  const RULES_LINK: Record<Locale, string> = {
+    zh: "📖 出线规则详解（第三名怎么算）",
+    en: "📖 How qualification works (third-place rules)",
+    es: "📖 Cómo funciona la clasificación (reglas del tercer puesto)",
+    pt: "📖 Como funciona a classificação (regras do terceiro lugar)",
+    de: "📖 So funktioniert die Qualifikation (Regeln für Gruppendritte)",
+    fr: "📖 Comment fonctionne la qualification (règles du troisième)",
   };
 
   return (
@@ -194,7 +218,7 @@ export default async function GroupPage({
       )}
       {lastResult && (
         <p className="mt-1 text-[11px] text-muted">
-          {c.latest} · {new Date(lastResult).toLocaleDateString(locale === "zh" ? "zh-CN" : "en-US")}
+          {c.latest} · {new Date(lastResult).toLocaleDateString(BCP47_LOCALE[locale] ?? "en-US")}
         </p>
       )}
       <p className="mb-4 mt-2 text-xs text-muted">{c.note}</p>
@@ -273,7 +297,7 @@ export default async function GroupPage({
           {c.tool}
         </Link>
         <Link href={localeHref(locale, "/rules")} className="block rounded-lg border border-border bg-surface-2 p-3 text-muted">
-          {locale === "zh" ? "📖 出线规则详解（第三名怎么算）" : "📖 How qualification works (third-place rules)"}
+          {RULES_LINK[locale] ?? RULES_LINK.en}
         </Link>
       </div>
 

@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { teamSlug } from "@/lib/prob/findTeam";
-import { localeHref } from "@/i18n";
+import { PREFIXED_LOCALES, localeHref } from "@/i18n";
 import type { SettledItem } from "@/lib/settlement/runSettlement";
 
 const BASE = "https://www.wc2026.cool";
@@ -51,10 +51,11 @@ export async function pingIndexNow(sb: SupabaseClient, items: SettledItem[]): Pr
       /* 组页解析失败不影响其余 URL 提交 */
     }
 
-    // 中文树同样需要被 Bing/Yandex 重抓：为每个 en URL 追加 /zh 版（快照后迭代，避免边迭代边改）。
+    // 各前缀语种树同样需被 Bing/Yandex 重抓：为每个 en URL 追加 zh/es/pt/de/fr 版
+    //（快照后迭代，避免边迭代边改）。
     for (const u of [...urls]) {
       const path = u.slice(BASE.length) || "/";
-      urls.add(BASE + localeHref("zh", path));
+      for (const l of PREFIXED_LOCALES) urls.add(BASE + localeHref(l, path));
     }
 
     const body = JSON.stringify({

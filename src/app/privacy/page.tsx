@@ -6,6 +6,7 @@ import { localizedAlternates } from "@/lib/seo/canonical";
 
 // 双语隐私政策：/privacy 出英文、/zh/privacy 出中文，使既有 reciprocal hreflang 成立
 // （与 /disclaimer、/about 同等待遇——避免「根 URL 声明 en 却渲染中文」的 hreflang/内容矛盾）。
+// ⚠️ es/pt/de/fr 法务文案为忠实翻译（镜像 en 含义）；de/fr 辖区建议上线后过母语/法务复核再视为定稿。
 const META = {
   zh: {
     title: "隐私政策 · 环球足球预测",
@@ -16,6 +17,26 @@ const META = {
     title: "Privacy Policy · WorldCup Predictor",
     description:
       "WorldCup Predictor privacy policy: what information we collect, how we use cookies, and details about third-party advertising (Google AdSense).",
+  },
+  es: {
+    title: "Política de privacidad · WorldCup Predictor",
+    description:
+      "Política de privacidad de WorldCup Predictor: qué información recopilamos, cómo usamos las cookies y detalles sobre la publicidad de terceros (Google AdSense).",
+  },
+  pt: {
+    title: "Política de Privacidade · WorldCup Predictor",
+    description:
+      "Política de privacidade do WorldCup Predictor: que informações coletamos, como usamos cookies e detalhes sobre a publicidade de terceiros (Google AdSense).",
+  },
+  de: {
+    title: "Datenschutzerklärung · WorldCup Predictor",
+    description:
+      "Datenschutzerklärung von WorldCup Predictor: welche Informationen wir erfassen, wie wir Cookies verwenden und Details zur Werbung von Drittanbietern (Google AdSense).",
+  },
+  fr: {
+    title: "Politique de confidentialité · WorldCup Predictor",
+    description:
+      "Politique de confidentialité de WorldCup Predictor : quelles informations nous collectons, comment nous utilisons les cookies et des détails sur la publicité tierce (Google AdSense).",
   },
 } as const;
 
@@ -87,6 +108,146 @@ const COPY = {
     updatesH: "Updates & Contact",
     updatesP1: "This policy may be updated from time to time; updates will be posted on this page.",
     contact: "Questions? Contact:",
+  },
+  es: {
+    back: "← Volver",
+    h1: "Política de privacidad",
+    updated: "Última actualización: junio de 2026",
+    overviewH: "Resumen",
+    overviewP:
+      "Esta política explica qué información recopila WorldCup Predictor (el «Sitio») cuando lo usas, cómo se utiliza esa información y detalles sobre la publicidad de terceros y las cookies. El Sitio es un juego gratuito, sin dinero, con fines de entretenimiento.",
+    collectH: "Información que recopilamos",
+    collectP1:
+      "El Sitio usa inicio de sesión anónimo y no recopila información de identificación personal como tu nombre, correo electrónico o número de teléfono.",
+    collectP2:
+      "Para ofrecer el juego, almacenamos datos de juego vinculados a tu cuenta anónima (como tus predicciones, tu saldo de puntos virtuales y tu historial de registro diario), además de registros de acceso básicos usados para seguridad y estadísticas.",
+    cookiesH: "Cookies y almacenamiento local",
+    cookiesP:
+      "El Sitio usa cookies / almacenamiento local del navegador para mantener tu sesión iniciada, recordar tus preferencias y mejorar tu experiencia. Puedes borrar o restringir este almacenamiento en tu navegador, pero algunas funciones podrían dejar de funcionar.",
+    adsH: "Publicidad de terceros (Google AdSense)",
+    adsP1: "El Sitio usa el proveedor de publicidad de terceros Google AdSense para mostrar anuncios.",
+    adsP2:
+      "Google y otros proveedores externos usan cookies para mostrar anuncios según tus visitas a este y otros sitios web.",
+    adsBefore: "Puedes visitar ",
+    adsLink1: "Configuración de anuncios de Google",
+    adsMid: " para desactivar los anuncios personalizados, o visitar ",
+    adsLink2: "aboutads.info",
+    adsAfter: " para saber cómo desactivar las cookies publicitarias de proveedores externos.",
+    storageH: "Almacenamiento y seguridad de los datos",
+    storageP1:
+      "El Sitio está alojado en servicios en la nube en el extranjero (Vercel / Supabase). Tomamos medidas razonables para proteger los datos, pero ninguna transmisión por internet puede garantizarse como completamente segura.",
+    storageP2: "El Sitio no vende tu información a terceros.",
+    childrenH: "Menores",
+    childrenP:
+      "El Sitio es un producto de entretenimiento para el público general y no se dirige a menores de 13 años ni recopila su información.",
+    updatesH: "Actualizaciones y contacto",
+    updatesP1: "Esta política puede actualizarse de vez en cuando; las actualizaciones se publicarán en esta página.",
+    contact: "¿Preguntas? Contacto:",
+  },
+  pt: {
+    back: "← Voltar",
+    h1: "Política de Privacidade",
+    updated: "Última atualização: junho de 2026",
+    overviewH: "Visão geral",
+    overviewP:
+      "Esta política explica quais informações o WorldCup Predictor (o «Site») coleta quando você o usa, como essas informações são usadas e detalhes sobre a publicidade de terceiros e os cookies. O Site é um jogo gratuito, sem dinheiro, para entretenimento.",
+    collectH: "Informações que coletamos",
+    collectP1:
+      "O Site usa login anônimo e não coleta informações de identificação pessoal, como nome, e-mail ou número de telefone.",
+    collectP2:
+      "Para oferecer o jogo, armazenamos dados de jogo vinculados à sua conta anônima (como suas previsões, seu saldo de pontos virtuais e seu histórico de check-in), além de registros de acesso básicos usados para segurança e estatísticas.",
+    cookiesH: "Cookies e armazenamento local",
+    cookiesP:
+      "O Site usa cookies / armazenamento local do navegador para manter você conectado, lembrar suas preferências e melhorar sua experiência. Você pode limpar ou restringir esse armazenamento no navegador, mas alguns recursos podem parar de funcionar.",
+    adsH: "Publicidade de terceiros (Google AdSense)",
+    adsP1: "O Site usa o provedor de publicidade de terceiros Google AdSense para exibir anúncios.",
+    adsP2:
+      "O Google e outros fornecedores terceiros usam cookies para exibir anúncios com base nas suas visitas a este e a outros sites.",
+    adsBefore: "Você pode acessar ",
+    adsLink1: "Configurações de anúncios do Google",
+    adsMid: " para desativar os anúncios personalizados, ou acessar ",
+    adsLink2: "aboutads.info",
+    adsAfter: " para saber como desativar os cookies de publicidade de fornecedores terceiros.",
+    storageH: "Armazenamento e segurança dos dados",
+    storageP1:
+      "O Site é hospedado em serviços de nuvem no exterior (Vercel / Supabase). Tomamos medidas razoáveis para proteger os dados, mas nenhuma transmissão pela internet pode ser garantida como totalmente segura.",
+    storageP2: "O Site não vende suas informações a terceiros.",
+    childrenH: "Crianças",
+    childrenP:
+      "O Site é um produto de entretenimento para o público geral e não se destina a crianças menores de 13 anos nem coleta suas informações.",
+    updatesH: "Atualizações e contato",
+    updatesP1: "Esta política pode ser atualizada periodicamente; as atualizações serão publicadas nesta página.",
+    contact: "Dúvidas? Contato:",
+  },
+  de: {
+    back: "← Zurück",
+    h1: "Datenschutzerklärung",
+    updated: "Zuletzt aktualisiert: Juni 2026",
+    overviewH: "Überblick",
+    overviewP:
+      "Diese Erklärung beschreibt, welche Informationen WorldCup Predictor (die „Website“) bei der Nutzung erfasst, wie diese Informationen verwendet werden, sowie Details zu Werbung von Drittanbietern und Cookies. Die Website ist ein kostenloses Spiel ohne Geldeinsatz zu Unterhaltungszwecken.",
+    collectH: "Welche Informationen wir erfassen",
+    collectP1:
+      "Die Website verwendet eine anonyme Anmeldung und erfasst keine personenbezogenen Daten wie deinen Namen, deine E-Mail-Adresse oder Telefonnummer.",
+    collectP2:
+      "Um das Spiel bereitzustellen, speichern wir mit deinem anonymen Konto verknüpfte Spieldaten (wie deine Vorhersagen, deinen Punktestand und deinen Check-in-Verlauf) sowie grundlegende Zugriffsprotokolle für Sicherheit und Statistik.",
+    cookiesH: "Cookies & lokaler Speicher",
+    cookiesP:
+      "Die Website verwendet Cookies / lokalen Browserspeicher, um dich angemeldet zu halten, Einstellungen zu speichern und dein Erlebnis zu verbessern. Du kannst diesen Speicher im Browser löschen oder einschränken, einige Funktionen könnten dann jedoch nicht mehr funktionieren.",
+    adsH: "Werbung von Drittanbietern (Google AdSense)",
+    adsP1: "Die Website nutzt den Drittanbieter Google AdSense, um Werbung anzuzeigen.",
+    adsP2:
+      "Google und andere Drittanbieter verwenden Cookies, um Werbung basierend auf deinen Besuchen dieser und anderer Websites auszuspielen.",
+    adsBefore: "Du kannst die ",
+    adsLink1: "Google-Anzeigeneinstellungen",
+    adsMid: " besuchen, um personalisierte Werbung zu deaktivieren, oder ",
+    adsLink2: "aboutads.info",
+    adsAfter: " besuchen, um zu erfahren, wie du die Werbe-Cookies von Drittanbietern deaktivierst.",
+    storageH: "Datenspeicherung & Sicherheit",
+    storageP1:
+      "Die Website wird auf ausländischen Cloud-Diensten (Vercel / Supabase) gehostet. Wir treffen angemessene Maßnahmen zum Schutz der Daten, doch keine Übertragung über das Internet kann als vollständig sicher garantiert werden.",
+    storageP2: "Die Website verkauft deine Informationen nicht an Dritte.",
+    childrenH: "Kinder",
+    childrenP:
+      "Die Website ist ein Unterhaltungsangebot für ein allgemeines Publikum und richtet sich nicht an Kinder unter 13 Jahren und erfasst keine Informationen von ihnen.",
+    updatesH: "Aktualisierungen & Kontakt",
+    updatesP1: "Diese Erklärung kann von Zeit zu Zeit aktualisiert werden; Aktualisierungen werden auf dieser Seite veröffentlicht.",
+    contact: "Fragen? Kontakt:",
+  },
+  fr: {
+    back: "← Retour",
+    h1: "Politique de confidentialité",
+    updated: "Dernière mise à jour : juin 2026",
+    overviewH: "Aperçu",
+    overviewP:
+      "Cette politique explique quelles informations WorldCup Predictor (le « Site ») collecte lorsque vous l'utilisez, comment ces informations sont utilisées, ainsi que des détails sur la publicité tierce et les cookies. Le Site est un jeu gratuit, sans argent, à but de divertissement.",
+    collectH: "Informations que nous collectons",
+    collectP1:
+      "Le Site utilise une connexion anonyme et ne collecte pas d'informations personnelles identifiantes telles que votre nom, votre e-mail ou votre numéro de téléphone.",
+    collectP2:
+      "Pour fournir le jeu, nous conservons des données de jeu liées à votre compte anonyme (comme vos prédictions, votre solde de points virtuels et votre historique de connexion quotidienne), ainsi que des journaux d'accès de base utilisés pour la sécurité et les statistiques.",
+    cookiesH: "Cookies et stockage local",
+    cookiesP:
+      "Le Site utilise des cookies / le stockage local du navigateur pour vous garder connecté, mémoriser vos préférences et améliorer votre expérience. Vous pouvez effacer ou restreindre ce stockage dans votre navigateur, mais certaines fonctionnalités risquent de ne plus fonctionner.",
+    adsH: "Publicité tierce (Google AdSense)",
+    adsP1: "Le Site utilise le fournisseur de publicité tiers Google AdSense pour afficher des annonces.",
+    adsP2:
+      "Google et d'autres fournisseurs tiers utilisent des cookies pour diffuser des annonces en fonction de vos visites sur ce site et d'autres.",
+    adsBefore: "Vous pouvez visiter ",
+    adsLink1: "les paramètres des annonces Google",
+    adsMid: " pour désactiver les annonces personnalisées, ou visiter ",
+    adsLink2: "aboutads.info",
+    adsAfter: " pour savoir comment désactiver les cookies publicitaires des fournisseurs tiers.",
+    storageH: "Stockage et sécurité des données",
+    storageP1:
+      "Le Site est hébergé sur des services cloud à l'étranger (Vercel / Supabase). Nous prenons des mesures raisonnables pour protéger les données, mais aucune transmission sur internet ne peut être garantie comme totalement sécurisée.",
+    storageP2: "Le Site ne vend pas vos informations à des tiers.",
+    childrenH: "Enfants",
+    childrenP:
+      "Le Site est un produit de divertissement tout public et ne cible pas les enfants de moins de 13 ans ni ne collecte leurs informations.",
+    updatesH: "Mises à jour et contact",
+    updatesP1: "Cette politique peut être mise à jour de temps à autre ; les mises à jour seront publiées sur cette page.",
+    contact: "Des questions ? Contact :",
   },
 } as const;
 

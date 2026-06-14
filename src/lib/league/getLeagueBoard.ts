@@ -1,5 +1,6 @@
 import { getServerSupabase } from "@/lib/supabase/server";
 import { defaultName } from "@/lib/identity/defaultName";
+import type { Locale } from "@/i18n/locales";
 
 // 擂台榜单查询（任务 5）：service key 服务端读取，客户端绝不直读 leagues/league_members。
 // 供 /league/[code] 页面（服务端直调）与 GET /api/league/[code] 共用。
@@ -24,7 +25,7 @@ const MEMBER_CAP = 200;
 
 export async function getLeagueBoard(
   code: string,
-  locale: "zh" | "en" = "zh"
+  locale: Locale = "zh"
 ): Promise<LeagueBoard | null> {
   const db = getServerSupabase();
 

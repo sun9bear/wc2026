@@ -3,11 +3,16 @@
 
 import { getMatchProbTrend } from "@/lib/prob/getTrends";
 import { Sparkline } from "./Sparkline";
+import type { Locale } from "@/i18n";
 
-const COPY = {
+const COPY: Record<Locale, { title: string; home: string; draw: string; away: string; note: string }> = {
   zh: { title: "📈 胜平负概率走势", home: "主胜", draw: "平局", away: "客胜", note: "模型每小时快照，越近越准" },
   en: { title: "📈 Win / draw / loss trend", home: "Home", draw: "Draw", away: "Away", note: "Hourly model snapshots — sharper near kickoff" },
-} as const;
+  es: { title: "📈 Tendencia victoria/empate/derrota", home: "Local", draw: "Empate", away: "Visitante", note: "Capturas del modelo cada hora — más nítidas cerca del inicio" },
+  pt: { title: "📈 Tendência vitória/empate/derrota", home: "Casa", draw: "Empate", away: "Fora", note: "Capturas do modelo a cada hora — mais nítidas perto do início" },
+  de: { title: "📈 Sieg/Unentschieden/Niederlage-Trend", home: "Heim", draw: "Remis", away: "Auswärts", note: "Stündliche Modell-Snapshots — schärfer kurz vor Anpfiff" },
+  fr: { title: "📈 Tendance victoire/nul/défaite", home: "Domicile", draw: "Nul", away: "Extérieur", note: "Instantanés du modèle chaque heure — plus précis près du coup d'envoi" },
+};
 
 // 与 /forecast 单场胜平负配色一致：主胜绿、平局灰、客胜橙。
 const HOME = "#1be27f";
@@ -26,11 +31,11 @@ export async function MatchProbTrend({
   locale,
 }: {
   matchId: string;
-  locale: "zh" | "en";
+  locale: Locale;
 }) {
   const trend = await getMatchProbTrend(matchId);
   if (!trend) return null;
-  const c = COPY[locale];
+  const c = COPY[locale] ?? COPY.en;
 
   return (
     <section className="fade-up mt-4 rounded-lg border border-border bg-surface p-4">

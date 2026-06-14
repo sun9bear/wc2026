@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { PREFIXED_LOCALES, DEFAULT_LOCALE } from "./i18n/locales";
+import { PREFIXED_LOCALES, DEFAULT_LOCALE, localeFromAcceptLanguage } from "./i18n/locales";
 
 // 首访语言/区域检测 + per-locale URL 路由（边缘执行，零延迟）：
 // - x-locale 请求头：按 URL 注入（/zh、/zh/* → zh，其余 → en），供服务端 getLocale() 权威取用。
@@ -28,8 +28,7 @@ export default function proxy(req: NextRequest) {
   }
 
   if (!req.cookies.get("NEXT_LOCALE")) {
-    const accept = req.headers.get("accept-language") ?? "";
-    const cookieLocale = /(^|[,;\s])zh\b|zh-/i.test(accept) ? "zh" : DEFAULT_LOCALE;
+    const cookieLocale = localeFromAcceptLanguage(req.headers.get("accept-language"));
     res.cookies.set("NEXT_LOCALE", cookieLocale, {
       maxAge: 60 * 60 * 24 * 365,
       path: "/",
@@ -50,8 +49,8 @@ export default function proxy(req: NextRequest) {
 }
 
 export const config = {
-  // 跳过静态资源与 API（含 /zh 前缀形式：/zh/_next、/zh/og.png 等）；只在页面请求上运行。
-  // 注意：matcher 须为静态字面量（Next 构建期静态分析，读不到 PREFIXED_LOCALES 数组）。
-  // 激活新前缀 locale 时手动把 (?:zh/)? 扩成 (?:(?:zh|es|pt|de|fr)/)?。
-  matcher: ["/((?!(?:zh/)?(?:_next/|api/|favicon|og\\.png|robots|sitemap)).*)"],
+  // 跳过静态资源与 API（含各前缀形式：/zh/_next、/es/og.png 等）；只在页面请求上运行。
+  // 注意：matcher 须为静态字面量（Next 构建期静态分析，读不到 PREFIXED_LOCALES 数组）——
+  // 加/删前缀 locale 时手动同步这条正则的 (?:(?:zh|es|pt|de|fr)/)? 段。
+  matcher: ["/((?!(?:(?:zh|es|pt|de|fr)/)?(?:_next/|api/|favicon|og\\.png|robots|sitemap)).*)"],
 };

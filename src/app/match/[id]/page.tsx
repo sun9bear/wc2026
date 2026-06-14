@@ -22,7 +22,7 @@ import { getMatchSwing, swingOgPath } from "@/lib/prob/getMatchSwing";
 import { getMatchReport, reportOgPath } from "@/lib/prob/getMatchReport";
 import { getMatchScoreline } from "@/lib/prob/getMatchScoreline";
 import { JsonLd } from "@/lib/seo/jsonLd";
-import { getDict, localeHref } from "@/i18n";
+import { getDict, localeHref, type Locale } from "@/i18n";
 import { getLocale } from "@/i18n/server";
 import { maybeAutoSettle } from "@/lib/settlement/autoSettle";
 import { localizedAlternates, selfUrl } from "@/lib/seo/canonical";
@@ -47,14 +47,26 @@ export async function generateMetadata({
   if (m) {
     const home = teamName(m.home.name, locale);
     const away = teamName(m.away.name, locale);
-    const title =
-      locale === "zh"
-        ? `${home} vs ${away} — 2026 世界杯预测与最可能比分`
-        : `${home} vs ${away} — World Cup 2026 prediction & likely scores`;
-    const description =
-      locale === "zh"
-        ? `${home} vs ${away} 的 2026 世界杯模型胜平负概率与最可能比分。免费，无需注册。`
-        : `Model win, draw and loss probabilities and the most likely scorelines for ${home} vs ${away} at the 2026 World Cup. Free, no sign-up.`;
+    const title = (
+      {
+        zh: `${home} vs ${away} — 2026 世界杯预测与最可能比分`,
+        en: `${home} vs ${away} — World Cup 2026 prediction & likely scores`,
+        es: `${home} vs ${away} — predicción y marcadores probables del Mundial 2026`,
+        pt: `${home} vs ${away} — previsão e placares prováveis da Copa 2026`,
+        de: `${home} vs ${away} — WM-2026-Vorhersage & wahrscheinliche Ergebnisse`,
+        fr: `${home} vs ${away} — prédiction et scores probables du Mondial 2026`,
+      } as Record<Locale, string>
+    )[locale];
+    const description = (
+      {
+        zh: `${home} vs ${away} 的 2026 世界杯模型胜平负概率与最可能比分。免费，无需注册。`,
+        en: `Model win, draw and loss probabilities and the most likely scorelines for ${home} vs ${away} at the 2026 World Cup. Free, no sign-up.`,
+        es: `Probabilidades del modelo de victoria, empate y derrota y los marcadores más probables para ${home} vs ${away} en el Mundial 2026. Gratis, sin registro.`,
+        pt: `Probabilidades do modelo de vitória, empate e derrota e os placares mais prováveis para ${home} vs ${away} na Copa 2026. Grátis, sem cadastro.`,
+        de: `Modell-Wahrscheinlichkeiten für Sieg, Unentschieden und Niederlage sowie die wahrscheinlichsten Ergebnisse für ${home} vs ${away} bei der WM 2026. Kostenlos, ohne Anmeldung.`,
+        fr: `Probabilités du modèle de victoire, nul et défaite et les scores les plus probables pour ${home} vs ${away} à la Coupe du monde 2026. Gratuit, sans inscription.`,
+      } as Record<Locale, string>
+    )[locale];
     base = {
       title,
       description,
@@ -89,21 +101,42 @@ export async function generateMetadata({
     }
     if (!report) return base;
     const rOg = `${SITE}${reportOgPath(report, locale)}`;
-    const rHome = locale === "zh" ? report.homeZh : report.homeName;
-    const rAway = locale === "zh" ? report.awayZh : report.awayName;
+    const rHome = locale === "zh" ? report.homeZh : teamName(report.homeName, locale);
+    const rAway = locale === "zh" ? report.awayZh : teamName(report.awayName, locale);
     const rScore = `${report.homeScore}-${report.awayScore}`;
-    const rTitle =
-      locale === "zh"
-        ? `${rHome} ${rScore} ${rAway} · 赛后战报 · wc2026.cool`
-        : `${rHome} ${rScore} ${rAway} · Full-time · wc2026.cool`;
-    const rDesc =
-      locale === "zh"
-        ? report.rank
-          ? `这个比分赛前是模型第 ${report.rank} 可能（${Math.round((report.scoreP ?? 0) * 100)}%）。世界杯 2026 实时模型，免费无需注册。`
-          : `这个比分赛前不在模型 Top-5（冷门）。世界杯 2026 实时模型，免费无需注册。`
-        : report.rank
-          ? `This scoreline was the model's #${report.rank} most likely pre-match (${Math.round((report.scoreP ?? 0) * 100)}%). Live World Cup 2026 model, free, no sign-up.`
-          : `This scoreline wasn't in the model's pre-match Top 5 (upset). Live World Cup 2026 model, free, no sign-up.`;
+    const rTitle = (
+      {
+        zh: `${rHome} ${rScore} ${rAway} · 赛后战报 · wc2026.cool`,
+        en: `${rHome} ${rScore} ${rAway} · Full-time · wc2026.cool`,
+        es: `${rHome} ${rScore} ${rAway} · Final · wc2026.cool`,
+        pt: `${rHome} ${rScore} ${rAway} · Fim de jogo · wc2026.cool`,
+        de: `${rHome} ${rScore} ${rAway} · Schlusspfiff · wc2026.cool`,
+        fr: `${rHome} ${rScore} ${rAway} · Fin du match · wc2026.cool`,
+      } as Record<Locale, string>
+    )[locale];
+    const sp = Math.round((report.scoreP ?? 0) * 100);
+    const rDesc = (
+      {
+        zh: report.rank
+          ? `这个比分赛前是模型第 ${report.rank} 可能（${sp}%）。世界杯 2026 实时模型，免费无需注册。`
+          : `这个比分赛前不在模型 Top-5（冷门）。世界杯 2026 实时模型，免费无需注册。`,
+        en: report.rank
+          ? `This scoreline was the model's #${report.rank} most likely pre-match (${sp}%). Live World Cup 2026 model, free, no sign-up.`
+          : `This scoreline wasn't in the model's pre-match Top 5 (upset). Live World Cup 2026 model, free, no sign-up.`,
+        es: report.rank
+          ? `Este marcador era el #${report.rank} más probable del modelo antes del partido (${sp}%). Modelo en vivo del Mundial 2026, gratis, sin registro.`
+          : `Este marcador no estaba en el Top 5 del modelo antes del partido (sorpresa). Modelo en vivo del Mundial 2026, gratis, sin registro.`,
+        pt: report.rank
+          ? `Este placar era o #${report.rank} mais provável do modelo antes do jogo (${sp}%). Modelo ao vivo da Copa 2026, grátis, sem cadastro.`
+          : `Este placar não estava no Top 5 do modelo antes do jogo (zebra). Modelo ao vivo da Copa 2026, grátis, sem cadastro.`,
+        de: report.rank
+          ? `Dieses Ergebnis war vor dem Spiel das #${report.rank} wahrscheinlichste im Modell (${sp}%). Live-WM-2026-Modell, kostenlos, ohne Anmeldung.`
+          : `Dieses Ergebnis war vor dem Spiel nicht in den Top 5 des Modells (Überraschung). Live-WM-2026-Modell, kostenlos, ohne Anmeldung.`,
+        fr: report.rank
+          ? `Ce score était le #${report.rank} le plus probable du modèle avant le match (${sp}%). Modèle en direct du Mondial 2026, gratuit, sans inscription.`
+          : `Ce score n'était pas dans le Top 5 du modèle avant le match (surprise). Modèle en direct du Mondial 2026, gratuit, sans inscription.`,
+      } as Record<Locale, string>
+    )[locale];
     return {
       ...base,
       title: rTitle,
@@ -120,17 +153,32 @@ export async function generateMetadata({
     };
   }
   const ogUrl = `${SITE}${swingOgPath(swing, locale)}`;
-  const heroName = locale === "zh" ? swing.hero.zh : swing.hero.name;
+  const heroName = locale === "zh" ? swing.hero.zh : teamName(swing.hero.name, locale);
   const bp = Math.round(swing.hero.before * 100);
   const ap = Math.round(swing.hero.after * 100);
-  const title =
-    locale === "zh"
-      ? `爆冷！${swing.homeZh} ${swing.homeScore}-${swing.awayScore} ${swing.awayZh} · wc2026.cool`
-      : `Upset! ${swing.homeName} ${swing.homeScore}-${swing.awayScore} ${swing.awayName} · wc2026.cool`;
-  const description =
-    locale === "zh"
-      ? `${heroName}出线概率 ${bp}% → ${ap}%。世界杯 2026 实时模型，免费无需注册。`
-      : `${heroName}'s chance to advance ${bp}% → ${ap}%. Live World Cup 2026 model, free, no sign-up.`;
+  const sHome = locale === "zh" ? swing.homeZh : teamName(swing.homeName, locale);
+  const sAway = locale === "zh" ? swing.awayZh : teamName(swing.awayName, locale);
+  const sScore = `${swing.homeScore}-${swing.awayScore}`;
+  const title = (
+    {
+      zh: `爆冷！${sHome} ${sScore} ${sAway} · wc2026.cool`,
+      en: `Upset! ${sHome} ${sScore} ${sAway} · wc2026.cool`,
+      es: `¡Sorpresa! ${sHome} ${sScore} ${sAway} · wc2026.cool`,
+      pt: `Zebra! ${sHome} ${sScore} ${sAway} · wc2026.cool`,
+      de: `Überraschung! ${sHome} ${sScore} ${sAway} · wc2026.cool`,
+      fr: `Surprise ! ${sHome} ${sScore} ${sAway} · wc2026.cool`,
+    } as Record<Locale, string>
+  )[locale];
+  const description = (
+    {
+      zh: `${heroName}出线概率 ${bp}% → ${ap}%。世界杯 2026 实时模型，免费无需注册。`,
+      en: `${heroName}'s chance to advance ${bp}% → ${ap}%. Live World Cup 2026 model, free, no sign-up.`,
+      es: `Probabilidad de ${heroName} de avanzar ${bp}% → ${ap}%. Modelo en vivo del Mundial 2026, gratis, sin registro.`,
+      pt: `Chance de ${heroName} avançar ${bp}% → ${ap}%. Modelo ao vivo da Copa 2026, grátis, sem cadastro.`,
+      de: `${heroName}s Chance aufs Weiterkommen ${bp}% → ${ap}%. Live-WM-2026-Modell, kostenlos, ohne Anmeldung.`,
+      fr: `Probabilité de qualification de ${heroName} ${bp}% → ${ap}%. Modèle en direct du Mondial 2026, gratuit, sans inscription.`,
+    } as Record<Locale, string>
+  )[locale];
   return {
     ...base,
     title,
@@ -226,6 +274,14 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
   // SportsEvent + 面包屑实体（实体/GEO 理解，非 Event 富结果；不编造 offers/location）。
   const evHome = teamName(m.home.name, locale);
   const evAway = teamName(m.away.name, locale);
+  const HOME_LABEL: Record<Locale, string> = {
+    zh: "首页",
+    en: "Home",
+    es: "Inicio",
+    pt: "Início",
+    de: "Startseite",
+    fr: "Accueil",
+  };
   const matchJsonLd = {
     "@context": "https://schema.org",
     "@graph": [
@@ -248,7 +304,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
       {
         "@type": "BreadcrumbList",
         itemListElement: [
-          { "@type": "ListItem", position: 1, name: locale === "zh" ? "首页" : "Home", item: selfUrl("/", locale) },
+          { "@type": "ListItem", position: 1, name: HOME_LABEL[locale] ?? "Home", item: selfUrl("/", locale) },
           { "@type": "ListItem", position: 2, name: `${evHome} vs ${evAway}`, item: selfUrl(`/match/${id}`, locale) },
         ],
       },
@@ -267,7 +323,19 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
     body: string | null;
     bodyEn: string | null;
   }) => {
-    if (locale === "en" && bodyEn) {
+    const isZh = locale === "zh";
+    // 中文：平铺中文 AI 文案。非中文（en/es/pt/de/fr）：优先平铺英文版（Phase A 新语种 AI 内容回落英文）；
+    // 无英文版时折叠展示中文原文（不漏内容，也不在非本语种页平铺中文）。
+    if (isZh) {
+      if (!body) return null;
+      return (
+        <div className="fade-up mt-4 rounded-lg border border-border bg-surface p-4">
+          <div className="mb-1 text-[11px] text-muted">{tag}</div>
+          <p className="text-sm leading-relaxed">{body}</p>
+        </div>
+      );
+    }
+    if (bodyEn) {
       return (
         <div className="fade-up mt-4 rounded-lg border border-border bg-surface p-4">
           <div className="mb-1 text-[11px] text-muted">{tag}</div>
@@ -276,16 +344,11 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
       );
     }
     if (!body) return null;
-    return locale === "en" ? (
+    return (
       <details className="fade-up mt-4 rounded-lg border border-border bg-surface p-4">
         <summary className="cursor-pointer text-[11px] text-muted">{foldTag}</summary>
         <p className="mt-2 text-sm leading-relaxed">{body}</p>
       </details>
-    ) : (
-      <div className="fade-up mt-4 rounded-lg border border-border bg-surface p-4">
-        <div className="mb-1 text-[11px] text-muted">{tag}</div>
-        <p className="text-sm leading-relaxed">{body}</p>
-      </div>
     );
   };
 
@@ -294,9 +357,16 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
       <JsonLd data={matchJsonLd} />
       {/* 语义 h1（视觉隐藏，不改版式；给爬虫/AI 明确实体标题）。 */}
       <h1 className="sr-only">
-        {locale === "zh"
-          ? `${teamName(m.home.name, locale)} vs ${teamName(m.away.name, locale)} — 2026 世界杯预测`
-          : `${teamName(m.home.name, locale)} vs ${teamName(m.away.name, locale)} — World Cup 2026 prediction`}
+        {(
+          {
+            zh: `${evHome} vs ${evAway} — 2026 世界杯预测`,
+            en: `${evHome} vs ${evAway} — World Cup 2026 prediction`,
+            es: `${evHome} vs ${evAway} — predicción del Mundial 2026`,
+            pt: `${evHome} vs ${evAway} — previsão da Copa 2026`,
+            de: `${evHome} vs ${evAway} — WM-2026-Vorhersage`,
+            fr: `${evHome} vs ${evAway} — prédiction du Mondial 2026`,
+          } as Record<Locale, string>
+        )[locale]}
       </h1>
       <div className="flex items-center justify-between">
         <Link href={localeHref(locale, "/")} className="text-xs text-muted">

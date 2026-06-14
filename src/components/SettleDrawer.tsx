@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
-import { teamZh } from "@/lib/football/teams";
+import { teamName } from "@/lib/football/teams";
 import { fmtPoints } from "@/lib/format";
 import { copyText } from "@/lib/clipboard";
 import { track } from "@/lib/track";
@@ -36,20 +36,33 @@ interface RecentBet {
   legs: number;
 }
 
-const TXT = {
+// win/lose 收预解析好的本地化队名（home/away，组件按 locale 经 teamName 取）。
+// 各语「combo」用中性 Combo（避博彩词如 apuesta/aposta combinada / Kombiwette / pari combiné）。
+interface SettleCopy {
+  title: string;
+  win: (b: RecentBet, home: string, away: string) => string;
+  lose: (b: RecentBet, home: string, away: string) => string;
+  comeback: (n: number) => string;
+  more: (n: number) => string;
+  cta: string;
+  close: string;
+  flexUpset: string;
+  copied: string;
+  copyFail: string;
+}
+const TXT: Record<Locale, SettleCopy> = {
   zh: {
     title: "📣 你的竞猜有新结果",
-    win: (b: RecentBet) =>
+    win: (b, home, away) =>
       b.legs > 1
         ? `🎉 串关全中！×${b.multiplier.toFixed(2)}，+${fmtPoints(b.payout)} 积分入账`
-        : `🎉 猜中了！${teamZh(b.home)} ${b.homeScore}-${b.awayScore} ${teamZh(b.away)}，你的竞猜 ×${b.multiplier.toFixed(2)}，+${fmtPoints(b.payout)} 积分入账`,
-    lose: (b: RecentBet) =>
+        : `🎉 猜中了！${home} ${b.homeScore}-${b.awayScore} ${away}，你的竞猜 ×${b.multiplier.toFixed(2)}，+${fmtPoints(b.payout)} 积分入账`,
+    lose: (b, home, away) =>
       b.legs > 1
         ? `串关差一点 −${fmtPoints(b.stake)}`
-        : `${teamZh(b.home)} ${b.homeScore}-${b.awayScore} ${teamZh(b.away)}，这场没猜中 −${fmtPoints(b.stake)}`,
-    comeback: (n: number) =>
-      n > 0 ? `接下来还有 ${n} 场翻盘机会 →` : "下一轮翻盘机会马上来 →",
-    more: (n: number) => `…还有 ${n} 条结果`,
+        : `${home} ${b.homeScore}-${b.awayScore} ${away}，这场没猜中 −${fmtPoints(b.stake)}`,
+    comeback: (n) => (n > 0 ? `接下来还有 ${n} 场翻盘机会 →` : "下一轮翻盘机会马上来 →"),
+    more: (n) => `…还有 ${n} 条结果`,
     cta: "看我的战绩",
     close: "知道了",
     flexUpset: "🎯 晒这波爆冷",
@@ -58,27 +71,103 @@ const TXT = {
   },
   en: {
     title: "📣 Your picks have new results",
-    win: (b: RecentBet) =>
+    win: (b, home, away) =>
       b.legs > 1
         ? `🎉 Combo landed! ×${b.multiplier.toFixed(2)} — +${fmtPoints(b.payout)} points`
-        : `🎉 Spot on! ${b.home} ${b.homeScore}-${b.awayScore} ${b.away} — your pick earned ×${b.multiplier.toFixed(2)}, +${fmtPoints(b.payout)} points`,
-    lose: (b: RecentBet) =>
+        : `🎉 Spot on! ${home} ${b.homeScore}-${b.awayScore} ${away} — your pick earned ×${b.multiplier.toFixed(2)}, +${fmtPoints(b.payout)} points`,
+    lose: (b, home, away) =>
       b.legs > 1
         ? `Combo fell short −${fmtPoints(b.stake)}`
-        : `${b.home} ${b.homeScore}-${b.awayScore} ${b.away} — missed this one −${fmtPoints(b.stake)}`,
-    comeback: (n: number) =>
+        : `${home} ${b.homeScore}-${b.awayScore} ${away} — missed this one −${fmtPoints(b.stake)}`,
+    comeback: (n) =>
       n > 0 ? `${n} more matches coming up — time for a comeback →` : "Next round is coming right up →",
-    more: (n: number) => `…and ${n} more results`,
+    more: (n) => `…and ${n} more results`,
     cta: "See my record",
     close: "Got it",
     flexUpset: "🎯 Flex this upset",
     copied: "Copied — paste to share 👍",
     copyFail: "Copy failed — screenshot to share",
   },
-} as const;
+  es: {
+    title: "📣 Tus predicciones tienen resultados",
+    win: (b, home, away) =>
+      b.legs > 1
+        ? `🎉 ¡Combo acertado! ×${b.multiplier.toFixed(2)} — +${fmtPoints(b.payout)} puntos`
+        : `🎉 ¡Acertaste! ${home} ${b.homeScore}-${b.awayScore} ${away} — tu predicción ×${b.multiplier.toFixed(2)}, +${fmtPoints(b.payout)} puntos`,
+    lose: (b, home, away) =>
+      b.legs > 1
+        ? `El combo se quedó corto −${fmtPoints(b.stake)}`
+        : `${home} ${b.homeScore}-${b.awayScore} ${away} — esta vez no acertaste −${fmtPoints(b.stake)}`,
+    comeback: (n) =>
+      n > 0 ? `Vienen ${n} partidos más — hora de la remontada →` : "La próxima ronda llega enseguida →",
+    more: (n) => `…y ${n} resultados más`,
+    cta: "Ver mi historial",
+    close: "Entendido",
+    flexUpset: "🎯 Presume esta sorpresa",
+    copied: "Copiado — pega para compartir 👍",
+    copyFail: "Error al copiar — comparte una captura",
+  },
+  pt: {
+    title: "📣 Suas previsões têm resultados",
+    win: (b, home, away) =>
+      b.legs > 1
+        ? `🎉 Combo certeiro! ×${b.multiplier.toFixed(2)} — +${fmtPoints(b.payout)} pontos`
+        : `🎉 Acertou! ${home} ${b.homeScore}-${b.awayScore} ${away} — sua previsão ×${b.multiplier.toFixed(2)}, +${fmtPoints(b.payout)} pontos`,
+    lose: (b, home, away) =>
+      b.legs > 1
+        ? `O combo ficou perto −${fmtPoints(b.stake)}`
+        : `${home} ${b.homeScore}-${b.awayScore} ${away} — não acertou desta vez −${fmtPoints(b.stake)}`,
+    comeback: (n) =>
+      n > 0 ? `Vêm mais ${n} jogos — hora da virada →` : "A próxima rodada chega já →",
+    more: (n) => `…e mais ${n} resultados`,
+    cta: "Ver meu histórico",
+    close: "Entendi",
+    flexUpset: "🎯 Mostre essa zebra",
+    copied: "Copiado — cole para compartilhar 👍",
+    copyFail: "Falha ao copiar — compartilhe uma captura",
+  },
+  de: {
+    title: "📣 Deine Tipps haben Ergebnisse",
+    win: (b, home, away) =>
+      b.legs > 1
+        ? `🎉 Combo komplett! ×${b.multiplier.toFixed(2)} — +${fmtPoints(b.payout)} Punkte`
+        : `🎉 Richtig getippt! ${home} ${b.homeScore}-${b.awayScore} ${away} — dein Tipp ×${b.multiplier.toFixed(2)}, +${fmtPoints(b.payout)} Punkte`,
+    lose: (b, home, away) =>
+      b.legs > 1
+        ? `Combo knapp verpasst −${fmtPoints(b.stake)}`
+        : `${home} ${b.homeScore}-${b.awayScore} ${away} — diesmal daneben −${fmtPoints(b.stake)}`,
+    comeback: (n) =>
+      n > 0 ? `Noch ${n} Spiele kommen — Zeit fürs Comeback →` : "Die nächste Runde kommt gleich →",
+    more: (n) => `…und ${n} weitere Ergebnisse`,
+    cta: "Meine Bilanz ansehen",
+    close: "Verstanden",
+    flexUpset: "🎯 Diese Überraschung zeigen",
+    copied: "Kopiert — zum Teilen einfügen 👍",
+    copyFail: "Kopieren fehlgeschlagen — Screenshot teilen",
+  },
+  fr: {
+    title: "📣 Tes prédictions ont des résultats",
+    win: (b, home, away) =>
+      b.legs > 1
+        ? `🎉 Combo gagnant ! ×${b.multiplier.toFixed(2)} — +${fmtPoints(b.payout)} points`
+        : `🎉 Bien vu ! ${home} ${b.homeScore}-${b.awayScore} ${away} — ta prédiction ×${b.multiplier.toFixed(2)}, +${fmtPoints(b.payout)} points`,
+    lose: (b, home, away) =>
+      b.legs > 1
+        ? `Le combo a échoué de peu −${fmtPoints(b.stake)}`
+        : `${home} ${b.homeScore}-${b.awayScore} ${away} — raté cette fois −${fmtPoints(b.stake)}`,
+    comeback: (n) =>
+      n > 0 ? `Encore ${n} matchs à venir — l'heure de la remontée →` : "La prochaine série arrive tout de suite →",
+    more: (n) => `…et ${n} résultats de plus`,
+    cta: "Voir mon historique",
+    close: "Compris",
+    flexUpset: "🎯 Frime cette surprise",
+    copied: "Copié — collez pour partager 👍",
+    copyFail: "Échec de la copie — partagez une capture",
+  },
+};
 
 export function SettleDrawer({ locale }: { locale: Locale }) {
-  const t = TXT[locale];
+  const t = TXT[locale] ?? TXT.en;
   const [items, setItems] = useState<RecentBet[]>([]);
   const [upcoming, setUpcoming] = useState(0);
   const [open, setOpen] = useState(false);
@@ -208,7 +297,9 @@ export function SettleDrawer({ locale }: { locale: Locale }) {
             const sw = b.won && b.matchId ? swings[b.matchId] : undefined;
             return (
               <li key={i} className={b.won ? "text-green" : "text-muted"}>
-                {b.won ? t.win(b) : t.lose(b)}
+                {b.won
+                  ? t.win(b, teamName(b.home, locale), teamName(b.away, locale))
+                  : t.lose(b, teamName(b.home, locale), teamName(b.away, locale))}
                 {sw && (
                   <button
                     type="button"

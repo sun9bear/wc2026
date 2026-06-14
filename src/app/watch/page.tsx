@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale } from "@/i18n/server";
-import { localeHref } from "@/i18n";
+import { localeHref, type Locale } from "@/i18n";
 import { localizedAlternates } from "@/lib/seo/canonical";
 
 // 观赛指南：按地区列官方转播/流媒体渠道（双语，随 locale 切换）。
@@ -14,7 +14,23 @@ const LINKS = {
   fifa: "https://www.fifa.com/",
 };
 
-const COPY = {
+interface WatchSection {
+  flag: string;
+  title: string;
+  body: string;
+  linkText: string;
+  href: string;
+}
+interface WatchCopy {
+  title: string;
+  description: string;
+  h1: string;
+  intro: string;
+  sections: WatchSection[];
+  note: string;
+  back: string;
+}
+const COPY: Record<Locale, WatchCopy> = {
   zh: {
     title: "2026 世界杯在哪看 · 直播观赛指南",
     description:
@@ -107,11 +123,195 @@ const COPY = {
     note: "Streaming services are region-locked; availability depends on your location.",
     back: "← Back to matches",
   },
-} as const;
+  es: {
+    title: "Dónde ver el Mundial 2026 — Guía de TV y streaming",
+    description:
+      "Cómo ver los 104 partidos del Mundial 2026: canales de TV y opciones de streaming para EE. UU., Canadá y aficionados de habla hispana. Actualizado durante el torneo.",
+    h1: "Dónde ver el Mundial 2026",
+    intro: "Formas oficiales de ver los 104 partidos, por región. Actualizado durante el torneo.",
+    sections: [
+      {
+        flag: "🇺🇸",
+        title: "Estados Unidos (inglés)",
+        body: "FOX y FS1 transmiten todos los partidos; streaming en foxsports.com con cuenta de proveedor de TV.",
+        linkText: "FOX Sports →",
+        href: LINKS.fox,
+      },
+      {
+        flag: "🇺🇸",
+        title: "Estados Unidos (español)",
+        body: "Telemundo y Universo transmiten en español; streaming en Peacock.",
+        linkText: "Peacock →",
+        href: LINKS.peacock,
+      },
+      {
+        flag: "🇨🇦",
+        title: "Canadá",
+        body: "TSN (inglés) y RDS (francés) transmiten el torneo; streaming con TSN+.",
+        linkText: "TSN →",
+        href: LINKS.tsn,
+      },
+      {
+        flag: "🇨🇳",
+        title: "China continental",
+        body: "CCTV-5, Migu Video y Xiaohongshu tienen los derechos; Migu y Xiaohongshu transmiten todos los partidos gratis.",
+        linkText: "Migu Video →",
+        href: LINKS.migu,
+      },
+      {
+        flag: "🌍",
+        title: "Resto del mundo",
+        body: "Consulta la lista oficial de socios de transmisión de la FIFA para tu país.",
+        linkText: "FIFA.com →",
+        href: LINKS.fifa,
+      },
+    ],
+    note: "Los servicios de streaming tienen restricciones regionales; la disponibilidad depende de tu ubicación.",
+    back: "← Volver a los partidos",
+  },
+  pt: {
+    title: "Onde assistir à Copa 2026 — Guia de TV e streaming",
+    description:
+      "Como assistir aos 104 jogos da Copa 2026: canais de TV e opções de streaming para EUA, Canadá e torcedores de língua portuguesa. Atualizado durante o torneio.",
+    h1: "Onde assistir à Copa 2026",
+    intro: "Formas oficiais de assistir aos 104 jogos, por região. Atualizado durante o torneio.",
+    sections: [
+      {
+        flag: "🇺🇸",
+        title: "Estados Unidos (inglês)",
+        body: "FOX e FS1 transmitem todos os jogos; streaming no foxsports.com com login de provedor de TV.",
+        linkText: "FOX Sports →",
+        href: LINKS.fox,
+      },
+      {
+        flag: "🇺🇸",
+        title: "Estados Unidos (espanhol)",
+        body: "Telemundo e Universo transmitem em espanhol; streaming no Peacock.",
+        linkText: "Peacock →",
+        href: LINKS.peacock,
+      },
+      {
+        flag: "🇨🇦",
+        title: "Canadá",
+        body: "TSN (inglês) e RDS (francês) transmitem o torneio; streaming com TSN+.",
+        linkText: "TSN →",
+        href: LINKS.tsn,
+      },
+      {
+        flag: "🇨🇳",
+        title: "China continental",
+        body: "CCTV-5, Migu Video e Xiaohongshu têm os direitos; Migu e Xiaohongshu transmitem todos os jogos de graça.",
+        linkText: "Migu Video →",
+        href: LINKS.migu,
+      },
+      {
+        flag: "🌍",
+        title: "Resto do mundo",
+        body: "Confira a lista oficial de parceiros de transmissão da FIFA para o seu país.",
+        linkText: "FIFA.com →",
+        href: LINKS.fifa,
+      },
+    ],
+    note: "Os serviços de streaming têm restrições regionais; a disponibilidade depende da sua localização.",
+    back: "← Voltar aos jogos",
+  },
+  de: {
+    title: "Wo läuft die WM 2026 — TV- & Streaming-Guide",
+    description:
+      "So siehst du alle 104 Spiele der WM 2026: TV-Sender und Streaming-Optionen für die USA, Kanada und Fans weltweit. Während des Turniers aktualisiert.",
+    h1: "Wo läuft die WM 2026",
+    intro: "Offizielle Wege, alle 104 Spiele zu sehen, nach Region. Während des Turniers aktualisiert.",
+    sections: [
+      {
+        flag: "🇺🇸",
+        title: "USA (Englisch)",
+        body: "FOX und FS1 übertragen jedes Spiel; Stream über foxsports.com mit TV-Anbieter-Login.",
+        linkText: "FOX Sports →",
+        href: LINKS.fox,
+      },
+      {
+        flag: "🇺🇸",
+        title: "USA (Spanisch)",
+        body: "Telemundo und Universo übertragen auf Spanisch; Stream auf Peacock.",
+        linkText: "Peacock →",
+        href: LINKS.peacock,
+      },
+      {
+        flag: "🇨🇦",
+        title: "Kanada",
+        body: "TSN (Englisch) und RDS (Französisch) übertragen das Turnier; Stream mit TSN+.",
+        linkText: "TSN →",
+        href: LINKS.tsn,
+      },
+      {
+        flag: "🇨🇳",
+        title: "Festlandchina",
+        body: "CCTV-5, Migu Video und Xiaohongshu halten die Rechte; Migu und Xiaohongshu streamen jedes Spiel kostenlos.",
+        linkText: "Migu Video →",
+        href: LINKS.migu,
+      },
+      {
+        flag: "🌍",
+        title: "Überall sonst",
+        body: "Sieh in der offiziellen FIFA-Liste der Übertragungspartner für dein Land nach.",
+        linkText: "FIFA.com →",
+        href: LINKS.fifa,
+      },
+    ],
+    note: "Streaming-Dienste sind regional beschränkt; die Verfügbarkeit hängt von deinem Standort ab.",
+    back: "← Zurück zu den Spielen",
+  },
+  fr: {
+    title: "Où regarder la Coupe du monde 2026 — Guide TV & streaming",
+    description:
+      "Comment regarder les 104 matchs de la Coupe du monde 2026 : chaînes TV et options de streaming pour les États-Unis, le Canada et les fans du monde entier. Mis à jour pendant le tournoi.",
+    h1: "Où regarder la Coupe du monde 2026",
+    intro: "Moyens officiels de regarder les 104 matchs, par région. Mis à jour pendant le tournoi.",
+    sections: [
+      {
+        flag: "🇺🇸",
+        title: "États-Unis (anglais)",
+        body: "FOX et FS1 diffusent tous les matchs ; streaming sur foxsports.com avec un compte fournisseur TV.",
+        linkText: "FOX Sports →",
+        href: LINKS.fox,
+      },
+      {
+        flag: "🇺🇸",
+        title: "États-Unis (espagnol)",
+        body: "Telemundo et Universo diffusent en espagnol ; streaming sur Peacock.",
+        linkText: "Peacock →",
+        href: LINKS.peacock,
+      },
+      {
+        flag: "🇨🇦",
+        title: "Canada",
+        body: "TSN (anglais) et RDS (français) diffusent le tournoi ; streaming avec TSN+.",
+        linkText: "TSN →",
+        href: LINKS.tsn,
+      },
+      {
+        flag: "🇨🇳",
+        title: "Chine continentale",
+        body: "CCTV-5, Migu Video et Xiaohongshu détiennent les droits ; Migu et Xiaohongshu diffusent tous les matchs gratuitement.",
+        linkText: "Migu Video →",
+        href: LINKS.migu,
+      },
+      {
+        flag: "🌍",
+        title: "Partout ailleurs",
+        body: "Consultez la liste officielle des diffuseurs partenaires de la FIFA pour votre pays.",
+        linkText: "FIFA.com →",
+        href: LINKS.fifa,
+      },
+    ],
+    note: "Les services de streaming sont limités par région ; la disponibilité dépend de votre localisation.",
+    back: "← Retour aux matchs",
+  },
+};
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
-  const c = COPY[locale];
+  const c = COPY[locale] ?? COPY.en;
   return {
     title: c.title,
     description: c.description,
@@ -121,7 +321,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function WatchPage() {
   const locale = await getLocale();
-  const c = COPY[locale];
+  const c = COPY[locale] ?? COPY.en;
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-8">
       <Link href={localeHref(locale, "/")} className="text-xs text-muted">

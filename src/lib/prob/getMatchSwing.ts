@@ -4,8 +4,9 @@
 
 import { unstable_cache } from "next/cache";
 import { supabase } from "@/lib/supabase/client";
-import { teamZh, flagUrl } from "@/lib/football/teams";
+import { teamZh, teamName, flagUrl } from "@/lib/football/teams";
 import { teamSlug } from "./findTeam";
+import type { Locale } from "@/i18n/locales";
 
 const UPSET_MIN = 0.1; // "爆冷"幅度门槛：出线概率摆动 ≥10pp（方向另需满足真爆冷，见 computeMatchSwing）
 
@@ -146,11 +147,11 @@ export const getMatchSwing = unstable_cache(computeMatchSwing, ["match-swing-v1"
 });
 
 /** 摆动 OG 图卡路径（metadata 与客户端分享共用，避免漂移）。比分作 result 文案（双语，雷词由 OG 路由再过滤）。 */
-export function swingOgPath(swing: MatchSwing, locale: "zh" | "en"): string {
+export function swingOgPath(swing: MatchSwing, locale: Locale): string {
   const result =
     locale === "zh"
       ? `${swing.homeZh} ${swing.homeScore}-${swing.awayScore} ${swing.awayZh}`
-      : `${swing.homeName} ${swing.homeScore}-${swing.awayScore} ${swing.awayName}`;
+      : `${teamName(swing.homeName, locale)} ${swing.homeScore}-${swing.awayScore} ${teamName(swing.awayName, locale)}`;
   const qs = new URLSearchParams({
     mode: "swing",
     team: swing.hero.slug,

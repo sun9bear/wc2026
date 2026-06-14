@@ -22,6 +22,13 @@ describe("localeHref — 行为须与重构前一致", () => {
     expect(localeHref("zh", "/forecast")).toBe("/zh/forecast");
     expect(localeHref("zh", "/team/brazil")).toBe("/zh/team/brazil");
   });
+  it("P2-2 激活的 es/pt/de/fr 各加自身前缀", () => {
+    expect(localeHref("es", "/")).toBe("/es");
+    expect(localeHref("es", "/forecast")).toBe("/es/forecast");
+    expect(localeHref("pt", "/forecast")).toBe("/pt/forecast");
+    expect(localeHref("de", "/forecast")).toBe("/de/forecast");
+    expect(localeHref("fr", "/team/brazil")).toBe("/fr/team/brazil");
+  });
 });
 
 describe("stripLocale — 行为须与重构前一致", () => {
@@ -54,8 +61,13 @@ describe("isLocale 运行时守卫", () => {
   it("受支持的 locale 返回 true", () => {
     for (const loc of LOCALES) expect(isLocale(loc)).toBe(true);
   });
-  it("未激活/非法值返回 false", () => {
-    expect(isLocale("es")).toBe(false);
+  it("P2-2 激活后 es/pt/de/fr 返回 true", () => {
+    expect(isLocale("es")).toBe(true);
+    expect(isLocale("pt")).toBe(true);
+    expect(isLocale("de")).toBe(true);
+    expect(isLocale("fr")).toBe(true);
+  });
+  it("非法值返回 false", () => {
     expect(isLocale("xx")).toBe(false);
     expect(isLocale("")).toBe(false);
     expect(isLocale(null)).toBe(false);

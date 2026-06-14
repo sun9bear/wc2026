@@ -2,10 +2,11 @@
 // 合规：标题/文案只用「最可能的比分 / Most likely results · 模型概率」，绝不出现 correct score/赔率/odds。
 // 条宽按"相对最高项"缩放（最高项占满）便于阅读，数字标注的是真实概率%。
 
-import { teamZh } from "@/lib/football/teams";
+import { teamName } from "@/lib/football/teams";
+import type { Locale } from "@/i18n";
 import type { MatchScoreline } from "@/lib/prob/getMatchScoreline";
 
-const COPY = {
+const COPY: Record<Locale, { title: string; sub: string; other: string; note: string }> = {
   zh: {
     title: "最可能的比分",
     sub: "模型概率 · 仅供娱乐参考",
@@ -18,7 +19,31 @@ const COPY = {
     other: "Other scores",
     note: "Poisson score model from strength ratings and public forecast data, updated hourly.",
   },
-} as const;
+  es: {
+    title: "Resultados más probables",
+    sub: "probabilidad del modelo · solo por diversión",
+    other: "Otros resultados",
+    note: "Modelo de marcadores de Poisson basado en valoraciones de fuerza y datos públicos de previsión, actualizado cada hora.",
+  },
+  pt: {
+    title: "Resultados mais prováveis",
+    sub: "probabilidade do modelo · só diversão",
+    other: "Outros placares",
+    note: "Modelo de placares de Poisson baseado em avaliações de força e dados públicos de previsão, atualizado a cada hora.",
+  },
+  de: {
+    title: "Wahrscheinlichste Ergebnisse",
+    sub: "Modellwahrscheinlichkeit · nur zum Spaß",
+    other: "Andere Ergebnisse",
+    note: "Poisson-Ergebnismodell aus Stärkewerten und öffentlichen Prognosedaten, stündlich aktualisiert.",
+  },
+  fr: {
+    title: "Résultats les plus probables",
+    sub: "probabilité du modèle · pour le plaisir",
+    other: "Autres scores",
+    note: "Modèle de scores de Poisson basé sur les notes de force et des données publiques de prévision, mis à jour chaque heure.",
+  },
+};
 
 function Side({
   name,
@@ -27,7 +52,7 @@ function Side({
 }: {
   name: string;
   flag: string | null;
-  locale: "zh" | "en";
+  locale: Locale;
 }) {
   return (
     <span className="inline-flex items-center gap-1.5">
@@ -35,7 +60,7 @@ function Side({
         // eslint-disable-next-line @next/next/no-img-element
         <img src={flag} alt="" className="h-3 w-4 rounded-[2px] object-cover" />
       )}
-      <span className="truncate">{locale === "zh" ? teamZh(name) : name}</span>
+      <span className="truncate">{teamName(name, locale)}</span>
     </span>
   );
 }
@@ -47,11 +72,11 @@ export function ScoreProbs({
   away,
 }: {
   data: MatchScoreline;
-  locale: "zh" | "en";
+  locale: Locale;
   home: { name: string; flag: string | null };
   away: { name: string; flag: string | null };
 }) {
-  const c = COPY[locale];
+  const c = COPY[locale] ?? COPY.en;
   const max = data.top[0]?.p ?? 1;
   const pct = (p: number) => (p * 100).toFixed(p < 0.1 ? 1 : 0) + "%";
 

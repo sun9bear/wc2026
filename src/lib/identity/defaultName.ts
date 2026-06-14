@@ -1,6 +1,8 @@
 // 趣味默认名（确定性，零注册身份的兜底显示名）：匿名 user_id → 稳定友好的昵称，
 // 替换丑陋的「玩家3f2a / Player-xxxx」。纯函数、双端可用（渲染期不可用 Math.random）。
 // 词表预先筛过中英雷词；defaultName 输出恒满足 validateNickname（见 defaultName.test.ts）。
+// P2-2：词表仅 zh/en，es/pt/de/fr 回落英文趣味名（默认名非可索引正文，回落可接受）。
+import type { Locale } from "@/i18n/locales";
 
 const ADJ = {
   zh: ["神算", "闪电", "铁血", "黑马", "草根", "冷静", "疯狂", "无敌", "沉默", "飞驰", "老练", "钢铁", "火热", "王者", "传奇", "不败"],
@@ -22,10 +24,11 @@ function fnv1a(s: string): number {
 }
 
 /** 匿名 user_id → 确定性趣味默认名（同 id 同名）。形容词+名词+两位数，恒合法。 */
-export function defaultName(userId: string, locale: "zh" | "en"): string {
+export function defaultName(userId: string, locale: Locale): string {
+  const lang = locale === "zh" ? "zh" : "en"; // 词表仅 zh/en，其余回落英文
   const h = fnv1a(userId || "anon");
-  const adj = ADJ[locale][h % ADJ[locale].length];
-  const noun = NOUN[locale][(h >>> 8) % NOUN[locale].length];
+  const adj = ADJ[lang][h % ADJ[lang].length];
+  const noun = NOUN[lang][(h >>> 8) % NOUN[lang].length];
   const num = 10 + ((h >>> 16) % 90); // 10–99
   return `${adj}${noun}${num}`;
 }

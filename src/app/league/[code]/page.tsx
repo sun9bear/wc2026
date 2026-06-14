@@ -14,7 +14,18 @@ export async function generateMetadata(): Promise<Metadata> {
   return { robots: { index: false } }; // 口令即私密邀请，绝不进索引
 }
 
-const TXT = {
+interface LeagueBoardCopy {
+  codeLabel: string;
+  members: (n: number) => string;
+  points: string;
+  hitRate: string;
+  record: (w: number, t: number) => string;
+  owner: string;
+  empty: string;
+  mine: string;
+  join: string;
+}
+const TXT: Record<import("@/i18n").Locale, LeagueBoardCopy> = {
   zh: {
     codeLabel: "擂台口令",
     members: (n: number) => `${n} 人参战`,
@@ -37,7 +48,51 @@ const TXT = {
     mine: "← My leagues",
     join: "Start your own league →",
   },
-} as const;
+  es: {
+    codeLabel: "Código de la liga",
+    members: (n: number) => `${n} jugadores`,
+    points: "Puntos",
+    hitRate: "Aciertos",
+    record: (w: number, t: number) => `${w}/${t} aciertos`,
+    owner: "Creador",
+    empty: "Aún no hay miembros — ¡comparte el código con tus amigos!",
+    mine: "← Mis ligas",
+    join: "Crea tu propia liga →",
+  },
+  pt: {
+    codeLabel: "Código da liga",
+    members: (n: number) => `${n} jogadores`,
+    points: "Pontos",
+    hitRate: "Acertos",
+    record: (w: number, t: number) => `${w}/${t} certos`,
+    owner: "Dono",
+    empty: "Ainda sem membros — compartilhe o código com seus amigos!",
+    mine: "← Minhas ligas",
+    join: "Crie sua própria liga →",
+  },
+  de: {
+    codeLabel: "Liga-Code",
+    members: (n: number) => `${n} Spieler`,
+    points: "Punkte",
+    hitRate: "Trefferquote",
+    record: (w: number, t: number) => `${w}/${t} richtig`,
+    owner: "Ersteller",
+    empty: "Noch keine Mitglieder — teile den Code mit Freunden!",
+    mine: "← Meine Ligen",
+    join: "Eigene Liga starten →",
+  },
+  fr: {
+    codeLabel: "Code de la ligue",
+    members: (n: number) => `${n} joueurs`,
+    points: "Points",
+    hitRate: "Réussite",
+    record: (w: number, t: number) => `${w}/${t} corrects`,
+    owner: "Créateur",
+    empty: "Aucun membre pour l'instant — partage le code avec tes amis !",
+    mine: "← Mes ligues",
+    join: "Crée ta propre ligue →",
+  },
+};
 
 export default async function LeagueBoardPage({
   params,
@@ -46,7 +101,7 @@ export default async function LeagueBoardPage({
 }) {
   const { code } = await params;
   const locale = await getLocale();
-  const t = TXT[locale];
+  const t = TXT[locale] ?? TXT.en;
   const board = await getLeagueBoard(normalizeLeagueCode(code), locale);
   if (!board) notFound();
 

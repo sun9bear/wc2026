@@ -2,6 +2,8 @@ import { ImageResponse } from "next/og";
 import QRCode from "qrcode";
 import { getForecast } from "@/lib/prob/pipeline";
 import { findTeam } from "@/lib/prob/findTeam";
+import { teamName } from "@/lib/football/teams";
+import { type Locale, isLocale } from "@/i18n";
 import { findBannedTermsStrict } from "@/lib/compliance/bannedTerms";
 
 export const maxDuration = 60;
@@ -75,7 +77,10 @@ function parseScoreline(sl: string | null): string[] {
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const q = searchParams.get("team") ?? "";
-  let locale = searchParams.get("locale") === "zh" ? "zh" : "en";
+  // 6 语种 OG 卡：locale 取自 query，非法回落 en。zh 走 CJK 字体；es/pt/de/fr 用默认 Latin 字体
+  //（含变音符——en 卡的 Türkiye/México 已验证可渲染）。德语文本偏长，标签已选简短措辞防溢出。
+  const localeParam = searchParams.get("locale");
+  let locale: Locale = isLocale(localeParam) ? localeParam : "en";
 
   // 二维码意图（任务 D）：默认仅 zh 卡渲染；qr=1 强制开、qr=0 强制关。u=要编码的站内路径。
   const qrFlag = searchParams.get("qr");
@@ -129,17 +134,17 @@ export async function GET(req: Request) {
         if (f) fonts = [{ name: "NotoSansSC", data: f, weight: 700 }];
         else locale = "en";
       }
-      const L =
-        locale === "zh"
-          ? { label: "出线概率", from: "赛前", sims: "10,000 次蒙特卡洛模拟", updated: `更新于 ${updated} UTC`, disc: "预测仅供娱乐" }
-          : {
-              label: "Chance to advance",
-              from: "was",
-              sims: "10,000 Monte Carlo simulations",
-              updated: `Updated ${updated} UTC`,
-              disc: "For entertainment only",
-            };
-      const name = locale === "zh" ? t.zh : t.name;
+      const L = (
+        {
+          zh: { label: "出线概率", from: "赛前", sims: "10,000 次蒙特卡洛模拟", updated: `更新于 ${updated} UTC`, disc: "预测仅供娱乐" },
+          en: { label: "Chance to advance", from: "was", sims: "10,000 Monte Carlo simulations", updated: `Updated ${updated} UTC`, disc: "For entertainment only" },
+          es: { label: "Probabilidad de avanzar", from: "era", sims: "10.000 simulaciones de Montecarlo", updated: `Actualizado ${updated} UTC`, disc: "Solo para entretenimiento" },
+          pt: { label: "Chance de avançar", from: "era", sims: "10.000 simulações de Monte Carlo", updated: `Atualizado ${updated} UTC`, disc: "Apenas entretenimento" },
+          de: { label: "Weiterkommen-Chance", from: "war", sims: "10.000 Monte-Carlo-Simulationen", updated: `Aktualisiert ${updated} UTC`, disc: "Nur zur Unterhaltung" },
+          fr: { label: "Chance de qualification", from: "était", sims: "10 000 simulations Monte-Carlo", updated: `Mis à jour ${updated} UTC`, disc: "Divertissement uniquement" },
+        } as Record<Locale, { label: string; from: string; sims: string; updated: string; disc: string }>
+      )[locale];
+      const name = locale === "zh" ? t.zh : teamName(t.name, locale);
       const up = after >= before;
       const fmtPct = (v: number) => (v >= 10 ? v.toFixed(0) : v.toFixed(1));
       const base: React.CSSProperties = {
@@ -250,10 +255,16 @@ export async function GET(req: Request) {
         if (f) mfonts = [{ name: "NotoSansSC", data: f, weight: 700 }];
         else locale = "en";
       }
-      const ML =
-        locale === "zh"
-          ? { kicker: "世界杯 2026 · 小组赛", hdr: "模型 胜 / 平 / 胜 概率", draw: "平局", sims: "10,000 次蒙特卡洛模拟", updated: `更新于 ${updated} UTC`, cta: "改一改剩余比分，自己算出线 →", disc: "预测仅供娱乐", scoreLbl: "最可能比分", scan: "扫码自己算" }
-          : { kicker: "World Cup 2026 · Group stage", hdr: "Model win / draw / win chance", draw: "Draw", sims: "10,000 Monte Carlo simulations", updated: `Updated ${updated} UTC`, cta: "Flip any remaining result yourself →", disc: "For entertainment only", scoreLbl: "Most likely", scan: "" };
+      const ML = (
+        {
+          zh: { kicker: "世界杯 2026 · 小组赛", hdr: "模型 胜 / 平 / 胜 概率", draw: "平局", sims: "10,000 次蒙特卡洛模拟", updated: `更新于 ${updated} UTC`, cta: "改一改剩余比分，自己算出线 →", disc: "预测仅供娱乐", scoreLbl: "最可能比分", scan: "扫码自己算" },
+          en: { kicker: "World Cup 2026 · Group stage", hdr: "Model win / draw / win chance", draw: "Draw", sims: "10,000 Monte Carlo simulations", updated: `Updated ${updated} UTC`, cta: "Flip any remaining result yourself →", disc: "For entertainment only", scoreLbl: "Most likely", scan: "" },
+          es: { kicker: "Mundial 2026 · Fase de grupos", hdr: "Prob. del modelo V / E / V", draw: "Empate", sims: "10.000 simulaciones de Montecarlo", updated: `Actualizado ${updated} UTC`, cta: "Cambia tú los resultados restantes →", disc: "Solo para entretenimiento", scoreLbl: "Más probable", scan: "" },
+          pt: { kicker: "Copa 2026 · Fase de grupos", hdr: "Prob. do modelo V / E / V", draw: "Empate", sims: "10.000 simulações de Monte Carlo", updated: `Atualizado ${updated} UTC`, cta: "Mude você os resultados restantes →", disc: "Apenas entretenimento", scoreLbl: "Mais provável", scan: "" },
+          de: { kicker: "WM 2026 · Gruppenphase", hdr: "Modell S / U / S-Chance", draw: "Remis", sims: "10.000 Monte-Carlo-Simulationen", updated: `Aktualisiert ${updated} UTC`, cta: "Ändere selbst die Restergebnisse →", disc: "Nur zur Unterhaltung", scoreLbl: "Wahrscheinlich", scan: "" },
+          fr: { kicker: "Mondial 2026 · Phase de groupes", hdr: "Prob. modèle V / N / V", draw: "Nul", sims: "10 000 simulations Monte-Carlo", updated: `Mis à jour ${updated} UTC`, cta: "Modifie les résultats restants →", disc: "Divertissement uniquement", scoreLbl: "Plus probable", scan: "" },
+        } as Record<Locale, { kicker: string; hdr: string; draw: string; sims: string; updated: string; cta: string; disc: string; scoreLbl: string; scan: string }>
+      )[locale];
       const scoreParts = parseScoreline(searchParams.get("sl"));
       const scoreLine = scoreParts.length ? `${ML.scoreLbl}  ${scoreParts.join(" · ")}` : "";
       const qr = locale === "zh" && qrFlag !== "0" ? await qrDataUrl(uPath) : null;
@@ -415,30 +426,76 @@ export async function GET(req: Request) {
         else locale = "en";
       }
       const cold = rk === 0;
-      const RL =
-        locale === "zh"
-          ? {
-              kicker: "世界杯 2026 · 赛后战报",
-              hook: cold ? "赛前 Top-5 都没有它 · 冷门" : `赛前第 ${rk} 可能比分 · ${sp}%`,
-              outcome: `模型赛前给这一结果 ${op}%`,
-              topH: "赛前最可能比分",
-              sims: "10,000 次蒙特卡洛模拟",
-              updated: `更新于 ${updated} UTC`,
-              disc: "预测仅供娱乐",
-              cta: "改剩余比分，自己算出线 →",
-              scan: "扫码自己算",
-            }
-          : {
-              kicker: "World Cup 2026 · Full-time",
-              hook: cold ? "Not in the pre-match Top 5 · upset" : `Pre-match #${rk} most likely · ${sp}%`,
-              outcome: `Model gave this result ${op}% pre-match`,
-              topH: "Pre-match most likely scores",
-              sims: "10,000 Monte Carlo simulations",
-              updated: `Updated ${updated} UTC`,
-              disc: "For entertainment only",
-              cta: "Flip remaining results yourself →",
-              scan: "",
-            };
+      const RL = (
+        {
+          zh: {
+            kicker: "世界杯 2026 · 赛后战报",
+            hook: cold ? "赛前 Top-5 都没有它 · 冷门" : `赛前第 ${rk} 可能比分 · ${sp}%`,
+            outcome: `模型赛前给这一结果 ${op}%`,
+            topH: "赛前最可能比分",
+            sims: "10,000 次蒙特卡洛模拟",
+            updated: `更新于 ${updated} UTC`,
+            disc: "预测仅供娱乐",
+            cta: "改剩余比分，自己算出线 →",
+            scan: "扫码自己算",
+          },
+          en: {
+            kicker: "World Cup 2026 · Full-time",
+            hook: cold ? "Not in the pre-match Top 5 · upset" : `Pre-match #${rk} most likely · ${sp}%`,
+            outcome: `Model gave this result ${op}% pre-match`,
+            topH: "Pre-match most likely scores",
+            sims: "10,000 Monte Carlo simulations",
+            updated: `Updated ${updated} UTC`,
+            disc: "For entertainment only",
+            cta: "Flip remaining results yourself →",
+            scan: "",
+          },
+          es: {
+            kicker: "Mundial 2026 · Final",
+            hook: cold ? "Fuera del Top 5 previo · sorpresa" : `#${rk} más probable previo · ${sp}%`,
+            outcome: `El modelo le dio ${op}% antes del partido`,
+            topH: "Marcadores más probables previos",
+            sims: "10.000 simulaciones de Montecarlo",
+            updated: `Actualizado ${updated} UTC`,
+            disc: "Solo para entretenimiento",
+            cta: "Cambia los resultados restantes →",
+            scan: "",
+          },
+          pt: {
+            kicker: "Copa 2026 · Fim de jogo",
+            hook: cold ? "Fora do Top 5 prévio · zebra" : `#${rk} mais provável prévio · ${sp}%`,
+            outcome: `O modelo deu ${op}% antes do jogo`,
+            topH: "Placares mais prováveis prévios",
+            sims: "10.000 simulações de Monte Carlo",
+            updated: `Atualizado ${updated} UTC`,
+            disc: "Apenas entretenimento",
+            cta: "Mude os resultados restantes →",
+            scan: "",
+          },
+          de: {
+            kicker: "WM 2026 · Schlusspfiff",
+            hook: cold ? "Nicht in den Top 5 vorab · Überraschung" : `#${rk} wahrscheinlichst vorab · ${sp}%`,
+            outcome: `Modell gab vorab ${op}%`,
+            topH: "Wahrscheinlichste Ergebnisse vorab",
+            sims: "10.000 Monte-Carlo-Simulationen",
+            updated: `Aktualisiert ${updated} UTC`,
+            disc: "Nur zur Unterhaltung",
+            cta: "Ändere die Restergebnisse →",
+            scan: "",
+          },
+          fr: {
+            kicker: "Mondial 2026 · Fin du match",
+            hook: cold ? "Hors du Top 5 d'avant-match · surprise" : `#${rk} plus probable avant-match · ${sp}%`,
+            outcome: `Le modèle a donné ${op}% avant le match`,
+            topH: "Scores les plus probables avant-match",
+            sims: "10 000 simulations Monte-Carlo",
+            updated: `Mis à jour ${updated} UTC`,
+            disc: "Divertissement uniquement",
+            cta: "Modifie les résultats restants →",
+            scan: "",
+          },
+        } as Record<Locale, { kicker: string; hook: string; outcome: string; topH: string; sims: string; updated: string; disc: string; cta: string; scan: string }>
+      )[locale];
       const hookColor = cold ? "#FF5436" : rk <= 2 ? "#1BE27F" : "#FFB02E";
       const qr = locale === "zh" && qrFlag !== "0" ? await qrDataUrl(uPath) : null;
       const rteam = (nm: string, flag: string | null) => (
@@ -561,26 +618,64 @@ export async function GET(req: Request) {
       else locale = "en";
     }
     const cut = thirds.find((t) => t.rank === 8) ?? thirds[thirds.length - 1];
-    const TL =
-      locale === "zh"
-        ? {
-            kicker: "世界杯 2026 · 最佳第三名",
-            sub: `前 8 晋级 32 强 · 出线分数线 ${cut.pts} 分`,
-            ptsUnit: "分",
-            sims: "10,000 次蒙特卡洛模拟",
-            updated: `更新于 ${updated} UTC`,
-            disc: "预测仅供娱乐",
-            scan: "扫码自己算",
-          }
-        : {
-            kicker: "World Cup 2026 · Best 3rd-placed",
-            sub: `Top 8 advance to R32 · cut-off ${cut.pts} pts`,
-            ptsUnit: "pts",
-            sims: "10,000 Monte Carlo simulations",
-            updated: `Updated ${updated} UTC`,
-            disc: "For entertainment only",
-            scan: "scan to run it",
-          };
+    const TL = (
+      {
+        zh: {
+          kicker: "世界杯 2026 · 最佳第三名",
+          sub: `前 8 晋级 32 强 · 出线分数线 ${cut.pts} 分`,
+          ptsUnit: "分",
+          sims: "10,000 次蒙特卡洛模拟",
+          updated: `更新于 ${updated} UTC`,
+          disc: "预测仅供娱乐",
+          scan: "扫码自己算",
+        },
+        en: {
+          kicker: "World Cup 2026 · Best 3rd-placed",
+          sub: `Top 8 advance to R32 · cut-off ${cut.pts} pts`,
+          ptsUnit: "pts",
+          sims: "10,000 Monte Carlo simulations",
+          updated: `Updated ${updated} UTC`,
+          disc: "For entertainment only",
+          scan: "scan to run it",
+        },
+        es: {
+          kicker: "Mundial 2026 · Mejores terceros",
+          sub: `Top 8 a 16avos · corte ${cut.pts} pts`,
+          ptsUnit: "pts",
+          sims: "10.000 simulaciones de Montecarlo",
+          updated: `Actualizado ${updated} UTC`,
+          disc: "Solo para entretenimiento",
+          scan: "",
+        },
+        pt: {
+          kicker: "Copa 2026 · Melhores terceiros",
+          sub: `Top 8 às 16avas · corte ${cut.pts} pts`,
+          ptsUnit: "pts",
+          sims: "10.000 simulações de Monte Carlo",
+          updated: `Atualizado ${updated} UTC`,
+          disc: "Apenas entretenimento",
+          scan: "",
+        },
+        de: {
+          kicker: "WM 2026 · Beste Dritte",
+          sub: `Top 8 ins Sechzehntelfinale · Grenze ${cut.pts} Pkt`,
+          ptsUnit: "Pkt",
+          sims: "10.000 Monte-Carlo-Simulationen",
+          updated: `Aktualisiert ${updated} UTC`,
+          disc: "Nur zur Unterhaltung",
+          scan: "",
+        },
+        fr: {
+          kicker: "Mondial 2026 · Meilleurs troisièmes",
+          sub: `Top 8 en 16es · barre ${cut.pts} pts`,
+          ptsUnit: "pts",
+          sims: "10 000 simulations Monte-Carlo",
+          updated: `Mis à jour ${updated} UTC`,
+          disc: "Divertissement uniquement",
+          scan: "",
+        },
+      } as Record<Locale, { kicker: string; sub: string; ptsUnit: string; sims: string; updated: string; disc: string; scan: string }>
+    )[locale];
     const qr = locale === "zh" && qrFlag !== "0" ? await qrDataUrl(uPath ?? "/forecast/best-thirds") : null;
     const tbase: React.CSSProperties = {
       width: "100%",
@@ -613,7 +708,7 @@ export async function GET(req: Request) {
             {thirds.map((t) => {
               const pa = pAdvById.get(t.id);
               const top8 = t.rank <= 8;
-              const nm = locale === "zh" ? t.zh : t.name;
+              const nm = locale === "zh" ? t.zh : teamName(t.name, locale);
               return (
                 <div
                   key={t.id}
@@ -702,26 +797,64 @@ export async function GET(req: Request) {
   const qr = locale === "zh" && qrFlag !== "0" ? await qrDataUrl(uPath) : null;
   const scanLabel = "扫码自己算";
 
-  const L =
-    locale === "zh"
-      ? {
-          advance: "出线概率",
-          champion: "夺冠",
-          group: (x: string, r: number) => `${x} 组 · 当前第 ${r}`,
-          sims: "10,000 次蒙特卡洛模拟",
-          updated: `更新于 ${updated} UTC`,
-          hook: "我的队还有戏吗？",
-          sub: "2026 世界杯出线计算器 · 免费 · 无需注册",
-        }
-      : {
-          advance: "Chance to advance",
-          champion: "Title chance",
-          group: (x: string, r: number) => `Group ${x} · currently ${r}${["st", "nd", "rd"][r - 1] ?? "th"}`,
-          sims: "10,000 Monte Carlo simulations",
-          updated: `Updated ${updated} UTC`,
-          hook: "Can your team still advance?",
-          sub: "World Cup 2026 scenario calculator · free · no sign-up",
-        };
+  const L = (
+    {
+      zh: {
+        advance: "出线概率",
+        champion: "夺冠",
+        group: (x: string, r: number) => `${x} 组 · 当前第 ${r}`,
+        sims: "10,000 次蒙特卡洛模拟",
+        updated: `更新于 ${updated} UTC`,
+        hook: "我的队还有戏吗？",
+        sub: "2026 世界杯出线计算器 · 免费 · 无需注册",
+      },
+      en: {
+        advance: "Chance to advance",
+        champion: "Title chance",
+        group: (x: string, r: number) => `Group ${x} · currently ${r}${["st", "nd", "rd"][r - 1] ?? "th"}`,
+        sims: "10,000 Monte Carlo simulations",
+        updated: `Updated ${updated} UTC`,
+        hook: "Can your team still advance?",
+        sub: "World Cup 2026 scenario calculator · free · no sign-up",
+      },
+      es: {
+        advance: "Probabilidad de avanzar",
+        champion: "Título",
+        group: (x: string, r: number) => `Grupo ${x} · actualmente ${r}.º`,
+        sims: "10.000 simulaciones de Montecarlo",
+        updated: `Actualizado ${updated} UTC`,
+        hook: "¿Tu equipo aún tiene opciones?",
+        sub: "Calculadora de escenarios del Mundial 2026 · gratis · sin registro",
+      },
+      pt: {
+        advance: "Chance de avançar",
+        champion: "Título",
+        group: (x: string, r: number) => `Grupo ${x} · atualmente ${r}º`,
+        sims: "10.000 simulações de Monte Carlo",
+        updated: `Atualizado ${updated} UTC`,
+        hook: "Sua seleção ainda tem chance?",
+        sub: "Calculadora de cenários da Copa 2026 · grátis · sem cadastro",
+      },
+      de: {
+        advance: "Weiterkommen-Chance",
+        champion: "Titelchance",
+        group: (x: string, r: number) => `Gruppe ${x} · aktuell Platz ${r}`,
+        sims: "10.000 Monte-Carlo-Simulationen",
+        updated: `Aktualisiert ${updated} UTC`,
+        hook: "Hat dein Team noch eine Chance?",
+        sub: "WM-2026-Szenario-Rechner · kostenlos · ohne Anmeldung",
+      },
+      fr: {
+        advance: "Chance de qualification",
+        champion: "Titre",
+        group: (x: string, r: number) => `Groupe ${x} · actuellement ${r}e`,
+        sims: "10 000 simulations Monte-Carlo",
+        updated: `Mis à jour ${updated} UTC`,
+        hook: "Ton équipe a-t-elle encore une chance ?",
+        sub: "Calculateur de scénarios du Mondial 2026 · gratuit · sans inscription",
+      },
+    } as Record<Locale, { advance: string; champion: string; group: (x: string, r: number) => string; sims: string; updated: string; hook: string; sub: string }>
+  )[locale];
 
   const base: React.CSSProperties = {
     width: "100%",
@@ -762,7 +895,7 @@ export async function GET(req: Request) {
   }
 
   const t = hit.team;
-  const name = locale === "zh" ? t.zh : t.name;
+  const name = locale === "zh" ? t.zh : teamName(t.name, locale);
   const adv = pct(t.pAdvance);
   const champ = pct(t.pChampion);
   const advColor = (t.pAdvance > 1 ? t.pAdvance : t.pAdvance * 100) >= 50 ? "#1BE27F" : "#FFB02E";

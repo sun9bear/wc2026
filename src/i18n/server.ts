@@ -1,5 +1,5 @@
 import { cookies, headers } from "next/headers";
-import { type Locale, isLocale, DEFAULT_LOCALE } from "./locales";
+import { type Locale, isLocale, localeFromAcceptLanguage } from "./locales";
 
 // 服务端读取当前语言。优先级（per-locale URL 改造后）：
 //   1) x-locale 请求头——中间件 proxy.ts 按 URL 注入（/zh/* → zh，其余 → en），这是页面渲染的【权威来源】。
@@ -13,6 +13,5 @@ export async function getLocale(): Promise<Locale> {
   const store = await cookies();
   const saved = store.get("NEXT_LOCALE")?.value;
   if (isLocale(saved)) return saved;
-  const accept = h.get("accept-language") ?? "";
-  return /(^|[,;\s])zh\b|zh-/i.test(accept) ? "zh" : DEFAULT_LOCALE;
+  return localeFromAcceptLanguage(h.get("accept-language"));
 }

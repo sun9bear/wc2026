@@ -2,9 +2,17 @@
 // 避免两处 querystring 漂移。kickoff 用浏览器本地时区格式化（静态图烤的是「分享者本地时间」）。
 // 合规：所有用户可控文本（队名/短评/比分行）由 /api/og 路由再过一道雷词闸 fail-closed，本文件只拼串。
 
-import { localeHref } from "@/i18n";
+import { localeHref, type Locale } from "@/i18n";
 
 const SITE = "https://www.wc2026.cool";
+
+// 非 zh/en locale 的 BCP-47 日期格式码（zh/en 走各自定制模板，见 formatKickoff）。
+const KICKOFF_BCP47: Record<Exclude<Locale, "zh" | "en">, string> = {
+  es: "es-ES",
+  pt: "pt-BR",
+  de: "de-DE",
+  fr: "fr-FR",
+};
 
 export interface ScoreCell {
   h: number;
@@ -18,7 +26,7 @@ export interface MatchCardParams {
   hp: number;
   dp: number;
   ap: number;
-  locale: "zh" | "en";
+  locale: Locale;
   kickoffDate?: string | null; // 开球「日期 + 星期」段（已按浏览器时区格式化）
   kickoffTime?: string | null; // 开球「时区 + 时间」段（已按浏览器时区格式化）
   homeFlag?: string | null;
@@ -37,13 +45,29 @@ export interface KickoffParts {
  * 开球时间 → 浏览器本地时区，拆成两段（日期+星期 / 时区+时间），换行点固定在日期/时间边界。
  * 用 formatToParts 干净取值再按固定模板拼，保证 zh/en 各自的顺序与分隔符可控。无效返回空段。
  */
-export function formatKickoff(iso: string | null | undefined, locale: "zh" | "en"): KickoffParts {
+export function formatKickoff(iso: string | null | undefined, locale: Locale): KickoffParts {
   if (!iso) return { date: "", time: "" };
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return { date: "", time: "" };
   const pick = (parts: Intl.DateTimeFormatPart[], type: Intl.DateTimeFormatPartTypes) =>
     parts.find((p) => p.type === type)?.value ?? "";
   try {
+    if (locale !== "zh" && locale !== "en") {
+      // es/pt/de/fr：用 BCP-47 自然排序（日期整串 .format，时间 24h + 时区缩写）。
+      const bcp = KICKOFF_BCP47[locale];
+      const date = new Intl.DateTimeFormat(bcp, {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+      }).format(d);
+      const tp = new Intl.DateTimeFormat(bcp, {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+        timeZoneName: "short",
+      }).formatToParts(d);
+      return { date, time: `${pick(tp, "hour")}:${pick(tp, "minute")} ${pick(tp, "timeZoneName")}` };
+    }
     if (locale === "zh") {
       const dp = new Intl.DateTimeFormat("zh-CN", {
         month: "numeric",
