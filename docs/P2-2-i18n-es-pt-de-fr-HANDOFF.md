@@ -1,7 +1,7 @@
 # P2-2：多语种扩展（es / pt / de / fr）— 新会话交接 spec
 
 > 状态：**进行中（staged，未激活）**｜分支：`feat/legal-pages`｜产出 2026-06-14
-> 已落地并提交（全绿、行为零变化、未对用户暴露）：**A0** 工单（§12）、**A1** 路由配置驱动重构（locales.ts，commit d86e1be）、**A2** 4 语 UI 字典（satisfies Dict，未挂 dicts，commit 7cd7c78）、**A6 国名表** 192 条（NATIONS 必填字段，commit 86180e7）、**A3-rules** 出线规则页 4 语 COPY（staged）。
+> 已落地并提交（全绿、行为零变化、未对用户暴露）：**A0** 工单（§12）、**A1** 路由配置驱动重构（locales.ts，commit d86e1be）、**A2** 4 语 UI 字典（satisfies Dict，未挂 dicts，commit 7cd7c78）、**A6 国名表** 192 条（NATIONS 必填字段，commit 86180e7）、**A3 rules+calculator** 4 语 COPY（staged）。
 > 剩余：**A3**（各页 COPY，含 about/rules + 法务页 privacy/disclaimer 需母语/法务校对）、**A4**（85 裸三元）、**A5**（canonical/sitemap/layout META）、**A6 余**（签名加宽 + 赛段/组名）、**A7**（合规扫描 + 部署）。这些多需「加宽 Locale」一次性激活（不可再增量绿），建议新会话冷启动集中做。
 > 用途：新会话凭本文件冷启动接手「把站点从中英双语扩成 6 语种（+西/葡/德/法）」。
 > 节奏（用户已定）：**先 A 后 B、四语一起上**。A=外壳本地化（UI+SEO 落地页全量翻译，AI 比赛短文新语种回落英文）；B=给 4 个新语种各自生成入库的 AI 比赛内容。
@@ -115,7 +115,7 @@
 - **⬜ 激活时补**（与 A0 加宽一并）：`Locale` 加 4 值后，把 `es/pt/de/fr` 挂进 `src/i18n/index.ts` 的 `dicts`（`satisfies Dict` 已保证可赋给 `Record<Locale,Dict>`）。建议母语者校对一遍文案（尤其 langLabel/缩写）。
 
 ### A3. 就地 COPY 对象 ×23 文件补键（tsc 驱动）
-- **✅ rules 页已 staged（2026-06-14）**：`COPY` 补 es/pt/de/fr（含小组排名 / 最佳第三名判据全文——差异化 SEO 资产）；tsc/eslint/vitest 净、合规词 0 命中。
+- **✅ rules + calculator 页已 staged（2026-06-14）**：`COPY` 补 es/pt/de/fr——rules（小组排名/最佳第三名判据全文）、calculator（计算器 title/description/teamTitle/teamDesc 函数键）；均 tsc/eslint/vitest 净、合规词 0 命中。**calculator 页 shareText/nm 内联三元留 A4**（激活时一并清）。
 - **⚠️ 结构发现（影响 A3/A4 排期）**：`about` 页**不是** `COPY[locale]` 字典——正文是 `if (locale==="en") return <整段英文 JSX> … return <整段中文 JSX>` 两段硬编码分支（仅 `META` 是字典）。新语种需**先把正文重构成模板/字典**（属 A4，且正文嵌 `<strong>`，改 SEO 页正文宜起服务渲染核对、不盲改）——留激活会话。**激活前需排查其它同类「整段 locale 分支」页**（grep `if (locale === "en")` / `return ( ... )` 双分支）。
 - 其余按 A0 的 tsc 错误清单逐文件给 `COPY` 补 `es/pt/de/fr` 块。重点长文：
   - **法务/说明页**：`privacy`/`disclaimer`（含法律免责声明，**德/法辖区建议过法务审或母语校对**）、`about`（需先重构正文结构，见上）。这是 Phase A 最重的纯翻译块。

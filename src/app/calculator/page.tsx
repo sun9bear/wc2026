@@ -36,6 +36,52 @@ const COPY = {
     back: "← Back",
     forecast: "📊 See model probabilities →",
   },
+  // P2-2 staged：es/pt/de/fr 暂不被渲染（locale 仍 zh|en），激活加宽 Locale 后 COPY[locale] 自动启用。
+  // 注：本页 shareText / nm 仍有 locale 三元（A4 清剿项），激活时一并处理。
+  es: {
+    title: "Calculadora de escenarios de terceros · Mundial 2026 (¿mi equipo aún tiene opciones?)",
+    description:
+      "Elige los resultados restantes de la fase de grupos y calcula en tiempo real las 12 tablas y qué 8 mejores terceros se clasifican — herramienta para el nuevo formato de 48 equipos del Mundial 2026.",
+    teamTitle: (name: string) => `¿Cómo puede clasificar ${name}? Calculadora de escenarios del Mundial 2026`,
+    teamDesc: (name: string) =>
+      `Escenarios de clasificación en vivo para ${name}: cambia cualquier resultado restante y ve al instante dónde queda ${name} en el grupo y en la carrera por los mejores terceros. Gratis, sin registro.`,
+    h1: "Calculadora de escenarios de terceros",
+    back: "← Atrás",
+    forecast: "📊 Ver versión de probabilidades →",
+  },
+  pt: {
+    title: "Calculadora de cenários dos terceiros · Copa 2026 (minha seleção ainda tem chance?)",
+    description:
+      "Escolha os resultados restantes da fase de grupos e calcule em tempo real as 12 tabelas e quais 8 melhores terceiros se classificam — ferramenta para o novo formato de 48 seleções da Copa 2026.",
+    teamTitle: (name: string) => `Como ${name} pode se classificar? Calculadora de cenários da Copa 2026`,
+    teamDesc: (name: string) =>
+      `Cenários de classificação ao vivo para ${name}: mude qualquer resultado restante e veja na hora onde ${name} fica no grupo e na disputa pelos melhores terceiros. Grátis, sem cadastro.`,
+    h1: "Calculadora de cenários dos terceiros",
+    back: "← Voltar",
+    forecast: "📊 Ver versão de probabilidades →",
+  },
+  de: {
+    title: "Szenario-Rechner für Gruppendritte · WM 2026 (Hat mein Team noch eine Chance?)",
+    description:
+      "Wähle die noch offenen Gruppenspiel-Ergebnisse und berechne in Echtzeit alle 12 Tabellen und welche 8 besten Gruppendritten weiterkommen — Tool für das neue 48-Team-Format der WM 2026.",
+    teamTitle: (name: string) => `Wie kann ${name} noch weiterkommen? WM-2026-Szenario-Rechner`,
+    teamDesc: (name: string) =>
+      `Live-Qualifikationsszenarien für ${name}: Ändere ein beliebiges offenes Ergebnis und sieh sofort, wo ${name} in der Gruppe und im Rennen um die besten Dritten steht. Kostenlos, ohne Anmeldung.`,
+    h1: "Szenario-Rechner für Gruppendritte",
+    back: "← Zurück",
+    forecast: "📊 Wahrscheinlichkeits-Version ansehen →",
+  },
+  fr: {
+    title: "Calculateur de scénarios des troisièmes · Mondial 2026 (mon équipe a-t-elle encore une chance ?)",
+    description:
+      "Choisis les résultats restants de la phase de groupes et calcule en direct les 12 classements et quels 8 meilleurs troisièmes se qualifient — outil pour le nouveau format à 48 équipes du Mondial 2026.",
+    teamTitle: (name: string) => `Comment ${name} peut-il encore se qualifier ? Calculateur de scénarios du Mondial 2026`,
+    teamDesc: (name: string) =>
+      `Scénarios de qualification en direct pour ${name} : modifie n'importe quel résultat restant et vois aussitôt où se situe ${name} dans le groupe et la course aux meilleurs troisièmes. Gratuit, sans inscription.`,
+    h1: "Calculateur de scénarios des troisièmes",
+    back: "← Retour",
+    forecast: "📊 Voir la version probabilités →",
+  },
 } as const;
 
 // 12 支热门队（北美主场三强 + 传统豪门 + 东亚），slug 与 DB 英文名对应
