@@ -162,6 +162,15 @@ const COPY = {
   },
 } as const;
 
+const SCORERS_CTA: Record<Locale, string> = {
+  zh: "⚽ 射手榜 · 金靴争夺 →",
+  en: "⚽ Top scorers · Golden Boot race →",
+  es: "⚽ Goleadores · Bota de Oro →",
+  pt: "⚽ Artilheiros · Chuteira de Ouro →",
+  de: "⚽ Torjäger · Goldener Schuh →",
+  fr: "⚽ Buteurs · Soulier d'or →",
+};
+
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   return {
@@ -275,6 +284,12 @@ export default async function ForecastPage() {
       <p className="mt-1 text-[11px] text-muted">
         {c.updated} {new Date(data.updatedAt).toLocaleString(BCP47_LOCALE[locale] ?? "en-US")}
       </p>
+      <Link
+        href={localeHref(locale, "/scorers")}
+        className="mt-3 inline-block rounded-md border border-green/50 px-3 py-2 text-sm font-semibold text-green"
+      >
+        {SCORERS_CTA[locale]}
+      </Link>
 
       {/* 前置可提取答案（GEO：答案前置 + 统计数字 + 年份信号；EN-first，爬虫见英文）。 */}
       {data.simOk && data.champions[0] && (() => {

@@ -11,6 +11,7 @@ export interface SelectionView {
 
 export interface MatchDetail {
   id: string;
+  externalId: number | null;
   stage: string | null;
   kickoffAt: string;
   status: string;
@@ -29,6 +30,7 @@ export interface MatchDetail {
 
 interface MatchRow {
   id: string;
+  external_id: number | null;
   stage: string | null;
   kickoff_at: string;
   status: string | null;
@@ -51,7 +53,7 @@ export async function getMatchDetail(matchId: string): Promise<MatchDetail | nul
   const { data: matchData } = await supabase
     .from("matches")
     .select(
-      "id, stage, kickoff_at, status, home_score, away_score, home:home_team_id(name, flag), away:away_team_id(name, flag)"
+      "id, external_id, stage, kickoff_at, status, home_score, away_score, home:home_team_id(name, flag), away:away_team_id(name, flag)"
     )
     .eq("id", matchId)
     .maybeSingle();
@@ -106,6 +108,7 @@ export async function getMatchDetail(matchId: string): Promise<MatchDetail | nul
 
   return {
     id: m.id,
+    externalId: m.external_id ?? null,
     stage: m.stage,
     kickoffAt: m.kickoff_at,
     status: m.status ?? "scheduled",

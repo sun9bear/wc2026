@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { after } from "next/server";
 import { getMatchDetail } from "@/lib/markets/getMatchDetail";
+import { getMatchExtra } from "@/lib/football/getMatchExtra";
 import { MarketPicks } from "@/components/MarketPicks";
 import { MatchProbTrend } from "@/components/MatchProbTrend";
 import { ScoreProbs } from "@/components/ScoreProbs";
@@ -202,6 +203,9 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
   const m = await getMatchDetail(id);
   if (!m) notFound();
 
+  // 裁判 + 赛果时长（加时/点球）：football-data 单场详情，按 external_id 缓存 6h，失败降级空。
+  const extra = await getMatchExtra(m.externalId).catch(() => ({ referee: null, duration: null }));
+
   // 队旗从概率数据取（与球队卡同源 flagcdn；matches 表的 flag 对部分队缺失/非 flagcdn → 之前渲染成空占位）。
   const fdata = await getForecast().catch(() => null);
   const homeFlag = fdata ? findTeam(fdata, teamSlug(m.home.name))?.team.flag ?? null : null;
@@ -244,6 +248,24 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
     draw: t.match.draw,
     away: t.match.away,
   };
+  // 裁判标签 + 加时/点球徽章文案（站内既有 inline Record<Locale> 模式，无需动全局 Dict）。
+  const REF_LABEL: Record<Locale, string> = {
+    zh: "主裁", en: "Referee", es: "Árbitro", pt: "Árbitro", de: "Schiedsrichter", fr: "Arbitre",
+  };
+  const DURATION_LABEL: Record<"EXTRA_TIME" | "PENALTY_SHOOTOUT", Record<Locale, string>> = {
+    EXTRA_TIME: {
+      zh: "加时赛", en: "after extra time", es: "tras la prórroga", pt: "após prorrogação",
+      de: "nach Verlängerung", fr: "après prolongation",
+    },
+    PENALTY_SHOOTOUT: {
+      zh: "点球大战", en: "on penalties", es: "en los penaltis", pt: "nos pênaltis",
+      de: "im Elfmeterschießen", fr: "aux tirs au but",
+    },
+  };
+  const durationBadge =
+    settled && (extra.duration === "EXTRA_TIME" || extra.duration === "PENALTY_SHOOTOUT")
+      ? DURATION_LABEL[extra.duration][locale]
+      : null;
 
   // 页眉右上分享（任务 A）：未结算 → 比赛预览卡（mode=match，含 Top-3 比分[任务E] + zh 二维码[任务D]）；
   // 已结算且爆冷 → 摆动卡；其余只给链接分享。
@@ -386,13 +408,27 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
         <div className="mb-4 text-[11px] text-muted">
           {stageName(m.stage ?? "", locale)} ·{" "}
           <LocalTime iso={m.kickoffAt} locale={locale} mode="datetime" tz />
+          {extra.referee && (
+            <>
+              {" · "}
+              {REF_LABEL[locale]} {extra.referee.name}
+              {extra.referee.nationality
+                ? ` (${teamName(extra.referee.nationality, locale)})`
+                : ""}
+            </>
+          )}
         </div>
         <div className="flex items-center justify-between">
           <TeamBadge name={m.home.name} locale={locale} size="lg" linkToTeam />
           <div className="text-center">
             {settled ? (
-              <div className="font-head text-3xl font-bold">
-                {m.homeScore} : {m.awayScore}
+              <div>
+                <div className="font-head text-3xl font-bold">
+                  {m.homeScore} : {m.awayScore}
+                </div>
+                {durationBadge && (
+                  <div className="mt-0.5 text-[10px] font-medium text-muted">{durationBadge}</div>
+                )}
               </div>
             ) : (
               <span className="font-head text-sm text-muted">VS</span>
