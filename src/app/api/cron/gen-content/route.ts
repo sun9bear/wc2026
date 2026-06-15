@@ -34,6 +34,13 @@ export async function GET(req: NextRequest) {
     req.headers.get("cron_secret") === secret || req.headers.get("x-cron-secret") === secret;
   if (!bearer && !plain) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const force = req.nextUrl.searchParams.get("force") === "1"; // ?force=1 覆盖重生（修旧的错误文案）
+  const debug = req.nextUrl.searchParams.get("debug") === "1"; // ?debug=1 在响应里回传被吞掉的错误
+  const errors: string[] = [];
+  const noteErr = (where: string, e: unknown) => {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error(`[gen-content] ${where} 失败:`, msg); // 此前 catch 静默——补上日志（可观测性）
+    if (debug && errors.length < 6) errors.push(`${where}: ${msg}`);
+  };
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const sk = process.env.SUPABASE_SECRET_KEY;
@@ -98,8 +105,8 @@ export async function GET(req: NextRequest) {
         const body = await generatePreviewEn(home, away, stage, probMap.get(m.id));
         await upsertContent(db, m.id, "preview_en", body);
         generated.preview_en++;
-      } catch {
-        /* 单场失败不阻塞批次 */
+      } catch (e) {
+        noteErr(`preview ${m.id}`, e);
       }
     }
 
@@ -112,8 +119,8 @@ export async function GET(req: NextRequest) {
           await upsertContent(db, m.id, "sentiment_en", body);
           generated.sentiment_en++;
         }
-      } catch {
-        /* 单场失败不阻塞批次 */
+      } catch (e) {
+        noteErr(`sentiment ${m.id}`, e);
       }
     }
   }
@@ -130,8 +137,8 @@ export async function GET(req: NextRequest) {
       const body = await generateRecapEn(home, away, m.home_score, m.away_score, CALL_TIMEOUT_MS);
       await upsertContent(db, m.id, "recap_en", body);
       generated.recap_en++;
-    } catch {
-      /* 单场失败不阻塞批次 */
+    } catch (e) {
+      noteErr(`recap ${m.id}`, e);
     }
   }
 
@@ -143,5 +150,11 @@ export async function GET(req: NextRequest) {
     settled.filter((m) => !have.has(`${m.id}:recap_en`)).length -
     processed;
 
-  return NextResponse.json({ ok: true, processed, generated, remaining: Math.max(0, remaining) });
+  return NextResponse.json({
+    ok: true,
+    processed,
+    generated,
+    remaining: Math.max(0, remaining),
+    ...(debug ? { errors } : {}),
+  });
 }
