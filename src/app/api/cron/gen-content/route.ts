@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { generatePreviewEn, generateSentimentEn, generateRecapEn } from "@/lib/ai/content";
-import { upsertContent } from "@/lib/ai/store";
+import { latestMatchProbs, upsertContent } from "@/lib/ai/store";
 import { stageName } from "@/lib/football/teams";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +33,7 @@ export async function GET(req: NextRequest) {
   const plain =
     req.headers.get("cron_secret") === secret || req.headers.get("x-cron-secret") === secret;
   if (!bearer && !plain) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const force = req.nextUrl.searchParams.get("force") === "1"; // ?force=1 覆盖重生（修旧的错误文案）
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const sk = process.env.SUPABASE_SECRET_KEY;
@@ -61,6 +62,8 @@ export async function GET(req: NextRequest) {
     .limit(40);
   const upcoming = (upRows as unknown as MatchRow[] | null) ?? [];
   const settled = (doneRows as unknown as MatchRow[] | null) ?? [];
+  // 模型胜平负概率（喂给前瞻/冷热门，确保倾向与真实概率一致）。
+  const probMap = await latestMatchProbs(db, upcoming.map((m) => m.id));
 
   const allIds = [...upcoming, ...settled].map((m) => m.id);
   const { data: acRows } = await db
@@ -84,15 +87,15 @@ export async function GET(req: NextRequest) {
     const home = m.home?.name;
     const away = m.away?.name;
     if (!home || !away) continue;
-    const needPreview = !have.has(`${m.id}:preview_en`);
-    const needSentiment = !have.has(`${m.id}:sentiment_en`);
+    const needPreview = force || !have.has(`${m.id}:preview_en`);
+    const needSentiment = force || !have.has(`${m.id}:sentiment_en`);
     if (!needPreview && !needSentiment) continue;
     processed++;
 
     if (needPreview && !overBudget()) {
       try {
         const stage = stageName(m.stage ?? "Group Stage", "en");
-        const body = await generatePreviewEn(home, away, stage);
+        const body = await generatePreviewEn(home, away, stage, probMap.get(m.id));
         await upsertContent(db, m.id, "preview_en", body);
         generated.preview_en++;
       } catch {
@@ -102,35 +105,12 @@ export async function GET(req: NextRequest) {
 
     if (needSentiment && !overBudget()) {
       try {
-        // hot/cold 按各 selection 的 pooled_stake 取最高/最低（与中文 sentiment 同口径）
-        const { data: mkRow } = await db
-          .from("markets")
-          .select("id")
-          .eq("match_id", m.id)
-          .eq("type", "1x2")
-          .maybeSingle();
-        const mk = mkRow as { id: string } | null;
-        if (mk) {
-          const { data: selData } = await db
-            .from("selections")
-            .select("code, pooled_stake")
-            .eq("market_id", mk.id);
-          const sels = (selData as { code: string; pooled_stake: number }[] | null) ?? [];
-          if (sels.length >= 2) {
-            const phrase: Record<string, string> = {
-              home: `${home} to win`,
-              draw: "a draw",
-              away: `${away} to win`,
-            };
-            const sorted = [...sels].sort(
-              (a, b) => Number(b.pooled_stake) - Number(a.pooled_stake)
-            );
-            const hot = phrase[sorted[0].code] ?? sorted[0].code;
-            const cold = phrase[sorted[sorted.length - 1].code] ?? sorted[sorted.length - 1].code;
-            const body = await generateSentimentEn(home, away, hot, cold);
-            await upsertContent(db, m.id, "sentiment_en", body);
-            generated.sentiment_en++;
-          }
+        // 以模型概率为锚（替代社区 pooled_stake——生成时常为空/默认，会把热门冷门判反）。
+        const probs = probMap.get(m.id);
+        if (probs) {
+          const body = await generateSentimentEn(home, away, probs);
+          await upsertContent(db, m.id, "sentiment_en", body);
+          generated.sentiment_en++;
         }
       } catch {
         /* 单场失败不阻塞批次 */
@@ -144,7 +124,7 @@ export async function GET(req: NextRequest) {
     const home = m.home?.name;
     const away = m.away?.name;
     if (!home || !away || m.home_score == null || m.away_score == null) continue;
-    if (have.has(`${m.id}:recap_en`)) continue;
+    if (!force && have.has(`${m.id}:recap_en`)) continue;
     processed++;
     try {
       const body = await generateRecapEn(home, away, m.home_score, m.away_score, CALL_TIMEOUT_MS);

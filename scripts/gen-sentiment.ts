@@ -5,7 +5,7 @@
  */
 import { createClient } from "@supabase/supabase-js";
 import { generateSentiment } from "../src/lib/ai/content";
-import { upsertContent } from "../src/lib/ai/store";
+import { latestMatchProbs, upsertContent } from "../src/lib/ai/store";
 import { teamZh } from "../src/lib/football/teams";
 
 process.loadEnvFile(".env.local");
@@ -15,17 +15,11 @@ interface MRow {
   home: { name: string } | null;
   away: { name: string } | null;
 }
-interface SRow {
-  code: string;
-  current_multiplier: number;
-}
-
-const phrase = (code: string, home: string, away: string): string =>
-  code === "home" ? `${home}胜` : code === "away" ? `${away}胜` : "平局";
 
 async function main() {
   const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!);
-  const limit = Number(process.argv[2] ?? 12);
+  const force = process.argv.includes("--force");
+  const limit = Number(process.argv.find((a) => /^\d+$/.test(a)) ?? 12);
 
   const { data } = await sb
     .from("matches")
@@ -34,43 +28,36 @@ async function main() {
     .order("kickoff_at")
     .limit(limit);
   const matches = (data as MRow[] | null) ?? [];
+  // 以模型概率为锚（替代生成时常为默认值的社区倍率，避免热门/冷门判反）。
+  const probMap = await latestMatchProbs(sb, matches.map((m) => m.id));
 
   let n = 0;
+  let skipped = 0;
   for (const m of matches) {
-    const { data: ex } = await sb
-      .from("ai_content")
-      .select("id")
-      .eq("match_id", m.id)
-      .eq("type", "sentiment")
-      .maybeSingle();
-    if (ex) continue;
+    if (!force) {
+      const { data: ex } = await sb
+        .from("ai_content")
+        .select("id")
+        .eq("match_id", m.id)
+        .eq("type", "sentiment")
+        .maybeSingle();
+      if (ex) continue;
+    }
 
-    const { data: mk } = await sb
-      .from("markets")
-      .select("id")
-      .eq("match_id", m.id)
-      .eq("type", "1x2")
-      .maybeSingle();
-    if (!mk) continue;
-    const { data: selData } = await sb
-      .from("selections")
-      .select("code, current_multiplier")
-      .eq("market_id", (mk as { id: string }).id);
-    const sels = (selData as SRow[] | null) ?? [];
-    if (sels.length === 0) continue;
+    const probs = probMap.get(m.id);
+    if (!probs) {
+      skipped++; // 无模型概率快照：无法判定热门/冷门，留待引擎写快照后再生成
+      continue;
+    }
 
     const home = teamZh(m.home?.name ?? "?");
     const away = teamZh(m.away?.name ?? "?");
-    const sorted = [...sels].sort((a, b) => Number(a.current_multiplier) - Number(b.current_multiplier));
-    const hot = phrase(sorted[0].code, home, away);
-    const cold = phrase(sorted[sorted.length - 1].code, home, away);
-
-    const body = await generateSentiment(home, away, hot, cold);
+    const body = await generateSentiment(home, away, probs);
     await upsertContent(sb, m.id, "sentiment", body);
-    console.log(`✓ ${home} vs ${away} | 热门:${hot} 冷门:${cold}`);
+    console.log(`✓ ${home} vs ${away}`);
     n++;
   }
-  console.log(`✓ 生成 ${n} 条冷热门看点`);
+  console.log(`✓ 生成 ${n} 条冷热门看点${skipped ? `（${skipped} 场缺概率快照跳过）` : ""}`);
 }
 
 main().catch((e) => {
