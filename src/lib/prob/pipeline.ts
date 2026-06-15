@@ -83,7 +83,7 @@ async function safeFetchText(url: string, ms = 10000): Promise<string | null> {
   try {
     const c = new AbortController();
     const t = setTimeout(() => c.abort(), ms);
-    const r = await fetch(url, { signal: c.signal });
+    const r = await fetch(url, { signal: c.signal, next: { revalidate: 3600 } });
     clearTimeout(t);
     return r.ok ? await r.text() : null;
   } catch {
@@ -119,7 +119,7 @@ async function computeForecast(): Promise<ForecastData> {
     try {
       const r = await fetch(
         "https://api.football-data.org/v4/competitions/WC/matches?status=FINISHED",
-        { headers: { "X-Auth-Token": fdKey } }
+        { headers: { "X-Auth-Token": fdKey }, next: { revalidate: 3600 } }
       );
       if (r.ok) {
         const j = (await r.json()) as {
@@ -181,7 +181,8 @@ async function computeForecast(): Promise<ForecastData> {
   if (oddsKey) {
     try {
       const r = await fetch(
-        `https://api.the-odds-api.com/v4/sports/soccer_fifa_world_cup/odds/?apiKey=${oddsKey}&regions=eu&markets=h2h&oddsFormat=decimal`
+        `https://api.the-odds-api.com/v4/sports/soccer_fifa_world_cup/odds/?apiKey=${oddsKey}&regions=eu&markets=h2h&oddsFormat=decimal`,
+        { next: { revalidate: 3600 } }
       );
       if (r.ok) {
         const events = (await r.json()) as {
