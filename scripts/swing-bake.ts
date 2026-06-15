@@ -4,7 +4,7 @@
  *
  * baseline：prob_team_snapshots 最新一期两队 p_advance（= 用户赛前看到的公开预测值）；
  * 条件值：把该场强制注入 胜/平/负（比分约定 1-0/1-1/0-1），用导出的 rankGroup/rankThirds +
- *         simulateTournament 跑缩减蒙特卡洛（RUNS=2000，纯 Elo 模型盘口）得三种情景 p_advance。
+ *         simulateTournament 跑缩减蒙特卡洛（RUNS=2000，纯 Elo 模型市场）得三种情景 p_advance。
  * 输出：三种结局 × 两队 × 中英 = 12 条 /api/og swing URL，运营按实际赛果挑对应一条打开另存图。
  * 注意：条件值是模型口径（无市场融合），与快照基线方法略有差异——卡上是趋势对比，可接受。
  */

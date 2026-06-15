@@ -1,5 +1,5 @@
 /**
- * 全量重置游戏状态（清空所有预测/积分/档案，盘口与赛程恢复初始）。
+ * 全量重置游戏状态（清空所有预测/积分/档案，市场与赛程恢复初始）。
  * ⚠️ 会删除所有用户数据——仅在没有真实用户（测试阶段）时使用。
  * 运行：npx tsx scripts/reset-all.ts
  */
@@ -24,7 +24,7 @@ async function main(): Promise<void> {
     .update({ status: "scheduled", home_score: null, away_score: null, settled_at: null })
     .not("id", "is", null);
 
-  console.log("✓ 全量重置完成：预测/积分/档案已清空，盘口与赛程恢复初始（倍率 3.00）");
+  console.log("✓ 全量重置完成：预测/积分/档案已清空，市场与赛程恢复初始（倍率 3.00）");
 }
 
 main().catch((e) => {

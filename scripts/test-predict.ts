@@ -1,6 +1,6 @@
 /**
- * 端到端验证下注流程：匿名登录 → POST /api/bet → 读回选项池/倍率变化。
- * 需 dev server 在 localhost:3000 运行。运行：npx tsx scripts/test-bet.ts
+ * 端到端验证预测流程：匿名登录 → POST /api/predict → 读回选项池/倍率变化。
+ * 需 dev server 在 localhost:3000 运行。运行：npx tsx scripts/test-predict.ts
  */
 import { createClient } from "@supabase/supabase-js";
 
@@ -35,29 +35,29 @@ async function main(): Promise<void> {
     | { id: string; label: string; pooled_stake: number; current_multiplier: number }
     | undefined;
   if (!sel) throw new Error("没有选项数据（先跑 seed-markets）");
-  console.log("下注前选项:", sel);
+  console.log("预测前选项:", sel);
 
   const { data: auth, error: ae } = await sb.auth.signInAnonymously();
   if (ae) throw ae;
   console.log("匿名登录 OK, user:", auth.user?.id);
 
-  const res = await fetch("http://localhost:3000/api/bet", {
+  const res = await fetch("http://localhost:3000/api/predict", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${auth.session?.access_token}`,
     },
-    body: JSON.stringify({ selectionId: sel.id, stake: 200 }),
+    body: JSON.stringify({ selectionId: sel.id, points: 200 }),
   });
   const json = await res.json();
-  console.log("下注响应:", res.status, json);
+  console.log("预测响应:", res.status, json);
 
   const { data: after } = await sb
     .from("selections")
     .select("id, pooled_stake, current_multiplier")
     .eq("id", sel.id)
     .single();
-  console.log("下注后该选项:", after);
+  console.log("预测后该选项:", after);
 }
 
 main().catch((e) => {

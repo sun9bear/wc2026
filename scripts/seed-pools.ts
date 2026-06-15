@@ -8,7 +8,7 @@
  * T≈2000 ≈ 20-40 笔真实预测的量级——真实参与几十笔内即可显著拉动倍率，
  * 种子不会淹没社区信号（SentimentBar 口径已标注"社区与模型综合"）。
  *
- * 只动未开赛场次；派分按 multiplier_at_bet 记录，种子不影响已有结算。
+ * 只动未开赛场次；发放按 multiplier_at_bet 记录，种子不影响已有结算。
  * 运行：npx tsx scripts/seed-pools.ts
  */
 import { createClient } from "@supabase/supabase-js";

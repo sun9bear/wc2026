@@ -1,5 +1,5 @@
 /**
- * 为每场比赛创建"胜平负(1x2)"盘口 + 三个选项（主胜/平局/客胜）。
+ * 为每场比赛创建"胜平负(1x2)"市场 + 三个选项（主胜/平局/客胜）。
  * 用 secret key 走 HTTPS 写入（service_role 绕过 RLS）。幂等：已存在则跳过。
  * 运行：npx tsx scripts/seed-markets.ts
  */
@@ -45,7 +45,7 @@ async function main(): Promise<void> {
     created++;
   }
 
-  console.log(`✓ 为 ${created} 场比赛创建了 1x2 盘口（已存在的跳过）`);
+  console.log(`✓ 为 ${created} 场比赛创建了 1x2 市场（已存在的跳过）`);
 }
 
 main().catch((e) => {

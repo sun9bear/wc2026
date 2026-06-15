@@ -1,5 +1,5 @@
 /**
- * 集成验证结算：造一个测试预测 → 结算 → 校验派分/余额 → 清理。
+ * 集成验证结算：造一个测试预测 → 结算 → 校验发放/余额 → 清理。
  * 运行：npx tsx scripts/test-settle.ts
  */
 import { createClient } from "@supabase/supabase-js";
@@ -22,7 +22,7 @@ async function main(): Promise<void> {
   const { data: sels } = await sb.from("selections").select("id, code").eq("market_id", m.id);
   const home = (sels as { id: string; code: string }[]).find((s) => s.code === "home")!;
 
-  // 造测试预测：押主胜，投入 100，锁定倍率 3（余额从 1000 扣到 900）
+  // 造测试预测：选主胜，投入 100，锁定倍率 3（余额从 1000 扣到 900）
   await sb.from("profiles").upsert({ user_id: TEST_USER, points_balance: 900 });
   const { data: bet } = await sb
     .from("bets")
@@ -31,7 +31,7 @@ async function main(): Promise<void> {
     .single();
   const betId = (bet as { id: string }).id;
   await sb.from("bet_selections").insert({ bet_id: betId, selection_id: home.id, multiplier_at_bet: 3 });
-  console.log("已造测试预测：押主胜 100，余额 900");
+  console.log("已造测试预测：选主胜 100，余额 900");
 
   // 结算：主队 2:1 胜 → 押中
   const summary = await settleMatch(sb, m.match_id, 2, 1);
@@ -44,7 +44,7 @@ async function main(): Promise<void> {
     .single();
   const { data: betAfter } = await sb.from("bets").select("status, payout").eq("id", betId).single();
   console.log("结算后 → 余额:", (prof as { points_balance: number }).points_balance, "预测:", betAfter);
-  console.log("预期：余额 1200（900+300），预测 won，派分 300");
+  console.log("预期：余额 1200（900+300），预测 won，发放 300");
 
   // 清理
   await sb.from("bet_selections").delete().eq("bet_id", betId);
