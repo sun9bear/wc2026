@@ -17,6 +17,7 @@ interface SettledBetRow {
   type: string;
   bet_selections: {
     selection: {
+      code?: string | null;
       market: {
         match: {
           id: string;
@@ -34,6 +35,8 @@ interface SettledBetRow {
 
 export interface RecentBet {
   won: boolean;
+  status: string; // won / lost / pending
+  picks: string[]; // 各腿所押选项 code（home/draw/away），供"押什么"展示
   matchId: string; // 代表场（最晚开球的一腿）——结算抽屉据此查爆冷摆动
   kickoff: string;
   settledAt: string | null;
@@ -101,10 +104,10 @@ export async function GET(req: NextRequest) {
   const { data: settledRaw } = await db
     .from("bets")
     .select(
-      "id, status, payout, total_stake, total_multiplier, type, bet_selections(selection:selections(market:markets(match:matches(id, kickoff_at, settled_at, home_score, away_score, home:home_team_id(name), away:away_team_id(name)))))"
+      "id, status, payout, total_stake, total_multiplier, type, bet_selections(selection:selections(code, market:markets(match:matches(id, kickoff_at, settled_at, home_score, away_score, home:home_team_id(name), away:away_team_id(name)))))"
     )
     .eq("user_id", user.id)
-    .in("status", ["won", "lost"]);
+    .in("status", ["won", "lost", "pending"]);
   const settledBets = (settledRaw as unknown as SettledBetRow[] | null) ?? [];
 
   const enriched = settledBets
@@ -121,6 +124,10 @@ export async function GET(req: NextRequest) {
       );
       return {
         won: b.status === "won",
+        status: b.status,
+        picks: b.bet_selections
+          .map((l) => l.selection?.code ?? "")
+          .filter((c): c is string => c.length > 0),
         matchId: last.id,
         kickoff: last.kickoff_at,
         settledAt,
@@ -137,8 +144,24 @@ export async function GET(req: NextRequest) {
     .filter((x): x is RecentBet => x !== null)
     .sort((a, b) => a.kickoff.localeCompare(b.kickoff));
 
-  const { streak, bestStreak } = computeWinStreaks(enriched.map((b) => b.won));
-  const recent = enriched.slice(-20);
+  // 拆分：已结算（供连胜/分享卡/抽屉，行为不变）与待结算（新增展示用）。
+  const settledEnriched = enriched.filter((b) => b.status !== "pending");
+  const pendingEnriched = enriched
+    .filter((b) => b.status === "pending")
+    .sort((a, b) => a.kickoff.localeCompare(b.kickoff)); // 待结算按开球先后
+  const { streak, bestStreak } = computeWinStreaks(settledEnriched.map((b) => b.won));
+  const recent = settledEnriched.slice(-20);
+
+  // 积分明细（最近 40 笔流水，倒序）：reason 类型 + delta 增减 + 时间。
+  const { data: ledgerRows } = await db
+    .from("points_ledger")
+    .select("reason, delta, created_at")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(40);
+  const ledger = (
+    (ledgerRows as { reason: string; delta: number; created_at: string }[] | null) ?? []
+  ).map((r) => ({ reason: r.reason, delta: Number(r.delta), at: r.created_at }));
 
   // emoji 战绩格"击败 N%"：仅全站结算样本 ≥50 时给值（按积分排名近似，两个 head count 查询）
   let beatPct: number | null = null;
@@ -169,6 +192,8 @@ export async function GET(req: NextRequest) {
     ...stats,
     achievements,
     recent,
+    pendingPicks: pendingEnriched,
+    ledger,
     streak,
     bestStreak,
     globalSettled: globalSettled ?? 0,

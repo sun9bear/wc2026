@@ -10,11 +10,28 @@ import { fmtPoints } from "@/lib/format";
 import { copyText } from "@/lib/clipboard";
 import { Skeleton } from "@/components/Skeleton";
 import { defaultName } from "@/lib/identity/defaultName";
+import { teamName } from "@/lib/football/teams";
 import { getDict, localeHref, type Locale } from "@/i18n";
 
 interface RecentBet {
   won: boolean;
+  status: string; // won / lost / pending
+  picks: string[]; // 各腿 code（home/draw/away）
   kickoff: string;
+  settledAt?: string | null;
+  home: string;
+  away: string;
+  homeScore: number | null;
+  awayScore: number | null;
+  multiplier: number;
+  payout: number;
+  stake: number;
+  legs: number;
+}
+interface LedgerItem {
+  reason: string;
+  delta: number;
+  at: string;
 }
 
 interface MeData {
@@ -29,10 +46,35 @@ interface MeData {
   hitRate: number;
   achievements: { id: string; icon: string; label: string; desc: string; earned: boolean }[];
   recent?: RecentBet[];
+  pendingPicks?: RecentBet[];
+  ledger?: LedgerItem[];
   streak?: number;
   bestStreak?: number;
   beatPct?: number | null;
 }
+
+// 竞猜记录 / 积分明细 文案（6 语种）。押项标签复用 Dict 的 t.match.home/draw/away。
+const PICKS_TXT: Record<
+  Locale,
+  {
+    picksTitle: string;
+    ledgerTitle: string;
+    pending: string;
+    hit: string;
+    miss: string;
+    stake: string;
+    payout: string;
+    pick: string;
+    reasons: Record<string, string>;
+  }
+> = {
+  zh: { picksTitle: "我的竞猜", ledgerTitle: "积分明细", pending: "待结算", hit: "命中", miss: "未中", stake: "投入", payout: "派分", pick: "押", reasons: { signup: "注册赠送", bet_stake: "竞猜投入", bet_payout: "命中派分", daily: "每日签到", refund: "退回" } },
+  en: { picksTitle: "My picks", ledgerTitle: "Points history", pending: "Pending", hit: "Hit", miss: "Miss", stake: "Stake", payout: "Payout", pick: "Pick", reasons: { signup: "Sign-up bonus", bet_stake: "Pick stake", bet_payout: "Payout", daily: "Daily check-in", refund: "Refund" } },
+  es: { picksTitle: "Mis predicciones", ledgerTitle: "Historial de puntos", pending: "Pendiente", hit: "Acertó", miss: "Falló", stake: "Aporte", payout: "Pago", pick: "Eligió", reasons: { signup: "Bono de registro", bet_stake: "Aporte", bet_payout: "Pago por acierto", daily: "Check-in diario", refund: "Reembolso" } },
+  pt: { picksTitle: "Minhas previsões", ledgerTitle: "Histórico de pontos", pending: "Pendente", hit: "Acertou", miss: "Errou", stake: "Aporte", payout: "Pagamento", pick: "Escolheu", reasons: { signup: "Bônus de registro", bet_stake: "Aporte", bet_payout: "Pagamento por acerto", daily: "Check-in diário", refund: "Reembolso" } },
+  de: { picksTitle: "Meine Tipps", ledgerTitle: "Punkteverlauf", pending: "Offen", hit: "Treffer", miss: "Daneben", stake: "Einsatz", payout: "Auszahlung", pick: "Tipp", reasons: { signup: "Anmeldebonus", bet_stake: "Einsatz", bet_payout: "Auszahlung", daily: "Täglicher Check-in", refund: "Rückerstattung" } },
+  fr: { picksTitle: "Mes prédictions", ledgerTitle: "Historique des points", pending: "En attente", hit: "Réussi", miss: "Raté", stake: "Mise", payout: "Gain", pick: "Choix", reasons: { signup: "Bonus d'inscription", bet_stake: "Mise", bet_payout: "Gain", daily: "Check-in quotidien", refund: "Remboursement" } },
+};
 
 // 世界杯开幕日（matchday 计数锚点，按用户本地日期算）
 const DAY1 = "2026-06-11";
@@ -172,9 +214,61 @@ function Tile({ value, label, color = "text-text" }: { value: string | number; l
   );
 }
 
+// 单条竞猜记录行：对阵 + 比分(已结算) + 押项 + 中/未中/待结算 + 投入/派分。
+function PredRow({
+  b,
+  dict,
+  px,
+  locale,
+}: {
+  b: RecentBet;
+  dict: ReturnType<typeof getDict>;
+  px: (typeof PICKS_TXT)[Locale];
+  locale: Locale;
+}) {
+  const settled = b.status !== "pending";
+  const pickLabel = (c: string) =>
+    c === "home" ? dict.match.home : c === "away" ? dict.match.away : dict.match.draw;
+  const picks = b.picks.map(pickLabel).join(" / ");
+  const badge = b.status === "won" ? px.hit : b.status === "lost" ? px.miss : px.pending;
+  const badgeColor =
+    b.status === "won" ? "text-green" : b.status === "lost" ? "text-muted" : "text-blue";
+  return (
+    <div className="rounded-lg border border-border bg-surface p-2.5">
+      <div className="flex items-center justify-between text-sm">
+        <span className="min-w-0 flex-1 truncate">
+          {teamName(b.home, locale)}{" "}
+          {settled ? (
+            <span className="font-head">
+              {b.homeScore}-{b.awayScore}
+            </span>
+          ) : (
+            <span className="text-muted">vs</span>
+          )}{" "}
+          {teamName(b.away, locale)}
+        </span>
+        <span className={`ml-2 shrink-0 text-xs font-semibold ${badgeColor}`}>{badge}</span>
+      </div>
+      <div className="mt-0.5 flex items-center justify-between text-[11px] text-muted">
+        <span className="min-w-0 truncate">
+          {px.pick} {picks}
+          {b.legs > 1 ? ` (×${b.legs})` : ""}
+          {b.multiplier > 0 ? ` ·×${b.multiplier.toFixed(2)}` : ""}
+        </span>
+        <span className="ml-2 shrink-0">
+          {b.status === "won"
+            ? `${px.payout} +${fmtPoints(b.payout)}`
+            : `${px.stake} ${fmtPoints(b.stake)}`}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export function MeClient({ locale }: { locale: Locale }) {
   const t = getDict(locale);
   const tx = TXT[locale] ?? TXT.en;
+  const px = PICKS_TXT[locale] ?? PICKS_TXT.en;
   const [data, setData] = useState<MeData | null>(null);
   const [state, setState] = useState<"loading" | "none" | "ready">("loading");
   const [copied, setCopied] = useState(false);
@@ -388,6 +482,42 @@ export function MeClient({ locale }: { locale: Locale }) {
             <Tile value={data.total} label={t.me.total} />
             <Tile value={data.pending} label={t.me.pending} color="text-blue" />
           </div>
+
+          {((data.pendingPicks?.length ?? 0) > 0 || (data.recent?.length ?? 0) > 0) && (
+            <section className="mt-6">
+              <h2 className="font-head mb-2 text-sm font-semibold">{px.picksTitle}</h2>
+              <div className="space-y-1.5">
+                {(data.pendingPicks ?? []).map((b, i) => (
+                  <PredRow key={`p${i}`} b={b} dict={t} px={px} locale={locale} />
+                ))}
+                {[...(data.recent ?? [])].reverse().map((b, i) => (
+                  <PredRow key={`s${i}`} b={b} dict={t} px={px} locale={locale} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {(data.ledger?.length ?? 0) > 0 && (
+            <section className="mt-6">
+              <h2 className="font-head mb-2 text-sm font-semibold">{px.ledgerTitle}</h2>
+              <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
+                {data.ledger!.map((e, i) => (
+                  <div key={i} className="flex items-center justify-between px-3 py-2 text-sm">
+                    <span className="text-muted">
+                      <span className="tabular-nums text-[11px]">{e.at.slice(5, 10)}</span>{" "}
+                      {px.reasons[e.reason] ?? e.reason}
+                    </span>
+                    <span
+                      className={`font-head tabular-nums ${e.delta >= 0 ? "text-green" : "text-muted"}`}
+                    >
+                      {e.delta >= 0 ? "+" : ""}
+                      {fmtPoints(e.delta)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {data.achievements && (
             <>
