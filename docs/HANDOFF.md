@@ -110,6 +110,7 @@ AI：DeepSeek 只写双语短评（夺冠 Top3 一句话），雷词 fail-closed
 - /forecast 首次计算 ~8s → 用 cron-job.org 每小时预热缓存
 - 队名匹配失败目前静默降级（books=0）→ 加监控/日志
 - og 动态图卡（@vercel/og）：每场概率卡、摆动卡自动生成（分发素材自动化）
+- **getMatchDetail 未加缓存（待优化，非紧急）**：`src/lib/markets/getMatchDetail.ts` 是裸 async——每次打开 `/match/[id]` 发 3-4 个 Supabase 查询（matches/markets/selections/ai_content），**随流量线性增长**、吃 Supabase 5GB 出口额度。爆量时给它包一层 `unstable_cache(fn, ["match-detail-v1"], { revalidate: 300 })`（按 matchId 做 key，像 getForecast/getMatchScoreline 那样）即可与流量解耦。注意：① 进行中比赛的实时比分走客户端 `/api/live`、不在此缓存的 HTML 里，不受影响；② **AI 短评本就预生成存库、非实时**（getMatchDetail 只读 `ai_content` 表，确认于 2026-06-15），故缓存不影响内容新鲜度。量级到了再做。
 - **【待做】OG 图卡改版（用户已拍板，spec 见 [`docs/OG-CARD-REDESIGN-HANDOFF.md`](OG-CARD-REDESIGN-HANDOFF.md)）**：按 locale 决定方向——zh 出 3:4 竖版(小红书/微信)、en 出 1.91:1 横版(X/FB)，四种模式各补另一方向版式；对阵卡日期时间行移到 VS 下方、自适应换行(横够一行/不够两行：日期+星期 / 时区+时间)；同步 `matchCard.ts` `formatKickoff` 出两段 + 全站 openGraph width/height 按 locale 给值。建议单独新会话冷启动做。
 
 ### 比分概率功能（6/13 新增，Phase A 已上线生产）
