@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase/client";
 import { lambdasFrom1x2, liveScoreline } from "@/lib/prob/poisson";
 import { getLiveWcFixtures, matchLive } from "@/lib/prob/liveFeed";
+import { getLiveWcFdFixtures, matchLiveFd } from "@/lib/prob/liveFeedFd";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,7 @@ interface MatchRow {
   status: string | null;
   home_score: number | null;
   away_score: number | null;
+  external_id: number | null;
   home: { name: string } | null;
   away: { name: string } | null;
 }
@@ -34,7 +36,7 @@ export async function GET(req: NextRequest) {
   const { data } = await supabase
     .from("matches")
     .select(
-      "kickoff_at, status, home_score, away_score, home:home_team_id(name), away:away_team_id(name)"
+      "kickoff_at, status, home_score, away_score, external_id, home:home_team_id(name), away:away_team_id(name)"
     )
     .eq("id", id)
     .maybeSingle();
@@ -47,13 +49,28 @@ export async function GET(req: NextRequest) {
   const inWindow = now >= kickoffMs && now <= kickoffMs + LIVE_WINDOW_MIN * 60_000;
   if (settled || !inWindow) return off;
 
-  // 2) 当前直播命中？
+  // 2) 当前直播命中？主源 API-Football；未命中再用 football-data 按 external_id 兜底。
   const fixtures = await getLiveWcFixtures();
   const hit = matchLive(fixtures, m.home.name, m.away.name);
-  if (!hit) return off;
-  const hNow = hit.swapped ? hit.fx.aNow : hit.fx.hNow;
-  const aNow = hit.swapped ? hit.fx.hNow : hit.fx.aNow;
-  const minute = hit.fx.minute;
+  let hNow: number;
+  let aNow: number;
+  let minute: number;
+  let short: string;
+  if (hit) {
+    hNow = hit.swapped ? hit.fx.aNow : hit.fx.hNow;
+    aNow = hit.swapped ? hit.fx.hNow : hit.fx.aNow;
+    minute = hit.fx.minute;
+    short = hit.fx.short;
+  } else {
+    // football-data 按 external_id 关联，主客与库内一致，无需对调。
+    const fd = matchLiveFd(await getLiveWcFdFixtures(), m.external_id);
+    if (!fd) return off;
+    hNow = fd.hNow;
+    aNow = fd.aNow;
+    minute = fd.minute;
+    short = fd.short;
+    console.warn(`[live] API-Football 未命中，football-data 兜底命中 match ${id}`);
+  }
 
   // 3) 最新赛前快照 1X2 → 反推 λ → in-play 最终比分分布
   const { data: snap } = await supabase
@@ -69,7 +86,7 @@ export async function GET(req: NextRequest) {
   const live = liveScoreline(lam.home, lam.away, hNow, aNow, minute);
 
   return NextResponse.json(
-    { live: true, score: { h: hNow, a: aNow }, minute, short: hit.fx.short, top: live.top, p: live.p },
+    { live: true, score: { h: hNow, a: aNow }, minute, short, top: live.top, p: live.p },
     { headers: { "Cache-Control": "no-store" } }
   );
 }

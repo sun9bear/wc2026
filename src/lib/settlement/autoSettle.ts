@@ -1,12 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
 import { runSettlement } from "./runSettlement";
 
-// 流量自驱动结算：Vercel Hobby cron 每天只跑一次（03:00 UTC），世界杯期间
-// 比分/结算会滞后最多 24h+。这里借页面流量补频：每个实例 10 分钟最多尝试一次，
-// 且仅当存在"开赛已近 2 小时仍未结算"的比赛时才请求上游（football-data 免费档 10 req/min，安全）。
+// 流量自驱动结算：作为外部定时（cron-job.org 每 5 分钟打 /api/cron/settle）之外的兜底，
+// 借页面流量补频——每个实例 5 分钟最多尝试一次，且仅当存在"开赛已近 2 小时仍未结算"的
+// 比赛时才请求上游（football-data 免费档 10 req/min、升级档 20 req/min，均安全）。
 // 经 next/server 的 after() 在响应后调用，绝不拖慢页面；失败静默（下一次流量再试）。
 let lastAttempt = 0;
-const THROTTLE_MS = 10 * 60 * 1000;
+const THROTTLE_MS = 5 * 60 * 1000;
 const MATCH_MIN_AGE_MS = 115 * 60 * 1000; // 常规时间+中场+补时 ≈ 110 分钟
 
 export async function maybeAutoSettle(): Promise<void> {
