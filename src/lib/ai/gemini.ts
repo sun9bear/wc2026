@@ -1,16 +1,18 @@
 // Gemini（REST v1beta）聊天补全，仅服务端使用——本机网络调不通（geo 拦截），生产 Vercel 端可用。
 // 签名对齐 deepseek.ts 的 chat(system, user, timeoutMs)，供英文内容管线替换底层模型。
-// 模型：默认 gemini-3.1-flash（2026-06-13 决策）；若该名失效（404），自动 ListModels 选最新 flash 重试。
+// 模型：默认 gemini-3.1-flash-lite（免费档 RPM/RPD 限额更高，避免 429）；若该名失效（404），
+// 自动 ListModels 选最新 flash 重试，并优先 lite 变体（不退回限额更低的满血 flash）。
 
 const BASE = "https://generativelanguage.googleapis.com/v1beta";
 
 let resolvedModel: string | null = null;
 
 function preferredModel(): string {
-  return resolvedModel ?? process.env.GEMINI_MODEL ?? "gemini-3.1-flash";
+  return resolvedModel ?? process.env.GEMINI_MODEL ?? "gemini-3.1-flash-lite";
 }
 
-// ListModels 里挑"纯 flash"主线模型（排除 lite/8b/image/live/tts/audio 变体），按版本号取最新。
+// ListModels 里挑 flash 主线模型（含 lite，排除 8b/image/live/tts/audio 变体）。
+// 优先 lite（免费档限额更高），其次版本号最新，再次稳定版优先 preview。
 async function resolveFlashModel(key: string, signal: AbortSignal): Promise<string | null> {
   const res = await fetch(`${BASE}/models?pageSize=200`, {
     headers: { "x-goog-api-key": key },
@@ -22,13 +24,18 @@ async function resolveFlashModel(key: string, signal: AbortSignal): Promise<stri
     .map((m) => ({ ...m, short: m.name.replace(/^models\//, "") }))
     .filter(
       (m) =>
-        /^gemini-[\d.]+-flash(-preview.*)?$/.test(m.short) &&
+        /^gemini-[\d.]+-flash(-lite)?(-preview.*)?$/.test(m.short) &&
         (m.supportedGenerationMethods?.includes("generateContent") ?? true)
     )
     .sort((a, b) => {
+      const lite = (s: string) => (s.includes("-lite") ? 1 : 0); // lite 优先（限额更高）
       const v = (s: string) => parseFloat(s.match(/gemini-([\d.]+)/)?.[1] ?? "0");
       const stable = (s: string) => (s.includes("preview") ? 0 : 1);
-      return v(b.short) - v(a.short) || stable(b.short) - stable(a.short);
+      return (
+        lite(b.short) - lite(a.short) ||
+        v(b.short) - v(a.short) ||
+        stable(b.short) - stable(a.short)
+      );
     });
   return candidates[0]?.short ?? null;
 }
