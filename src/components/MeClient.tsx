@@ -65,15 +65,18 @@ const PICKS_TXT: Record<
     stake: string;
     payout: string;
     pick: string;
+    ledgerHint: string;
+    more: string;
+    less: string;
     reasons: Record<string, string>;
   }
 > = {
-  zh: { picksTitle: "我的竞猜", ledgerTitle: "积分明细", pending: "待结算", hit: "命中", miss: "未中", stake: "投入", payout: "派分", pick: "押", reasons: { signup: "注册赠送", bet_stake: "竞猜投入", bet_payout: "命中派分", daily: "每日签到", refund: "退回" } },
-  en: { picksTitle: "My picks", ledgerTitle: "Points history", pending: "Pending", hit: "Hit", miss: "Miss", stake: "Stake", payout: "Payout", pick: "Pick", reasons: { signup: "Sign-up bonus", bet_stake: "Pick stake", bet_payout: "Payout", daily: "Daily check-in", refund: "Refund" } },
-  es: { picksTitle: "Mis predicciones", ledgerTitle: "Historial de puntos", pending: "Pendiente", hit: "Acertó", miss: "Falló", stake: "Aporte", payout: "Pago", pick: "Eligió", reasons: { signup: "Bono de registro", bet_stake: "Aporte", bet_payout: "Pago por acierto", daily: "Check-in diario", refund: "Reembolso" } },
-  pt: { picksTitle: "Minhas previsões", ledgerTitle: "Histórico de pontos", pending: "Pendente", hit: "Acertou", miss: "Errou", stake: "Aporte", payout: "Pagamento", pick: "Escolheu", reasons: { signup: "Bônus de registro", bet_stake: "Aporte", bet_payout: "Pagamento por acerto", daily: "Check-in diário", refund: "Reembolso" } },
-  de: { picksTitle: "Meine Tipps", ledgerTitle: "Punkteverlauf", pending: "Offen", hit: "Treffer", miss: "Daneben", stake: "Einsatz", payout: "Auszahlung", pick: "Tipp", reasons: { signup: "Anmeldebonus", bet_stake: "Einsatz", bet_payout: "Auszahlung", daily: "Täglicher Check-in", refund: "Rückerstattung" } },
-  fr: { picksTitle: "Mes prédictions", ledgerTitle: "Historique des points", pending: "En attente", hit: "Réussi", miss: "Raté", stake: "Mise", payout: "Gain", pick: "Choix", reasons: { signup: "Bonus d'inscription", bet_stake: "Mise", bet_payout: "Gain", daily: "Check-in quotidien", refund: "Remboursement" } },
+  zh: { picksTitle: "我的竞猜", ledgerTitle: "积分明细", pending: "待结算", hit: "命中", miss: "未中", stake: "投入", payout: "派分", pick: "押", ledgerHint: "查看明细", more: "查看更多竞猜记录", less: "收起", reasons: { signup: "注册赠送", bet_stake: "竞猜投入", bet_payout: "命中派分", daily: "每日签到", refund: "退回" } },
+  en: { picksTitle: "My picks", ledgerTitle: "Points history", pending: "Pending", hit: "Hit", miss: "Miss", stake: "Stake", payout: "Payout", pick: "Pick", ledgerHint: "details", more: "Show more picks", less: "Show less", reasons: { signup: "Sign-up bonus", bet_stake: "Pick stake", bet_payout: "Payout", daily: "Daily check-in", refund: "Refund" } },
+  es: { picksTitle: "Mis predicciones", ledgerTitle: "Historial de puntos", pending: "Pendiente", hit: "Acertó", miss: "Falló", stake: "Aporte", payout: "Pago", pick: "Eligió", ledgerHint: "detalle", more: "Ver más", less: "Ver menos", reasons: { signup: "Bono de registro", bet_stake: "Aporte", bet_payout: "Pago por acierto", daily: "Check-in diario", refund: "Reembolso" } },
+  pt: { picksTitle: "Minhas previsões", ledgerTitle: "Histórico de pontos", pending: "Pendente", hit: "Acertou", miss: "Errou", stake: "Aporte", payout: "Pagamento", pick: "Escolheu", ledgerHint: "detalhes", more: "Ver mais", less: "Ver menos", reasons: { signup: "Bônus de registro", bet_stake: "Aporte", bet_payout: "Pagamento por acerto", daily: "Check-in diário", refund: "Reembolso" } },
+  de: { picksTitle: "Meine Tipps", ledgerTitle: "Punkteverlauf", pending: "Offen", hit: "Treffer", miss: "Daneben", stake: "Einsatz", payout: "Auszahlung", pick: "Tipp", ledgerHint: "Details", more: "Mehr anzeigen", less: "Weniger", reasons: { signup: "Anmeldebonus", bet_stake: "Einsatz", bet_payout: "Auszahlung", daily: "Täglicher Check-in", refund: "Rückerstattung" } },
+  fr: { picksTitle: "Mes prédictions", ledgerTitle: "Historique des points", pending: "En attente", hit: "Réussi", miss: "Raté", stake: "Mise", payout: "Gain", pick: "Choix", ledgerHint: "détails", more: "Voir plus", less: "Voir moins", reasons: { signup: "Bonus d'inscription", bet_stake: "Mise", bet_payout: "Gain", daily: "Check-in quotidien", refund: "Remboursement" } },
 };
 
 // 世界杯开幕日（matchday 计数锚点，按用户本地日期算）
@@ -278,6 +281,8 @@ export function MeClient({ locale }: { locale: Locale }) {
   const [draft, setDraft] = useState("");
   const [saving, setSaving] = useState(false);
   const [nameErr, setNameErr] = useState<string | null>(null);
+  const [showLedger, setShowLedger] = useState(false); // 点当前积分卡才展开积分明细
+  const [showAllPicks, setShowAllPicks] = useState(false); // 默认仅近 24h+未结算，点开看全部
   const effectiveName = nickname ?? (uid ? defaultName(uid, locale) : "");
 
   async function saveName() {
@@ -380,7 +385,12 @@ export function MeClient({ locale }: { locale: Locale }) {
 
       {state === "ready" && data && (
         <>
-          <div className="mt-5 flex items-center gap-3 rounded-lg border border-border bg-surface p-5">
+          <button
+            type="button"
+            onClick={() => setShowLedger((v) => !v)}
+            aria-expanded={showLedger}
+            className="mt-5 flex w-full items-center gap-3 rounded-lg border border-border bg-surface p-5 text-left transition hover:border-green/50"
+          >
             <span className="text-4xl">🎯</span>
             <div className="flex-1">
               <div className="font-head text-lg font-bold">
@@ -388,10 +398,35 @@ export function MeClient({ locale }: { locale: Locale }) {
                   🛡 {(data.tierCode && t.tiers[data.tierCode]) || data.tier}
                 </span>
               </div>
-              <div className="text-xs text-muted">{t.me.balanceLabel}</div>
+              <div className="text-xs text-muted">
+                {t.me.balanceLabel} · {px.ledgerHint} {showLedger ? "▾" : "›"}
+              </div>
             </div>
             <div className="font-head text-3xl font-bold text-green">{fmtPoints(data.balance)}</div>
-          </div>
+          </button>
+
+          {showLedger && (
+            <div className="mt-2 divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
+              {(data.ledger?.length ?? 0) === 0 ? (
+                <div className="px-3 py-4 text-center text-xs text-muted">—</div>
+              ) : (
+                data.ledger!.map((e, i) => (
+                  <div key={i} className="flex items-center justify-between px-3 py-2 text-sm">
+                    <span className="text-muted">
+                      <span className="tabular-nums text-[11px]">{e.at.slice(5, 10)}</span>{" "}
+                      {px.reasons[e.reason] ?? e.reason}
+                    </span>
+                    <span
+                      className={`font-head tabular-nums ${e.delta >= 0 ? "text-green" : "text-muted"}`}
+                    >
+                      {e.delta >= 0 ? "+" : ""}
+                      {fmtPoints(e.delta)}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
 
           <div className="mt-3 flex items-center justify-between rounded-md border border-border bg-surface-2 px-4 py-2.5 text-sm">
             {editing ? (
@@ -483,41 +518,38 @@ export function MeClient({ locale }: { locale: Locale }) {
             <Tile value={data.pending} label={t.me.pending} color="text-blue" />
           </div>
 
-          {((data.pendingPicks?.length ?? 0) > 0 || (data.recent?.length ?? 0) > 0) && (
-            <section className="mt-6">
-              <h2 className="font-head mb-2 text-sm font-semibold">{px.picksTitle}</h2>
-              <div className="space-y-1.5">
-                {(data.pendingPicks ?? []).map((b, i) => (
-                  <PredRow key={`p${i}`} b={b} dict={t} px={px} locale={locale} />
-                ))}
-                {[...(data.recent ?? [])].reverse().map((b, i) => (
-                  <PredRow key={`s${i}`} b={b} dict={t} px={px} locale={locale} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {(data.ledger?.length ?? 0) > 0 && (
-            <section className="mt-6">
-              <h2 className="font-head mb-2 text-sm font-semibold">{px.ledgerTitle}</h2>
-              <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
-                {data.ledger!.map((e, i) => (
-                  <div key={i} className="flex items-center justify-between px-3 py-2 text-sm">
-                    <span className="text-muted">
-                      <span className="tabular-nums text-[11px]">{e.at.slice(5, 10)}</span>{" "}
-                      {px.reasons[e.reason] ?? e.reason}
-                    </span>
-                    <span
-                      className={`font-head tabular-nums ${e.delta >= 0 ? "text-green" : "text-muted"}`}
-                    >
-                      {e.delta >= 0 ? "+" : ""}
-                      {fmtPoints(e.delta)}
-                    </span>
+          {((data.pendingPicks?.length ?? 0) > 0 || (data.recent?.length ?? 0) > 0) &&
+            (() => {
+              const DAY_MS = 24 * 3600 * 1000;
+              const settled = [...(data.recent ?? [])].reverse(); // 新→旧
+              const recent24 = settled.filter(
+                (b) => b.settledAt && Date.now() - Date.parse(b.settledAt) <= DAY_MS
+              );
+              const shownSettled = showAllPicks ? settled : recent24;
+              const hasMore = settled.length > recent24.length;
+              return (
+                <section className="mt-6">
+                  <h2 className="font-head mb-2 text-sm font-semibold">{px.picksTitle}</h2>
+                  <div className="space-y-1.5">
+                    {(data.pendingPicks ?? []).map((b, i) => (
+                      <PredRow key={`p${i}`} b={b} dict={t} px={px} locale={locale} />
+                    ))}
+                    {shownSettled.map((b, i) => (
+                      <PredRow key={`s${i}`} b={b} dict={t} px={px} locale={locale} />
+                    ))}
                   </div>
-                ))}
-              </div>
-            </section>
-          )}
+                  {hasMore && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllPicks((v) => !v)}
+                      className="mt-2 w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-xs text-muted transition hover:border-green hover:text-green"
+                    >
+                      {showAllPicks ? px.less : `${px.more} →`}
+                    </button>
+                  )}
+                </section>
+              );
+            })()}
 
           {data.achievements && (
             <>
