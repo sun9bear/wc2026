@@ -8,10 +8,13 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 // 英文 AI 内容回填（任务 2，2026-06-13）：Gemini 只在 Vercel 端可调（本机 geo 拦截，勿写本地脚本）。
-// 幂等：ai_content 已有该 type 则跳过；每次最多处理 8 场（cron-job.org 每小时触发或手动多 curl 即全量）。
-// 覆盖：未开赛 → preview_en + sentiment_en；已结算缺英文小结 → recap_en 补录（settle 路由漏网的）。
-const MATCH_CAP = 8;
-const DEADLINE_MS = 40000;
+// 限流（flash-lite 免费档 15 RPM / 500 RPD）：每次最多 6 场（≤12 次调用，留 RPM 余量）；
+//   调用方两次间隔 ≥60s 即可全量刷新不撞 RPM。日额度 500 充裕。
+// 覆盖：未开赛 → preview_en + sentiment_en；已结算缺英文小结 → recap_en。
+// 重生：?force=1 全量覆盖（会卡在前 N 场）；?staleBefore=<ISO> 只重生该时刻前生成的旧文案
+//   （重生后 updated_at 刷新→后续自动跳过，逐场推进、自然收敛，推荐用它做全量刷新）。
+const MATCH_CAP = 6;
+const DEADLINE_MS = 50000;
 const CALL_TIMEOUT_MS = 8000;
 
 interface MatchRow {
@@ -33,8 +36,13 @@ export async function GET(req: NextRequest) {
   const plain =
     req.headers.get("cron_secret") === secret || req.headers.get("x-cron-secret") === secret;
   if (!bearer && !plain) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const force = req.nextUrl.searchParams.get("force") === "1"; // ?force=1 覆盖重生（修旧的错误文案）
+  const force = req.nextUrl.searchParams.get("force") === "1"; // ?force=1 覆盖重生（会卡在前 N 场）
   const debug = req.nextUrl.searchParams.get("debug") === "1"; // ?debug=1 在响应里回传被吞掉的错误
+  const staleBeforeMs = (() => {
+    const s = req.nextUrl.searchParams.get("staleBefore"); // 早于此 ISO 时刻生成的旧文案才重生
+    const ms = s ? Date.parse(s) : NaN;
+    return Number.isNaN(ms) ? 0 : ms;
+  })();
   const errors: string[] = [];
   const noteErr = (where: string, e: unknown) => {
     const msg = e instanceof Error ? e.message : String(e);
@@ -60,13 +68,13 @@ export async function GET(req: NextRequest) {
     .gt("kickoff_at", nowIso)
     .neq("status", "settled")
     .order("kickoff_at", { ascending: true })
-    .limit(40);
+    .limit(120); // 覆盖全部未开赛场次（之前 40 截断，靠后的场次永远拿不到英文）
   const { data: doneRows } = await db
     .from("matches")
     .select(SELECT)
     .eq("status", "settled")
     .order("kickoff_at", { ascending: false })
-    .limit(40);
+    .limit(60);
   const upcoming = (upRows as unknown as MatchRow[] | null) ?? [];
   const settled = (doneRows as unknown as MatchRow[] | null) ?? [];
   // 模型胜平负概率（喂给前瞻/冷热门，确保倾向与真实概率一致）。
@@ -75,14 +83,17 @@ export async function GET(req: NextRequest) {
   const allIds = [...upcoming, ...settled].map((m) => m.id);
   const { data: acRows } = await db
     .from("ai_content")
-    .select("match_id, type")
+    .select("match_id, type, updated_at")
     .in("match_id", allIds.length ? allIds : ["00000000-0000-0000-0000-000000000000"])
     .in("type", ["preview_en", "sentiment_en", "recap_en"]);
-  const have = new Set(
-    ((acRows as { match_id: string; type: string }[] | null) ?? []).map(
-      (r) => `${r.match_id}:${r.type}`
+  const have = new Map<string, number>(
+    ((acRows as { match_id: string; type: string; updated_at: string }[] | null) ?? []).map(
+      (r) => [`${r.match_id}:${r.type}`, Date.parse(r.updated_at) || 0]
     )
   );
+  // 需要生成：缺失 / 强制 / 早于 staleBefore（旧文案重生；重生后 updated_at 刷新→后续跳过，逐场收敛）
+  const needGen = (key: string) =>
+    force || !have.has(key) || (staleBeforeMs > 0 && (have.get(key) ?? 0) < staleBeforeMs);
 
   let processed = 0;
   const generated = { preview_en: 0, sentiment_en: 0, recap_en: 0 };
@@ -94,8 +105,8 @@ export async function GET(req: NextRequest) {
     const home = m.home?.name;
     const away = m.away?.name;
     if (!home || !away) continue;
-    const needPreview = force || !have.has(`${m.id}:preview_en`);
-    const needSentiment = force || !have.has(`${m.id}:sentiment_en`);
+    const needPreview = needGen(`${m.id}:preview_en`);
+    const needSentiment = needGen(`${m.id}:sentiment_en`);
     if (!needPreview && !needSentiment) continue;
     processed++;
 
@@ -131,7 +142,7 @@ export async function GET(req: NextRequest) {
     const home = m.home?.name;
     const away = m.away?.name;
     if (!home || !away || m.home_score == null || m.away_score == null) continue;
-    if (!force && have.has(`${m.id}:recap_en`)) continue;
+    if (!needGen(`${m.id}:recap_en`)) continue;
     processed++;
     try {
       const body = await generateRecapEn(home, away, m.home_score, m.away_score, CALL_TIMEOUT_MS);
