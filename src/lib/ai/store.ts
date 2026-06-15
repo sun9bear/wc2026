@@ -34,13 +34,10 @@ export async function upsertContent(
   type: string,
   body: string
 ): Promise<void> {
-  // 显式刷新 updated_at：upsert 冲突更新时不会自动更新该列，否则 staleBefore 重生判据永远命中旧值、
-  // 导致同几场被反复重生、无法推进（2026-06 修复）。
+  // 注：updated_at 不可经 upsert 写入（PostgREST schema 不含该可写列，写了会报错）；
+  // 故不依赖 staleBefore 重生（改走「删除旧内容 + 无 force 补回」，无 force 靠存在性判据可靠推进）。
   const { error } = await db
     .from("ai_content")
-    .upsert(
-      { match_id: matchId, type, body, updated_at: new Date().toISOString() },
-      { onConflict: "match_id,type" }
-    );
+    .upsert({ match_id: matchId, type, body }, { onConflict: "match_id,type" });
   if (error) throw error;
 }

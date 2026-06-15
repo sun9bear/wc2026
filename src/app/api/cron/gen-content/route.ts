@@ -45,7 +45,12 @@ export async function GET(req: NextRequest) {
   })();
   const errors: string[] = [];
   const noteErr = (where: string, e: unknown) => {
-    const msg = e instanceof Error ? e.message : String(e);
+    const msg =
+      e instanceof Error
+        ? e.message
+        : e && typeof e === "object" && "message" in e
+          ? String((e as { message: unknown }).message)
+          : String(e);
     console.error(`[gen-content] ${where} 失败:`, msg); // 此前 catch 静默——补上日志（可观测性）
     if (debug && errors.length < 6) errors.push(`${where}: ${msg}`);
   };
