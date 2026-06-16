@@ -21,12 +21,24 @@ export async function GET(req: NextRequest) {
   if (!url || !sk) return NextResponse.json({ error: "服务未配置" }, { status: 500 });
   const db = createClient(url, sk, { auth: { persistSession: false } });
 
-  const { data } = await db.from("players").select("id, wiki_title").eq("is_active", true);
-  const players = (data as { id: string; wiki_title: string | null }[] | null) ?? [];
+  const [{ data: pData }, { data: mData }] = await Promise.all([
+    db.from("players").select("id, wiki_title").eq("is_active", true),
+    db.from("player_metrics").select("player_id, buzz_updated_at"),
+  ]);
+  const players = (pData as { id: string; wiki_title: string | null }[] | null) ?? [];
+  // 「最久未更新优先」：从未抓到(无时间戳)排最前，保证尾部球员也能轮到（解决全量超时下的覆盖盲区）。
+  const staleAt = new Map(
+    ((mData as { player_id: string; buzz_updated_at: string | null }[] | null) ?? []).map(
+      (m) => [m.player_id, m.buzz_updated_at ? Date.parse(m.buzz_updated_at) : 0] as const
+    )
+  );
+  const ordered = [...players].sort((a, b) => (staleAt.get(a.id) ?? 0) - (staleAt.get(b.id) ?? 0));
 
   const now = new Date().toISOString();
+  const deadline = Date.now() + 45_000; // 留足 maxDuration(60s) 余量，杜绝 504 超时
   let updated = 0;
-  for (const p of players) {
+  for (const p of ordered) {
+    if (Date.now() > deadline) break;
     if (!p.wiki_title) continue;
     const views = await fetchPageviews(p.wiki_title);
     // views=0 多为抓取失败/429 → 跳过，保留上次好值（绝不把已有热度清成 0）。
@@ -39,7 +51,7 @@ export async function GET(req: NextRequest) {
         );
       if (!error) updated++;
     }
-    await new Promise((r) => setTimeout(r, 200)); // 节流，避免 wikimedia 突发 429
+    await new Promise((r) => setTimeout(r, 150)); // 节流，避免 wikimedia 突发 429
   }
 
   return NextResponse.json({ ok: true, updated, total: players.length });
