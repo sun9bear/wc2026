@@ -9,6 +9,7 @@ import { findTeam, teamSlug } from "@/lib/prob/findTeam";
 import { ThirdCalculator } from "@/components/ThirdCalculator";
 import { CalculatorFocus } from "@/components/CalculatorFocus";
 import { HeaderShare } from "@/components/HeaderShare";
+import { JsonLd } from "@/lib/seo/jsonLd";
 
 export const maxDuration = 60;
 
@@ -101,6 +102,40 @@ const HOT = [
   "Germany",
 ];
 
+// FAQ 富摘要（GEO/SEO）：承接"世界杯第三名怎么算 / 小组怎么出线"问答型搜索；纯规则、零博彩词。
+const FAQ: Record<Locale, { q: string; a: string }[]> = {
+  zh: [
+    { q: "2026 世界杯怎么从小组出线？", a: "每组前 2 名直接晋级，12 个小组第三名中最好的 8 个也进 32 强。" },
+    { q: "最佳第三名怎么排名？", a: "先比积分，再比净胜球、进球数（公平竞赛分与抽签为最后判据），前 8 名晋级。" },
+    { q: "小组第三还有机会出线吗？", a: "有。12 个小组第三里有 8 个能进 32 强；用计算器改剩余赛果即可看你的队是否在安全线内。" },
+  ],
+  en: [
+    { q: "How do teams qualify from a World Cup 2026 group?", a: "The top 2 of each group advance, plus the 8 best third-placed teams across the 12 groups reach the Round of 32." },
+    { q: "How are the best third-placed teams ranked?", a: "By points, then goal difference, then goals scored (fair-play points and drawing of lots as final tiebreakers); the top 8 advance." },
+    { q: "Can a third-placed team still advance?", a: "Yes — 8 of the 12 third-placed teams make the Round of 32. Flip the remaining results in the calculator to see if your team is above the line." },
+  ],
+  es: [
+    { q: "¿Cómo se clasifica un equipo desde un grupo del Mundial 2026?", a: "Los 2 primeros de cada grupo avanzan, más los 8 mejores terceros de los 12 grupos llegan a dieciseisavos." },
+    { q: "¿Cómo se ordenan los mejores terceros?", a: "Por puntos, luego diferencia de goles y goles a favor (juego limpio y sorteo como criterios finales); los 8 mejores avanzan." },
+    { q: "¿Puede clasificar un tercero?", a: "Sí: 8 de los 12 terceros llegan a dieciseisavos. Cambia los resultados restantes en la calculadora para ver si tu equipo está por encima del corte." },
+  ],
+  pt: [
+    { q: "Como uma seleção se classifica de um grupo da Copa 2026?", a: "Os 2 primeiros de cada grupo avançam, mais os 8 melhores terceiros dos 12 grupos chegam às 16-avas." },
+    { q: "Como os melhores terceiros são classificados?", a: "Por pontos, depois saldo de gols e gols marcados (fair-play e sorteio como critérios finais); os 8 melhores avançam." },
+    { q: "Um terceiro colocado ainda pode se classificar?", a: "Sim: 8 dos 12 terceiros vão às 16-avas. Mude os resultados restantes na calculadora para ver se sua seleção está acima da linha." },
+  ],
+  de: [
+    { q: "Wie qualifiziert man sich aus einer WM-2026-Gruppe?", a: "Die besten 2 jeder Gruppe kommen weiter, plus die 8 besten Gruppendritten der 12 Gruppen ins Sechzehntelfinale." },
+    { q: "Wie werden die besten Gruppendritten gereiht?", a: "Nach Punkten, dann Tordifferenz und erzielten Toren (Fair-Play und Losentscheid als letzte Kriterien); die Top 8 kommen weiter." },
+    { q: "Kann ein Gruppendritter noch weiterkommen?", a: "Ja — 8 der 12 Gruppendritten erreichen das Sechzehntelfinale. Ändere die offenen Ergebnisse im Rechner, um zu sehen, ob dein Team über dem Strich liegt." },
+  ],
+  fr: [
+    { q: "Comment se qualifie-t-on depuis un groupe du Mondial 2026 ?", a: "Les 2 premiers de chaque groupe avancent, plus les 8 meilleurs troisièmes des 12 groupes atteignent les seizièmes." },
+    { q: "Comment classe-t-on les meilleurs troisièmes ?", a: "Aux points, puis différence de buts et buts marqués (fair-play et tirage au sort en derniers critères) ; les 8 meilleurs avancent." },
+    { q: "Un troisième peut-il encore se qualifier ?", a: "Oui : 8 des 12 troisièmes atteignent les seizièmes. Modifie les résultats restants dans le calculateur pour voir si ton équipe est au-dessus de la barre." },
+  ],
+};
+
 export async function generateMetadata({
   searchParams,
 }: {
@@ -129,10 +164,13 @@ export async function generateMetadata({
       /* 降级为通用 meta */
     }
   }
+  const fallbackOg = `${SITE}/api/og?mode=thirds&locale=${locale}`;
   return {
     title: c.title,
     description: c.description,
     alternates: localizedAlternates("/calculator", locale),
+    openGraph: { type: "website", images: [{ url: fallbackOg, width: 1080, height: 1440 }] },
+    twitter: { card: "summary_large_image", images: [fallbackOg] },
   };
 }
 
@@ -145,6 +183,16 @@ export default async function CalculatorPage({
   const locale = await getLocale();
   const c = COPY[locale];
   const data = await getForecast();
+
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: FAQ[locale].map((qa) => ({
+      "@type": "Question",
+      name: qa.q,
+      acceptedAnswer: { "@type": "Answer", text: qa.a },
+    })),
+  };
 
   const groups = data.groups.map((g) => ({
     letter: g.letter,
@@ -198,6 +246,7 @@ export default async function CalculatorPage({
 
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-8">
+      <JsonLd data={faqJsonLd} />
       <div className="flex items-center justify-between gap-2">
         <Link href={localeHref(locale, "/")} className="shrink-0 text-xs text-muted">
           {c.back}

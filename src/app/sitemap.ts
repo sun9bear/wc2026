@@ -70,7 +70,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const { data: teamData } = await supabase.from("teams").select("id, name, grp");
     // 静态页注入真实 lastModified：home/forecast=全站最近结算；group=该组最近结算（无则不带）。
     const statics: Entry[] = staticBase.map((e) => {
-      if (e.path === "/" || e.path === "/forecast" || e.path === "/forecast/best-thirds") {
+      if (
+        e.path === "/" ||
+        e.path === "/forecast" ||
+        e.path === "/forecast/best-thirds" ||
+        e.path === "/calculator"
+      ) {
         return idx.all ? { ...e, lastModified: idx.all } : e;
       }
       const gm = e.path.match(/^\/calculator\/group\/([a-l])$/);

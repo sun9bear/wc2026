@@ -119,7 +119,7 @@ async function computeForecast(): Promise<ForecastData> {
     try {
       const r = await fetch(
         "https://api.football-data.org/v4/competitions/WC/matches?status=FINISHED",
-        { headers: { "X-Auth-Token": fdKey }, next: { revalidate: 3600 } }
+        { headers: { "X-Auth-Token": fdKey }, next: { revalidate: 900 } }
       );
       if (r.ok) {
         const j = (await r.json()) as {
@@ -173,51 +173,11 @@ async function computeForecast(): Promise<ForecastData> {
     rating.set(t.id, (eloOk ? eloFor(t.name, nameToCode, codeToElo) : null) ?? 1600);
   }
 
-  // 4) 多机构报价共识（The Odds API；无 key/失败则纯模型）
-  type Prices = { home: number; draw: number; away: number }[];
-  const oddsIdx = new Map<string, Prices>();
-  let oddsOk = false;
-  const oddsKey = process.env.THE_ODDS_API_KEY;
-  if (oddsKey) {
-    try {
-      const r = await fetch(
-        `https://api.the-odds-api.com/v4/sports/soccer_fifa_world_cup/odds/?apiKey=${oddsKey}&regions=eu&markets=h2h&oddsFormat=decimal`,
-        { next: { revalidate: 3600 } }
-      );
-      if (r.ok) {
-        const events = (await r.json()) as {
-          home_team: string;
-          away_team: string;
-          bookmakers: { markets: { key: string; outcomes: { name: string; price: number }[] }[] }[];
-        }[];
-        for (const e of events) {
-          const prices: Prices = [];
-          for (const b of e.bookmakers ?? []) {
-            const m = b.markets?.find((x) => x.key === "h2h");
-            if (!m) continue;
-            let home = 0;
-            let draw = 0;
-            let away = 0;
-            for (const o of m.outcomes ?? []) {
-              if (o.name === e.home_team) home = o.price;
-              else if (o.name === e.away_team) away = o.price;
-              else draw = o.price;
-            }
-            if (home > 1 && draw > 1 && away > 1) prices.push({ home, draw, away });
-          }
-          if (prices.length) {
-            oddsIdx.set(
-              `${normalizeTeamName(e.home_team)}|${normalizeTeamName(e.away_team)}`,
-              prices
-            );
-          }
-        }
-        oddsOk = true;
-      }
-    } catch {
-      /* 降级 */
-    }
-  }
+  // 4) 多机构报价共识（The Odds API，独立 6h 缓存 getOdds：与 forecast TTL 解耦，
+  //    无论 forecast 15min 重算多频繁，报价最多 ~4 credits/天）。
+  const oddsRes = await getOdds();
+  const oddsIdx = new Map<string, Prices>(oddsRes.entries);
+  const oddsOk = oddsRes.ok;
 
   // 5) 每场剩余小组赛的概率（市场共识 + Elo 模型 → 融合 → 比分矩阵校准）
   const simMatches: SimMatch[] = [];
@@ -436,7 +396,53 @@ async function computeForecast(): Promise<ForecastData> {
   };
 }
 
-/** 缓存入口：每小时最多重算一次（也即 The Odds API 最多 24 credits/天）。 */
+type Prices = { home: number; draw: number; away: number }[];
+
+// The Odds API 独立缓存(6h)：与 forecast TTL 解耦——forecast 降到 15min 也不会多烧 credits。
+const getOdds = unstable_cache(
+  async (): Promise<{ entries: [string, Prices][]; ok: boolean }> => {
+    const oddsKey = process.env.THE_ODDS_API_KEY;
+    if (!oddsKey) return { entries: [], ok: false };
+    try {
+      const r = await fetch(
+        `https://api.the-odds-api.com/v4/sports/soccer_fifa_world_cup/odds/?apiKey=${oddsKey}&regions=eu&markets=h2h&oddsFormat=decimal`
+      );
+      if (!r.ok) return { entries: [], ok: false };
+      const events = (await r.json()) as {
+        home_team: string;
+        away_team: string;
+        bookmakers: { markets: { key: string; outcomes: { name: string; price: number }[] }[] }[];
+      }[];
+      const entries: [string, Prices][] = [];
+      for (const e of events) {
+        const prices: Prices = [];
+        for (const b of e.bookmakers ?? []) {
+          const m = b.markets?.find((x) => x.key === "h2h");
+          if (!m) continue;
+          let home = 0;
+          let draw = 0;
+          let away = 0;
+          for (const o of m.outcomes ?? []) {
+            if (o.name === e.home_team) home = o.price;
+            else if (o.name === e.away_team) away = o.price;
+            else draw = o.price;
+          }
+          if (home > 1 && draw > 1 && away > 1) prices.push({ home, draw, away });
+        }
+        if (prices.length) {
+          entries.push([`${normalizeTeamName(e.home_team)}|${normalizeTeamName(e.away_team)}`, prices]);
+        }
+      }
+      return { entries, ok: true };
+    } catch {
+      return { entries: [], ok: false };
+    }
+  },
+  ["odds-v1"],
+  { revalidate: 21600 }
+);
+
+/** 缓存入口：15 分钟重算一次（末轮表随结算变新；odds 已独立 6h 缓存，credits 不受影响）。 */
 export const getForecast = unstable_cache(computeForecast, ["forecast-v1"], {
-  revalidate: 3600,
+  revalidate: 900,
 });

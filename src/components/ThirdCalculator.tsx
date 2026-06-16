@@ -155,17 +155,15 @@ export function ThirdCalculator({
         return { homeId: m.homeId, awayId: m.awayId, homeGoals: h, awayGoals: a };
       }),
     ];
+    // 单 RNG 实例跨 rankGroup(12组)→rankThirds 连续消费，对齐服务端 pipeline 的 RNG 顺序，
+    // 杜绝完全打平（含 Elo 同分）时客户端/服务端给出不同晋级结论。
+    const rng = mulberry32(1);
     const tables = groups.map((g) => ({
       letter: g.letter,
-      order: rankGroup(
-        g.teams.map((x) => x.id),
-        results,
-        mulberry32(1),
-        ratingMap
-      ),
+      order: rankGroup(g.teams.map((x) => x.id), results, rng, ratingMap),
     }));
     const thirdRows = tables.map((x) => x.order[2]).filter(Boolean);
-    const thirdsRanked = rankThirds(thirdRows, mulberry32(2), ratingMap);
+    const thirdsRanked = rankThirds(thirdRows, rng, ratingMap);
     return { tables, thirdsRanked };
   }, [groups, played, remaining, picks, rating]);
 
