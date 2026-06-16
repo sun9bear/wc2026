@@ -116,49 +116,59 @@ export function PopularityList({ rows, locale }: { rows: PopularityRow[]; locale
         {rows.map((r) => {
           const cur = myToday[r.id] ?? 0;
           const maxed = cur >= DAILY_MAX;
+          // 前三名头像：金/银/铜描边 + 呼吸光晕；其余普通描边。
+          const podium =
+            r.rank === 1
+              ? "podium podium-1"
+              : r.rank === 2
+                ? "podium podium-2"
+                : r.rank === 3
+                  ? "podium podium-3"
+                  : "ring-1 ring-border";
+          const detail = localeHref(locale, `/player/${r.slug}`);
           return (
             <li
               key={r.id}
-              className="flex items-center gap-3 rounded-md border border-border bg-surface-2 p-3"
+              className="flex items-start gap-3 rounded-md border border-border bg-surface-2 p-3"
             >
-              <span className="font-head w-6 shrink-0 text-center text-lg font-bold text-muted">{r.rank}</span>
-              {/* 头像+名+短评整块可点进详情页（加宽点击通道；内部用 span 避免嵌套 <a>） */}
-              <Link
-                href={localeHref(locale, `/player/${r.slug}`)}
-                className="group flex min-w-0 flex-1 items-center gap-3"
-              >
-                {r.photo ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={r.photo} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-border" />
-                ) : r.flag ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={r.flag} alt="" className="h-5 w-7 shrink-0 rounded-sm object-cover ring-1 ring-border" />
-                ) : (
-                  <span className="inline-block w-7 shrink-0 text-center">⚽</span>
-                )}
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate">
-                    <span className="text-sm font-medium group-hover:text-green group-hover:underline">
-                      {r.name}
-                    </span>
-                    <span className="ml-1.5 text-[11px] text-muted">{r.teamLabel}</span>
+              {/* 左列：排名编号在上、头像在下（头像可点进详情；前三名金银铜光晕） */}
+              <div className="flex w-11 shrink-0 flex-col items-center gap-1.5">
+                <span className="font-head text-lg font-bold leading-none text-muted">{r.rank}</span>
+                <Link href={detail} aria-label={r.name}>
+                  {r.photo ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={r.photo} alt="" className={`h-11 w-11 rounded-full object-cover ${podium}`} />
+                  ) : r.flag ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={r.flag} alt="" className={`h-9 w-11 rounded-sm object-cover ${podium}`} />
+                  ) : (
+                    <span className="inline-block text-2xl leading-none">⚽</span>
+                  )}
+                </Link>
+              </div>
+              {/* 中列：名/队/分项/短评（可点进详情） */}
+              <Link href={detail} className="group min-w-0 flex-1">
+                <span className="block truncate">
+                  <span className="text-sm font-medium group-hover:text-green group-hover:underline">
+                    {r.name}
                   </span>
-                  {/* 分项拆解（透明）：🗳 总票 · ⚽ 表现0-100 · 🔥 热度0-100 · 今日x/5 */}
-                  <span className="block text-[11px] text-muted tabular-nums">
-                    🗳 {Math.max(0, votes[r.id] ?? 0)} · ⚽ {r.perfScore} · 🔥 {r.buzzScore}
-                    {cur > 0 ? ` · ${cur}/${DAILY_MAX}` : ""}
-                  </span>
-                  {r.blurb && <span className="mt-0.5 block text-[11px] italic text-muted">{r.blurb}</span>}
+                  <span className="ml-1.5 text-[11px] text-muted">{r.teamLabel}</span>
                 </span>
+                {/* 分项拆解（透明）：🗳 总票 · ⚽ 表现0-100 · 🔥 热度0-100 · 今日x/5 */}
+                <span className="block text-[11px] text-muted tabular-nums">
+                  🗳 {Math.max(0, votes[r.id] ?? 0)} · ⚽ {r.perfScore} · 🔥 {r.buzzScore}
+                  {cur > 0 ? ` · ${cur}/${DAILY_MAX}` : ""}
+                </span>
+                {r.blurb && <span className="mt-0.5 block text-[11px] italic text-muted">{r.blurb}</span>}
               </Link>
-              <span
-                className="font-head shrink-0 text-right text-lg font-bold tabular-nums text-green"
-                aria-label={t.title}
-              >
-                {r.index}
-              </span>
-              {/* 投票按钮恒为"投票"且等宽；副行提示再投扣分 / 今日已满（不再挤压短评） */}
-              <span className="flex w-16 shrink-0 flex-col items-center gap-0.5">
+              {/* 右列：综合指数在上、投票按钮在下（按钮放票数下方）；副行提示再投扣分 / 今日已满 */}
+              <div className="flex w-16 shrink-0 flex-col items-center gap-1">
+                <span
+                  className="font-head text-lg font-bold leading-none tabular-nums text-green"
+                  aria-label={t.title}
+                >
+                  {r.index}
+                </span>
                 <button
                   type="button"
                   onClick={() => vote(r.id)}
@@ -174,7 +184,7 @@ export function PopularityList({ rows, locale }: { rows: PopularityRow[]; locale
                 ) : cur > 0 ? (
                   <span className="text-center text-[10px] leading-tight text-gold">{t.voteRepeat}</span>
                 ) : null}
-              </span>
+              </div>
             </li>
           );
         })}

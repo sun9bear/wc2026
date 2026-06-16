@@ -65,6 +65,32 @@ body {
   animation: breathe-glow 2.2s ease-in-out infinite;
 }
 
+/* 人气榜前三名头像：金/银/铜描边 + 呼吸光晕（沿用 breathe 模式；reduced-motion 由文末统一关停） */
+@keyframes podium-breathe {
+  0%, 100% { box-shadow: 0 0 0 0 var(--podium-soft), 0 0 8px 1px var(--podium-soft); }
+  50% { box-shadow: 0 0 0 3px var(--podium-soft), 0 0 18px 4px var(--podium-strong); }
+}
+.podium {
+  border-width: 2px;
+  border-style: solid;
+  animation: podium-breathe 2.4s ease-in-out infinite;
+}
+.podium-1 {
+  border-color: #f5c451;
+  --podium-soft: rgba(245, 196, 81, 0.30);
+  --podium-strong: rgba(245, 196, 81, 0.65);
+}
+.podium-2 {
+  border-color: #cfd6de;
+  --podium-soft: rgba(207, 214, 222, 0.28);
+  --podium-strong: rgba(207, 214, 222, 0.60);
+}
+.podium-3 {
+  border-color: #d8954e;
+  --podium-soft: rgba(216, 149, 78, 0.30);
+  --podium-strong: rgba(216, 149, 78, 0.62);
+}
+
 /* 入场淡入上浮 */
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(6px); }
