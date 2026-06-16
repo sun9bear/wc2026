@@ -116,58 +116,65 @@ export function PopularityList({ rows, locale }: { rows: PopularityRow[]; locale
         {rows.map((r) => {
           const cur = myToday[r.id] ?? 0;
           const maxed = cur >= DAILY_MAX;
-          const label = maxed ? t.dailyMax : cur === 0 ? t.vote : t.voteRepeat;
-          const btnCls = maxed
-            ? "border border-border text-muted"
-            : cur === 0
-              ? "bg-green text-[#06231a]"
-              : "border border-gold/60 text-gold";
           return (
             <li
               key={r.id}
               className="flex items-center gap-3 rounded-md border border-border bg-surface-2 p-3"
             >
               <span className="font-head w-6 shrink-0 text-center text-lg font-bold text-muted">{r.rank}</span>
-              {r.photo ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={r.photo} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-border" />
-              ) : r.flag ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={r.flag} alt="" className="h-5 w-7 shrink-0 rounded-sm object-cover ring-1 ring-border" />
-              ) : (
-                <span className="inline-block w-7 shrink-0 text-center">⚽</span>
-              )}
-              <span className="min-w-0 flex-1">
-                <span className="block truncate">
-                  <Link
-                    href={localeHref(locale, `/player/${r.slug}`)}
-                    className="text-sm font-medium hover:text-green hover:underline"
-                  >
-                    {r.name}
-                  </Link>
-                  <span className="ml-1.5 text-[11px] text-muted">{r.teamLabel}</span>
+              {/* 头像+名+短评整块可点进详情页（加宽点击通道；内部用 span 避免嵌套 <a>） */}
+              <Link
+                href={localeHref(locale, `/player/${r.slug}`)}
+                className="group flex min-w-0 flex-1 items-center gap-3"
+              >
+                {r.photo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={r.photo} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-border" />
+                ) : r.flag ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={r.flag} alt="" className="h-5 w-7 shrink-0 rounded-sm object-cover ring-1 ring-border" />
+                ) : (
+                  <span className="inline-block w-7 shrink-0 text-center">⚽</span>
+                )}
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate">
+                    <span className="text-sm font-medium group-hover:text-green group-hover:underline">
+                      {r.name}
+                    </span>
+                    <span className="ml-1.5 text-[11px] text-muted">{r.teamLabel}</span>
+                  </span>
+                  {/* 分项拆解（透明）：🗳 总票 · ⚽ 表现0-100 · 🔥 热度0-100 · 今日x/5 */}
+                  <span className="block text-[11px] text-muted tabular-nums">
+                    🗳 {Math.max(0, votes[r.id] ?? 0)} · ⚽ {r.perfScore} · 🔥 {r.buzzScore}
+                    {cur > 0 ? ` · ${cur}/${DAILY_MAX}` : ""}
+                  </span>
+                  {r.blurb && <span className="mt-0.5 block text-[11px] italic text-muted">{r.blurb}</span>}
                 </span>
-                {/* 分项拆解（透明）：🗳 总票 · ⚽ 表现0-100 · 🔥 热度0-100 · 今日x/5 */}
-                <span className="block text-[11px] text-muted tabular-nums">
-                  🗳 {Math.max(0, votes[r.id] ?? 0)} · ⚽ {r.perfScore} · 🔥 {r.buzzScore}
-                  {cur > 0 ? ` · ${cur}/${DAILY_MAX}` : ""}
-                </span>
-                {r.blurb && <span className="mt-0.5 block text-[11px] italic text-muted">{r.blurb}</span>}
-              </span>
+              </Link>
               <span
                 className="font-head shrink-0 text-right text-lg font-bold tabular-nums text-green"
                 aria-label={t.title}
               >
                 {r.index}
               </span>
-              <button
-                type="button"
-                onClick={() => vote(r.id)}
-                disabled={busy === r.id || maxed}
-                className={`shrink-0 rounded-pill px-3 py-1.5 text-xs font-bold transition disabled:opacity-40 ${btnCls}`}
-              >
-                {busy === r.id ? "…" : label}
-              </button>
+              {/* 投票按钮恒为"投票"且等宽；副行提示再投扣分 / 今日已满（不再挤压短评） */}
+              <span className="flex w-16 shrink-0 flex-col items-center gap-0.5">
+                <button
+                  type="button"
+                  onClick={() => vote(r.id)}
+                  disabled={busy === r.id || maxed}
+                  className={`w-full rounded-pill px-2 py-1.5 text-xs font-bold transition disabled:opacity-50 ${
+                    maxed ? "border border-border text-muted" : "bg-green text-[#06231a]"
+                  }`}
+                >
+                  {busy === r.id ? "…" : t.vote}
+                </button>
+                {maxed ? (
+                  <span className="text-center text-[10px] leading-tight text-muted">{t.dailyMax}</span>
+                ) : cur > 0 ? (
+                  <span className="text-center text-[10px] leading-tight text-gold">{t.voteRepeat}</span>
+                ) : null}
+              </span>
             </li>
           );
         })}

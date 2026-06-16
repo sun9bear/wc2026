@@ -103,7 +103,7 @@ export const es = {
     empty: "Aún no hay jugadores — vuelve pronto.",
     note: "Solo por diversión · Votos de la comunidad + datos públicos · No es una predicción ni un respaldo",
     voteFail: "Error al votar, inténtalo de nuevo",
-    voteRepeat: "Otra -10",
+    voteRepeat: "Otra -10 pts",
     dailyMax: "Máx. hoy",
     noPoints: "Puntos insuficientes",
     points: "Puntos",

@@ -90,23 +90,23 @@ export function PlayerVoteButton({
   }
 
   const maxed = cur >= DAILY_MAX;
-  const label = maxed ? t.dailyMax : cur === 0 ? t.vote : t.voteRepeat;
-  const btnCls = maxed
-    ? "border border-border text-muted"
-    : cur === 0
-      ? "bg-green text-[#06231a]"
-      : "border border-gold/60 text-gold";
+  const btnCls = maxed ? "border border-border text-muted" : "bg-green text-[#06231a]";
 
   return (
-    <div className="mt-4 flex items-center gap-3">
+    <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1">
       <button
         type="button"
         onClick={vote}
         disabled={busy || maxed}
         className={`rounded-pill px-5 py-2 text-sm font-bold transition disabled:opacity-40 ${btnCls}`}
       >
-        {busy ? "…" : label}
+        {busy ? "…" : t.vote}
       </button>
+      {maxed ? (
+        <span className="text-xs font-medium text-muted">{t.dailyMax}</span>
+      ) : cur > 0 ? (
+        <span className="text-xs font-medium text-gold">{t.voteRepeat}</span>
+      ) : null}
       <span className="text-xs text-muted tabular-nums">
         🗳 {votes}
         {cur > 0 ? ` · ${cur}/${DAILY_MAX}` : ""}

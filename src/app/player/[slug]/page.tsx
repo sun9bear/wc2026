@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getPlayer, getPlayerFacts } from "@/lib/players/getPlayer";
+import { getPlayer, getPlayerFacts, getPlayerIntro } from "@/lib/players/getPlayer";
 import { PlayerVoteButton } from "@/components/PlayerVoteButton";
 import { Disclaimer } from "@/components/Disclaimer";
 import { getDict, localeHref, type Locale } from "@/i18n";
@@ -9,6 +9,7 @@ import { getLocale } from "@/i18n/server";
 import { teamName, flagUrl } from "@/lib/football/teams";
 import { nameZhBySlug, wikiTitleBySlug } from "@/data/players.seed";
 import { PHOTOS } from "@/data/players.photos";
+import { GALLERY } from "@/data/players.gallery";
 import { localizedAlternates } from "@/lib/seo/canonical";
 
 export const dynamic = "force-dynamic";
@@ -23,6 +24,16 @@ const POS: Record<string, Record<Locale, string>> = {
 function dispName(slug: string, latin: string, locale: Locale): string {
   return locale === "zh" ? nameZhBySlug.get(slug) ?? latin : latin;
 }
+
+// 详情页本地文案（6 语，页面专属，免动全局 Dict）。
+const UI: Record<Locale, { photos: string; bioSource: string; more: string }> = {
+  zh: { photos: "相册", bioSource: "资料来自维基百科 · CC BY-SA", more: "查看词条" },
+  en: { photos: "Photos", bioSource: "Bio from Wikipedia · CC BY-SA", more: "Read more" },
+  es: { photos: "Fotos", bioSource: "Biografía de Wikipedia · CC BY-SA", more: "Leer más" },
+  pt: { photos: "Fotos", bioSource: "Biografia da Wikipédia · CC BY-SA", more: "Ler mais" },
+  de: { photos: "Fotos", bioSource: "Biografie aus Wikipedia · CC BY-SA", more: "Mehr lesen" },
+  fr: { photos: "Photos", bioSource: "Biographie de Wikipédia · CC BY-SA", more: "En savoir plus" },
+};
 
 export async function generateMetadata({
   params,
@@ -65,6 +76,9 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
     ? Math.floor((Date.now() - Date.parse(facts.birthDate)) / 31_557_600_000)
     : null;
   const wikiUrl = wikiTitle ? `https://en.wikipedia.org/wiki/${wikiTitle}` : null;
+  const intro = wikiTitle ? await getPlayerIntro(wikiTitle, locale) : null;
+  const gallery = GALLERY[slug] ?? [];
+  const ui = UI[locale];
 
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-8">
@@ -109,9 +123,55 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
 
       {blurb && <p className="mt-3 text-sm italic text-muted">{blurb}</p>}
 
+      {/* 维基百科简介（CC BY-SA，需署名 + 链接源页；当前语言词条，无则不显示） */}
+      {intro && (
+        <section className="mt-4">
+          <p className="text-sm leading-relaxed">{intro.text}</p>
+          <a
+            href={intro.sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-1.5 inline-block text-[11px] text-muted hover:text-green"
+          >
+            📖 {ui.bioSource} · {ui.more} →
+          </a>
+        </section>
+      )}
+
       <PlayerVoteButton playerId={p.id} initialVotes={p.votes} locale={locale} />
 
-      {wikiUrl && (
+      {/* Commons 相册（自由许可，逐图链 Commons 源页 + 署名；不足 2 张则不显示） */}
+      {gallery.length >= 2 && (
+        <section className="mt-6">
+          <h2 className="font-head mb-2 text-sm font-semibold">{ui.photos}</h2>
+          <div className="grid grid-cols-3 gap-2">
+            {gallery.map((g) => (
+              <a
+                key={g.file}
+                href={`https://commons.wikimedia.org/wiki/${encodeURIComponent(g.file)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={`${g.author} · ${g.license}`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={g.url}
+                  alt={name}
+                  loading="lazy"
+                  className="aspect-square w-full rounded-md object-cover ring-1 ring-border transition hover:opacity-90"
+                />
+              </a>
+            ))}
+          </div>
+          <p className="mt-1.5 text-[10px] text-muted">
+            📷 {Array.from(new Set(gallery.map((g) => `${g.author} (${g.license})`))).join(" · ")} ·
+            Wikimedia Commons
+          </p>
+        </section>
+      )}
+
+      {/* 兜底维基链接：仅当无当前语言简介时显示 */}
+      {!intro && wikiUrl && (
         <a
           href={wikiUrl}
           target="_blank"
