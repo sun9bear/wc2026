@@ -511,6 +511,13 @@ export function MeClient({ locale }: { locale: Locale }) {
             {tx.league}
           </Link>
 
+          <Link
+            href={localeHref(locale, "/leaderboard")}
+            className="mt-2 block rounded-md border border-border bg-surface-2 px-4 py-2.5 text-sm text-muted transition hover:border-green hover:text-green"
+          >
+            {t.leaderboard.title}
+          </Link>
+
           <div className="mt-4 grid grid-cols-2 gap-3">
             <Tile value={`${data.hitRate}%`} label={t.me.hitRate} color="text-green" />
             <Tile value={data.won} label={t.me.wins} color="text-gold" />

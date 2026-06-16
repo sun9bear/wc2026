@@ -33,11 +33,12 @@ export function BottomNav({ locale }: { locale: Locale }) {
   }, []);
   // 小组赛期间"出线计算器"占主导航位（独家传播资产）；串关入口在首页与 /me。
   // 淘汰赛阶段（6/28+）视数据评估是否换回 combo。
+  // 排行榜让位「人气榜」(可分享资产)；积分排行入口移至 /me 页二级入口。
   const tabs = [
     { href: "/", label: nav.predict, icon: "⚽" },
     { href: "/calculator", label: nav.calc, icon: "🧮" },
     { href: "/forecast", label: nav.forecast, icon: "📊" },
-    { href: "/leaderboard", label: nav.ranking, icon: "🏆" },
+    { href: "/popularity", label: nav.popularity, icon: "⭐" },
     { href: "/me", label: nav.me, icon: "👤" },
   ];
 

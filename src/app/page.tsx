@@ -92,6 +92,23 @@ export default async function Home({
         </div>
       </TrackedLink>
 
+      {/* #2 资产：人气榜（可分享图卡弹药），紧随计算器 */}
+      <TrackedLink
+        href={localeHref(locale, "/popularity")}
+        event="home_popularity_card_click"
+        className="mb-4 block rounded-lg border border-border bg-surface p-4 transition hover:border-green"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="font-head text-lg font-bold">{t.popularity.title}</div>
+            <div className="mt-0.5 text-xs text-muted">{t.popularity.subtitle}</div>
+          </div>
+          <span className="shrink-0 rounded-pill border border-green/50 px-3 py-1.5 text-xs font-bold text-green">
+            {t.popularity.cta}
+          </span>
+        </div>
+      </TrackedLink>
+
       {/* 次入口：今晚焦点战，直达预测 */}
       {focus && (
         <section className="mb-4">
@@ -117,13 +134,6 @@ export default async function Home({
         <Link href={localeHref(locale, "/league")} className="text-muted hover:text-green">
           {t.hero.leagueLink}
         </Link>
-        <TrackedLink
-          href={localeHref(locale, "/popularity")}
-          event="home_popularity_click"
-          className="text-muted hover:text-green"
-        >
-          {t.popularity.title}
-        </TrackedLink>
       </div>
 
       <div className="mb-5 flex items-center gap-2 text-xs">
