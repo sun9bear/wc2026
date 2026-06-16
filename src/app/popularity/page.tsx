@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getRanking } from "@/lib/players/getRanking";
 import { nameZhBySlug } from "@/data/players.seed";
+import { PHOTOS } from "@/data/players.photos";
 import { PopularityList } from "@/components/PopularityList";
 import { Disclaimer } from "@/components/Disclaimer";
 import { getDict, localeHref } from "@/i18n";
@@ -40,6 +41,7 @@ export default async function PopularityPage() {
     name: locale === "zh" ? nameZhBySlug.get(r.slug) ?? r.name : r.name,
     teamLabel: teamName(r.teamName, locale),
     flag: flagUrl(r.teamName),
+    photo: PHOTOS[r.slug]?.url ?? null,
     votes: r.votes,
     index: r.index,
     voteScore: r.voteScore,
@@ -69,6 +71,11 @@ export default async function PopularityPage() {
       )}
 
       <p className="mt-6 text-center text-[11px] text-muted">{t.popularity.note}</p>
+      <p className="mt-1 text-center text-[10px] text-muted">
+        {locale === "zh"
+          ? "球员头像来自 Wikimedia Commons（CC 许可）"
+          : "Player photos via Wikimedia Commons (CC)"}
+      </p>
       <footer className="mt-4 text-center">
         <Disclaimer />
       </footer>

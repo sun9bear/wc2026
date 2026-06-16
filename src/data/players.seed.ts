@@ -23,7 +23,7 @@ export const PLAYERS: PlayerSeed[] = [
   { slug: "julian-alvarez", name: "Julián Álvarez", nameZh: "J·阿尔瓦雷斯", teamName: "Argentina", countryIso: "ar", position: "FW", wikiTitle: "Julián_Álvarez" },
   { slug: "vinicius-junior", name: "Vinícius Júnior", nameZh: "维尼修斯", teamName: "Brazil", countryIso: "br", position: "FW", wikiTitle: "Vinícius_Júnior" },
   { slug: "rodrygo", name: "Rodrygo", nameZh: "罗德里戈", teamName: "Brazil", countryIso: "br", position: "FW", wikiTitle: "Rodrygo" },
-  { slug: "endrick", name: "Endrick", nameZh: "恩德里克", teamName: "Brazil", countryIso: "br", position: "FW", wikiTitle: "Endrick" },
+  { slug: "endrick", name: "Endrick", nameZh: "恩德里克", teamName: "Brazil", countryIso: "br", position: "FW", wikiTitle: "Endrick_(footballer,_born_2006)" },
   { slug: "kylian-mbappe", name: "Kylian Mbappé", nameZh: "姆巴佩", teamName: "France", countryIso: "fr", position: "FW", wikiTitle: "Kylian_Mbappé" },
   { slug: "antoine-griezmann", name: "Antoine Griezmann", nameZh: "格列兹曼", teamName: "France", countryIso: "fr", position: "FW", wikiTitle: "Antoine_Griezmann" },
   { slug: "aurelien-tchouameni", name: "Aurélien Tchouaméni", nameZh: "楚阿梅尼", teamName: "France", countryIso: "fr", position: "MF", wikiTitle: "Aurélien_Tchouaméni" },
@@ -58,7 +58,7 @@ export const PLAYERS: PlayerSeed[] = [
   { slug: "takefusa-kubo", name: "Takefusa Kubo", nameZh: "久保建英", teamName: "Japan", countryIso: "jp", position: "FW", wikiTitle: "Takefusa_Kubo" },
   { slug: "son-heung-min", name: "Son Heung-min", nameZh: "孙兴慜", teamName: "South Korea", countryIso: "kr", position: "FW", wikiTitle: "Son_Heung-min" },
   { slug: "robert-lewandowski", name: "Robert Lewandowski", nameZh: "莱万多夫斯基", teamName: "Poland", countryIso: "pl", position: "FW", wikiTitle: "Robert_Lewandowski" },
-  { slug: "luis-diaz", name: "Luis Díaz", nameZh: "路易斯·迪亚斯", teamName: "Colombia", countryIso: "co", position: "FW", wikiTitle: "Luis_Díaz" },
+  { slug: "luis-diaz", name: "Luis Díaz", nameZh: "路易斯·迪亚斯", teamName: "Colombia", countryIso: "co", position: "FW", wikiTitle: "Luis_Díaz_(footballer,_born_1997)" },
 ];
 
 /** slug → 中文常用译名（zh 渲染用；非 zh 仍显示拉丁原名）。 */

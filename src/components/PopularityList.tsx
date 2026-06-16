@@ -10,6 +10,7 @@ export interface PopularityRow {
   name: string;
   teamLabel: string;
   flag: string | null;
+  photo: string | null;
   votes: number;
   index: number; // 0-100 综合指数（服务端，排序依据）
   voteScore: number;
@@ -125,7 +126,10 @@ export function PopularityList({ rows, locale }: { rows: PopularityRow[]; locale
               className="flex items-center gap-3 rounded-md border border-border bg-surface-2 p-3"
             >
               <span className="font-head w-6 shrink-0 text-center text-lg font-bold text-muted">{r.rank}</span>
-              {r.flag ? (
+              {r.photo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={r.photo} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-border" />
+              ) : r.flag ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={r.flag} alt="" className="h-5 w-7 shrink-0 rounded-sm object-cover ring-1 ring-border" />
               ) : (
