@@ -291,6 +291,7 @@ export default async function CalculatorPage({
         remaining={remaining}
         rating={data.rating}
         focusLetter={hit?.letter ?? null}
+        focusTeamId={hit?.team.id ?? null}
       />
     </main>
   );
