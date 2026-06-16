@@ -8,7 +8,7 @@ export const de = {
   appName: "WM-Tippspiel · 2026",
   tagline: "Tippen · In der Rangliste aufsteigen · Ränge freischalten",
   disclaimer: "Nur zum Spaß · Punkte haben keinen realen Wert · Nicht einlösbar",
-  nav: { predict: "Tippen", combo: "Kombi", calc: "Weiter", forecast: "Prognose", ranking: "Ränge", me: "Ich" },
+  nav: { predict: "Tippen", combo: "Kombi", calc: "Weiter", forecast: "Prognose", ranking: "Ränge", me: "Ich", popularity: "Stars" },
   filter: { all: "Alle", upcoming: "Anstehend", done: "Beendet", empty: "Keine Spiele für diesen Filter." },
   footer: {
     calculator: "Szenario-Rechner",
@@ -93,6 +93,17 @@ export const de = {
     checkinFail: "Check-in fehlgeschlagen",
   },
   leaderboard: { title: "🏆 Rangliste", empty: "Noch niemand in der Rangliste — tippe ein Spiel und sammle Punkte!" },
+  popularity: {
+    title: "⭐ Publikumslieblinge",
+    subtitle: "Stimme für deine Lieblingsspieler · Beliebtheits-Index der Community",
+    cta: "Jetzt abstimmen →",
+    vote: "Abstimmen",
+    voted: "Abgestimmt ✓",
+    votes: "Stimmen",
+    empty: "Noch keine Spieler — schau bald wieder vorbei.",
+    note: "Nur zum Spaß · Community-Stimmen + öffentliche Daten · Keine Prognose oder Empfehlung",
+    voteFail: "Abstimmen fehlgeschlagen, bitte erneut versuchen",
+  },
   tiers: {
     bronze: "Bronze",
     silver: "Silber",

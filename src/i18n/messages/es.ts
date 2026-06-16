@@ -8,7 +8,7 @@ export const es = {
   appName: "Predictor del Mundial · 2026",
   tagline: "Predice · Sube en la tabla · Desbloquea rangos",
   disclaimer: "Solo por diversión · Los puntos no tienen valor real · No canjeables",
-  nav: { predict: "Predecir", combo: "Combinada", calc: "Avanzar", forecast: "Probabilidad", ranking: "Rangos", me: "Yo" },
+  nav: { predict: "Predecir", combo: "Combinada", calc: "Avanzar", forecast: "Probabilidad", ranking: "Rangos", me: "Yo", popularity: "Estrellas" },
   filter: { all: "Todos", upcoming: "Próximos", done: "Finalizados", empty: "No hay partidos para este filtro." },
   footer: {
     calculator: "Calculadora de escenarios",
@@ -93,6 +93,17 @@ export const es = {
     checkinFail: "Error en el registro",
   },
   leaderboard: { title: "🏆 Clasificación", empty: "Nadie en la tabla todavía — ¡predice un partido y gana puntos!" },
+  popularity: {
+    title: "⭐ Favoritos de la afición",
+    subtitle: "Vota por tus jugadores favoritos · índice de popularidad de la comunidad",
+    cta: "Votar ahora →",
+    vote: "Votar",
+    voted: "Votado ✓",
+    votes: "votos",
+    empty: "Aún no hay jugadores — vuelve pronto.",
+    note: "Solo por diversión · Votos de la comunidad + datos públicos · No es una predicción ni un respaldo",
+    voteFail: "Error al votar, inténtalo de nuevo",
+  },
   tiers: {
     bronze: "Bronce",
     silver: "Plata",

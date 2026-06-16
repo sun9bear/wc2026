@@ -2,7 +2,8 @@ import { ImageResponse } from "next/og";
 import QRCode from "qrcode";
 import { getForecast } from "@/lib/prob/pipeline";
 import { findTeam } from "@/lib/prob/findTeam";
-import { teamName } from "@/lib/football/teams";
+import { teamName, flagUrl } from "@/lib/football/teams";
+import { getRanking } from "@/lib/players/getRanking";
 import { type Locale, isLocale } from "@/i18n";
 import { findBannedTermsStrict } from "@/lib/compliance/bannedTerms";
 
@@ -85,6 +86,101 @@ export async function GET(req: Request) {
   // 二维码意图（任务 D）：默认仅 zh 卡渲染；qr=1 强制开、qr=0 强制关。u=要编码的站内路径。
   const qrFlag = searchParams.get("qr");
   const uPath = searchParams.get("u");
+
+  // 球迷最爱 Top 10 图卡（mode=ranking）：社区人气指数榜，传播弹药。数据 = getRanking()。
+  // 只渲染 DB/聚合静态数据（球员名=策展种子、指数=合成），无任何用户输入文本 → 零雷词风险。
+  if (searchParams.get("mode") === "ranking") {
+    const ranking = (await getRanking().catch(() => [])).slice(0, 10);
+    const nowStr = new Date().toISOString().slice(0, 16).replace("T", " ");
+    let rfonts: { name: string; data: ArrayBuffer; weight: 700 }[] = [];
+    if (locale === "zh") {
+      const txt =
+        ranking.map((r) => r.name).join("") +
+        ranking.map((r) => teamName(r.teamName, "zh")).join("") +
+        "世界杯球迷最爱社区人气指数仅供娱乐扫码投票公开数据更新于0123456789.%· Top";
+      const f = await loadZhFont(txt);
+      if (f) rfonts = [{ name: "NotoSansSC", data: f, weight: 700 }];
+      else locale = "en";
+    }
+    const RL = (
+      {
+        zh: { kicker: "世界杯 2026 · 球迷最爱", sub: "社区人气指数 · Top 10", updated: `更新于 ${nowStr} UTC`, disc: "仅供娱乐 · 社区投票与公开数据", scan: "扫码投票" },
+        en: { kicker: "World Cup 2026 · Fan Favorites", sub: "Community popularity index · Top 10", updated: `Updated ${nowStr} UTC`, disc: "For entertainment only · community votes + public data", scan: "scan to vote" },
+        es: { kicker: "Mundial 2026 · Favoritos de la afición", sub: "Índice de popularidad · Top 10", updated: `Actualizado ${nowStr} UTC`, disc: "Solo entretenimiento · votos + datos públicos", scan: "" },
+        pt: { kicker: "Copa 2026 · Favoritos da torcida", sub: "Índice de popularidade · Top 10", updated: `Atualizado ${nowStr} UTC`, disc: "Apenas entretenimento · votos + dados públicos", scan: "" },
+        de: { kicker: "WM 2026 · Publikumslieblinge", sub: "Beliebtheits-Index · Top 10", updated: `Aktualisiert ${nowStr} UTC`, disc: "Nur zur Unterhaltung · Stimmen + öffentliche Daten", scan: "" },
+        fr: { kicker: "Mondial 2026 · Favoris des fans", sub: "Indice de popularité · Top 10", updated: `Mis à jour ${nowStr} UTC`, disc: "Divertissement · votes + données publiques", scan: "" },
+      } as Record<Locale, { kicker: string; sub: string; updated: string; disc: string; scan: string }>
+    )[locale];
+    const qr = locale === "zh" && qrFlag !== "0" ? await qrDataUrl(uPath ?? "/popularity") : null;
+    const rbase: React.CSSProperties = {
+      width: "100%",
+      height: "100%",
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "space-between",
+      backgroundColor: "#0A0E13",
+      color: "#E8EDF2",
+      padding: 64,
+      fontFamily: rfonts.length ? "NotoSansSC" : "sans-serif",
+    };
+    return new ImageResponse(
+      (
+        <div style={rbase}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{ display: "flex", width: 14, height: 14, borderRadius: 7, backgroundColor: "#1BE27F" }} />
+                <div style={{ display: "flex", fontSize: 28, color: "#8A97A6" }}>{RL.kicker}</div>
+              </div>
+              <div style={{ display: "flex", fontSize: 30, fontWeight: 700, color: "#1BE27F" }}>wc2026.cool</div>
+            </div>
+            <div style={{ display: "flex", fontSize: 36, fontWeight: 700, color: "#E8EDF2" }}>{RL.sub}</div>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", flexGrow: 1, justifyContent: "center", marginTop: 8 }}>
+            {ranking.map((r, i) => {
+              const flag = flagUrl(r.teamName);
+              return (
+                <div
+                  key={r.id}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: 74, borderBottom: "1px solid #161C24" }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+                    <div style={{ display: "flex", width: 40, justifyContent: "flex-end", fontSize: 30, fontWeight: 700, color: i < 3 ? "#1BE27F" : "#8A97A6" }}>{i + 1}</div>
+                    {flag ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={flag.replace("/w80/", "/w160/")} width={54} height={36} style={{ borderRadius: 5, objectFit: "cover" }} />
+                    ) : (
+                      <div style={{ display: "flex", width: 54, height: 36, borderRadius: 5, backgroundColor: "#1B232D" }} />
+                    )}
+                    <div style={{ display: "flex", fontSize: 34, fontWeight: 700, color: "#E8EDF2" }}>{r.name}</div>
+                    <div style={{ display: "flex", fontSize: 22, color: "#5a6472" }}>{teamName(r.teamName, locale)}</div>
+                  </div>
+                  <div style={{ display: "flex", width: 90, justifyContent: "flex-end", fontSize: 34, fontWeight: 700, color: "#1BE27F" }}>{r.index}</div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 24, marginTop: 8 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, color: "#5a6472" }}>
+              <div style={{ display: "flex", fontSize: 23 }}>{RL.updated}</div>
+              <div style={{ display: "flex", fontSize: 21 }}>{`wc2026.cool · ${RL.disc}`}</div>
+            </div>
+            {qr ? (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={qr} width={120} height={120} style={{ borderRadius: 10 }} />
+                <div style={{ display: "flex", fontSize: 20, color: "#8A97A6" }}>{RL.scan}</div>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ),
+      { width: 1080, height: 1440, fonts: rfonts.length ? rfonts : undefined }
+    );
+  }
 
   const data = await getForecast();
   const hit = q ? findTeam(data, q) : null;

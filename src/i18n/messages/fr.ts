@@ -8,7 +8,7 @@ export const fr = {
   appName: "Prédictions Coupe du Monde · 2026",
   tagline: "Prédis · Grimpe au classement · Débloque des rangs",
   disclaimer: "Pour le fun · Les points n'ont aucune valeur réelle · Non échangeables",
-  nav: { predict: "Prédire", combo: "Combiné", calc: "Avancer", forecast: "Prévisions", ranking: "Rangs", me: "Moi" },
+  nav: { predict: "Prédire", combo: "Combiné", calc: "Avancer", forecast: "Prévisions", ranking: "Rangs", me: "Moi", popularity: "Stars" },
   filter: { all: "Tous", upcoming: "À venir", done: "Terminés", empty: "Aucun match pour ce filtre." },
   footer: {
     calculator: "Calculateur de scénarios",
@@ -93,6 +93,17 @@ export const fr = {
     checkinFail: "Échec du pointage",
   },
   leaderboard: { title: "🏆 Classement", empty: "Personne au classement — prédis un match et gagne des points !" },
+  popularity: {
+    title: "⭐ Favoris des fans",
+    subtitle: "Vote pour tes joueurs préférés · indice de popularité de la communauté",
+    cta: "Voter →",
+    vote: "Voter",
+    voted: "Voté ✓",
+    votes: "votes",
+    empty: "Pas encore de joueurs — reviens bientôt.",
+    note: "Pour le fun · Votes de la communauté + données publiques · Ni prédiction ni recommandation",
+    voteFail: "Échec du vote, réessaie",
+  },
   tiers: {
     bronze: "Bronze",
     silver: "Argent",

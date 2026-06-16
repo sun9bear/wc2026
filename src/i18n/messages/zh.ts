@@ -4,7 +4,7 @@ export const zh = {
   appName: "环球足球预测 · 2026",
   tagline: "趣味预测 · 冲榜 · 解锁段位",
   disclaimer: "仅供娱乐 · 积分无现实价值 · 不可兑换",
-  nav: { predict: "预测", combo: "串关", calc: "出线", forecast: "概率", ranking: "排行", me: "我的" },
+  nav: { predict: "预测", combo: "串关", calc: "出线", forecast: "概率", ranking: "排行", me: "我的", popularity: "人气" },
   filter: { all: "全部", upcoming: "未开赛", done: "已结束", empty: "该筛选下暂无比赛。" },
   footer: {
     calculator: "出线计算器",
@@ -89,6 +89,17 @@ export const zh = {
     checkinFail: "签到失败",
   },
   leaderboard: { title: "🏆 排行榜", empty: "还没有人上榜，快去预测拿积分吧！" },
+  popularity: {
+    title: "⭐ 球迷最爱",
+    subtitle: "为你喜欢的球员投票 · 社区人气榜",
+    cta: "去投票 →",
+    vote: "投票",
+    voted: "已投 ✓",
+    votes: "票",
+    empty: "暂无球员，稍后再来。",
+    note: "仅供娱乐 · 社区投票与公开数据合成 · 不构成预测或背书",
+    voteFail: "投票失败，请重试",
+  },
   tiers: {
     bronze: "青铜",
     silver: "白银",

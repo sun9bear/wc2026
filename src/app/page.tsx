@@ -117,6 +117,13 @@ export default async function Home({
         <Link href={localeHref(locale, "/league")} className="text-muted hover:text-green">
           {t.hero.leagueLink}
         </Link>
+        <TrackedLink
+          href={localeHref(locale, "/popularity")}
+          event="home_popularity_click"
+          className="text-muted hover:text-green"
+        >
+          {t.popularity.title}
+        </TrackedLink>
       </div>
 
       <div className="mb-5 flex items-center gap-2 text-xs">

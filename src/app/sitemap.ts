@@ -45,6 +45,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/forecast", changeFrequency: "hourly", priority: 0.9 },
     { path: "/forecast/best-thirds", changeFrequency: "hourly", priority: 0.85 },
     { path: "/scorers", changeFrequency: "hourly", priority: 0.8 },
+    { path: "/popularity", changeFrequency: "daily", priority: 0.7 },
     { path: "/calculator", changeFrequency: "daily", priority: 0.85 },
     { path: "/rules", changeFrequency: "monthly", priority: 0.8, lastModified: "2026-06-14" },
     // 12 个按组着陆页（脉冲式搜索："Group A who advances" / "X 组出线形势"）

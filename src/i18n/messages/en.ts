@@ -5,7 +5,7 @@ export const en = {
   appName: "World Cup Predictor · 2026",
   tagline: "Predict · Climb the board · Unlock ranks",
   disclaimer: "For fun only · Points have no real value · Non-redeemable",
-  nav: { predict: "Predict", combo: "Combo", calc: "Advance", forecast: "Forecast", ranking: "Ranks", me: "Me" },
+  nav: { predict: "Predict", combo: "Combo", calc: "Advance", forecast: "Forecast", ranking: "Ranks", me: "Me", popularity: "Stars" },
   filter: { all: "All", upcoming: "Upcoming", done: "Finished", empty: "No matches for this filter." },
   footer: {
     calculator: "Scenario Calculator",
@@ -90,6 +90,17 @@ export const en = {
     checkinFail: "Check-in failed",
   },
   leaderboard: { title: "🏆 Leaderboard", empty: "No one on the board yet — predict a match to earn points!" },
+  popularity: {
+    title: "⭐ Fan Favorites",
+    subtitle: "Vote for your favorite players · community popularity index",
+    cta: "Vote now →",
+    vote: "Vote",
+    voted: "Voted ✓",
+    votes: "votes",
+    empty: "No players yet — check back soon.",
+    note: "For fun only · Community votes + public data · Not a prediction or endorsement",
+    voteFail: "Vote failed, please try again",
+  },
   tiers: {
     bronze: "Bronze",
     silver: "Silver",

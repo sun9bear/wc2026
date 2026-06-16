@@ -8,7 +8,7 @@ export const pt = {
   appName: "Preditor da Copa · 2026",
   tagline: "Preveja · Suba no ranking · Desbloqueie patentes",
   disclaimer: "Só por diversão · Os pontos não têm valor real · Não resgatáveis",
-  nav: { predict: "Prever", combo: "Combinada", calc: "Avançar", forecast: "Probabilidade", ranking: "Ranking", me: "Eu" },
+  nav: { predict: "Prever", combo: "Combinada", calc: "Avançar", forecast: "Probabilidade", ranking: "Ranking", me: "Eu", popularity: "Craques" },
   filter: { all: "Todos", upcoming: "Próximos", done: "Encerrados", empty: "Nenhum jogo para este filtro." },
   footer: {
     calculator: "Calculadora de cenários",
@@ -93,6 +93,17 @@ export const pt = {
     checkinFail: "Falha no check-in",
   },
   leaderboard: { title: "🏆 Classificação", empty: "Ninguém no ranking ainda — preveja um jogo e ganhe pontos!" },
+  popularity: {
+    title: "⭐ Favoritos da torcida",
+    subtitle: "Vote nos seus jogadores favoritos · índice de popularidade da comunidade",
+    cta: "Votar agora →",
+    vote: "Votar",
+    voted: "Votado ✓",
+    votes: "votos",
+    empty: "Ainda não há jogadores — volte em breve.",
+    note: "Só por diversão · Votos da comunidade + dados públicos · Não é previsão nem recomendação",
+    voteFail: "Falha ao votar, tente novamente",
+  },
   tiers: {
     bronze: "Bronze",
     silver: "Prata",

@@ -25,7 +25,7 @@ export interface Dict {
   appName: string;
   tagline: string;
   disclaimer: string;
-  nav: { predict: string; combo: string; calc: string; forecast: string; ranking: string; me: string };
+  nav: { predict: string; combo: string; calc: string; forecast: string; ranking: string; me: string; popularity: string };
   filter: { all: string; upcoming: string; done: string; empty: string };
   footer: {
     calculator: string;
@@ -110,6 +110,17 @@ export interface Dict {
     checkinFail: string;
   };
   leaderboard: { title: string; empty: string };
+  popularity: {
+    title: string;
+    subtitle: string;
+    cta: string;
+    vote: string;
+    voted: string;
+    votes: string;
+    empty: string;
+    note: string;
+    voteFail: string;
+  };
   tiers: Record<string, string>;
   ach: Record<string, { label: string; desc: string }>;
 }
