@@ -100,6 +100,10 @@ export const en = {
     empty: "No players yet — check back soon.",
     note: "For fun only · Community votes + public data · Not a prediction or endorsement",
     voteFail: "Vote failed, please try again",
+    voteRepeat: "Again -10",
+    dailyMax: "Maxed today",
+    noPoints: "Not enough points",
+    points: "Points",
   },
   tiers: {
     bronze: "Bronze",

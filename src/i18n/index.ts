@@ -120,6 +120,10 @@ export interface Dict {
     empty: string;
     note: string;
     voteFail: string;
+    voteRepeat: string;
+    dailyMax: string;
+    noPoints: string;
+    points: string;
   };
   tiers: Record<string, string>;
   ach: Record<string, { label: string; desc: string }>;

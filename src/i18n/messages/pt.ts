@@ -103,6 +103,10 @@ export const pt = {
     empty: "Ainda não há jogadores — volte em breve.",
     note: "Só por diversão · Votos da comunidade + dados públicos · Não é previsão nem recomendação",
     voteFail: "Falha ao votar, tente novamente",
+    voteRepeat: "Mais -10",
+    dailyMax: "Máx. hoje",
+    noPoints: "Pontos insuficientes",
+    points: "Pontos",
   },
   tiers: {
     bronze: "Bronze",

@@ -103,6 +103,10 @@ export const fr = {
     empty: "Pas encore de joueurs — reviens bientôt.",
     note: "Pour le fun · Votes de la communauté + données publiques · Ni prédiction ni recommandation",
     voteFail: "Échec du vote, réessaie",
+    voteRepeat: "Encore -10",
+    dailyMax: "Max auj.",
+    noPoints: "Points insuffisants",
+    points: "Points",
   },
   tiers: {
     bronze: "Bronze",

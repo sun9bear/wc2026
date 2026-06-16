@@ -103,6 +103,10 @@ export const de = {
     empty: "Noch keine Spieler — schau bald wieder vorbei.",
     note: "Nur zum Spaß · Community-Stimmen + öffentliche Daten · Keine Prognose oder Empfehlung",
     voteFail: "Abstimmen fehlgeschlagen, bitte erneut versuchen",
+    voteRepeat: "Nochmal -10",
+    dailyMax: "Max heute",
+    noPoints: "Zu wenig Punkte",
+    points: "Punkte",
   },
   tiers: {
     bronze: "Bronze",

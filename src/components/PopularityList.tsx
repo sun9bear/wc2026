@@ -18,17 +18,20 @@ export interface PopularityRow {
   blurb: string | null;
 }
 
+const DAILY_MAX = 5; // 每球员每天最多票数（与 API 一致）
+
 export function PopularityList({ rows, locale }: { rows: PopularityRow[]; locale: Locale }) {
   const t = getDict(locale).popularity;
-  // 仅票数乐观更新（🗳 立即反馈）；index/分项为服务端静态值，SSR 60s 内收敛。
+  // 票数乐观更新（🗳 立即反馈）；index/分项为服务端静态值，SSR 60s 内收敛。
   const [votes, setVotes] = useState<Record<string, number>>(() =>
     Object.fromEntries(rows.map((r) => [r.id, r.votes]))
   );
-  const [voted, setVoted] = useState<Set<string>>(new Set());
+  const [myToday, setMyToday] = useState<Record<string, number>>({}); // 今日各球员已投票数
+  const [balance, setBalance] = useState<number | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
-  // 挂载后查「我投过谁」（未登录则空，不主动注册）。
+  // 挂载后查「今日已投 + 余额」（未登录则空，不主动注册）。
   useEffect(() => {
     (async () => {
       const session = (await supabase.auth.getSession()).data.session;
@@ -37,28 +40,29 @@ export function PopularityList({ rows, locale }: { rows: PopularityRow[]; locale
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
       if (res.ok) {
-        const j = (await res.json()) as { voted: string[] };
-        setVoted(new Set(j.voted));
+        const j = (await res.json()) as { mine?: Record<string, number>; balance?: number | null };
+        setMyToday(j.mine ?? {});
+        setBalance(j.balance ?? null);
       }
     })();
   }, []);
 
-  async function toggle(id: string) {
+  async function vote(id: string) {
     if (busy) return;
+    const cur = myToday[id] ?? 0;
+    if (cur >= DAILY_MAX) {
+      setErr(t.dailyMax);
+      return;
+    }
     setBusy(id);
     setErr(null);
-    const wasVoted = voted.has(id);
-    const action = wasVoted ? "unvote" : "vote";
-
-    // 乐观更新
-    setVoted((prev) => {
-      const n = new Set(prev);
-      if (wasVoted) n.delete(id);
-      else n.add(id);
-      return n;
-    });
-    setVotes((prev) => ({ ...prev, [id]: (prev[id] ?? 0) + (wasVoted ? -1 : 1) }));
-
+    // 乐观 +1
+    setVotes((p) => ({ ...p, [id]: (p[id] ?? 0) + 1 }));
+    setMyToday((p) => ({ ...p, [id]: (p[id] ?? 0) + 1 }));
+    const rollback = () => {
+      setVotes((p) => ({ ...p, [id]: Math.max(0, (p[id] ?? 0) - 1) }));
+      setMyToday((p) => ({ ...p, [id]: Math.max(0, (p[id] ?? 0) - 1) }));
+    };
     try {
       let session = (await supabase.auth.getSession()).data.session;
       if (!session) {
@@ -72,26 +76,25 @@ export function PopularityList({ rows, locale }: { rows: PopularityRow[]; locale
           "Content-Type": "application/json",
           Authorization: `Bearer ${session?.access_token ?? ""}`,
         },
-        body: JSON.stringify({ playerId: id, action }),
+        body: JSON.stringify({ playerId: id }),
       });
-      if (!res.ok) throw new Error("vote failed");
-      const j = (await res.json()) as { votes: number; voted: boolean };
-      setVotes((prev) => ({ ...prev, [id]: j.votes }));
-      setVoted((prev) => {
-        const n = new Set(prev);
-        if (j.voted) n.add(id);
-        else n.delete(id);
-        return n;
-      });
+      const j = (await res.json().catch(() => ({}))) as {
+        votes?: number;
+        todayCount?: number;
+        balance?: number | null;
+        error?: string;
+      };
+      if (!res.ok) {
+        rollback();
+        setErr(j.error === "insufficient_points" ? t.noPoints : j.error === "daily_limit" ? t.dailyMax : t.voteFail);
+        return;
+      }
+      // 以服务端真值校正
+      if (typeof j.votes === "number") setVotes((p) => ({ ...p, [id]: j.votes as number }));
+      if (typeof j.todayCount === "number") setMyToday((p) => ({ ...p, [id]: j.todayCount as number }));
+      if (typeof j.balance === "number") setBalance(j.balance);
     } catch {
-      // 回滚
-      setVoted((prev) => {
-        const n = new Set(prev);
-        if (wasVoted) n.add(id);
-        else n.delete(id);
-        return n;
-      });
-      setVotes((prev) => ({ ...prev, [id]: (prev[id] ?? 0) + (wasVoted ? 1 : -1) }));
+      rollback();
       setErr(t.voteFail);
     } finally {
       setBusy(null);
@@ -100,18 +103,28 @@ export function PopularityList({ rows, locale }: { rows: PopularityRow[]; locale
 
   return (
     <>
-      {err && <p className="mt-3 text-center text-xs text-red">{err}</p>}
-      <ul className="mt-5 space-y-2">
+      {balance !== null && (
+        <p className="mt-3 text-right text-[11px] text-muted">
+          {t.points}: <span className="font-head font-bold text-gold tabular-nums">{balance}</span>
+        </p>
+      )}
+      {err && <p className="mt-2 text-center text-xs text-red">{err}</p>}
+      <ul className="mt-3 space-y-2">
         {rows.map((r) => {
-          const isVoted = voted.has(r.id);
+          const cur = myToday[r.id] ?? 0;
+          const maxed = cur >= DAILY_MAX;
+          const label = maxed ? t.dailyMax : cur === 0 ? t.vote : t.voteRepeat;
+          const btnCls = maxed
+            ? "border border-border text-muted"
+            : cur === 0
+              ? "bg-green text-[#06231a]"
+              : "border border-gold/60 text-gold";
           return (
             <li
               key={r.id}
               className="flex items-center gap-3 rounded-md border border-border bg-surface-2 p-3"
             >
-              <span className="font-head w-6 shrink-0 text-center text-lg font-bold text-muted">
-                {r.rank}
-              </span>
+              <span className="font-head w-6 shrink-0 text-center text-lg font-bold text-muted">{r.rank}</span>
               {r.flag ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={r.flag} alt="" className="h-5 w-7 shrink-0 rounded-sm object-cover ring-1 ring-border" />
@@ -123,9 +136,10 @@ export function PopularityList({ rows, locale }: { rows: PopularityRow[]; locale
                   <span className="text-sm font-medium">{r.name}</span>
                   <span className="ml-1.5 text-[11px] text-muted">{r.teamLabel}</span>
                 </span>
-                {/* 分项拆解（透明）：🗳 票数 · ⚽ 表现0-100 · 🔥 热度0-100 */}
+                {/* 分项拆解（透明）：🗳 总票 · ⚽ 表现0-100 · 🔥 热度0-100 · 今日x/5 */}
                 <span className="block text-[11px] text-muted tabular-nums">
                   🗳 {Math.max(0, votes[r.id] ?? 0)} · ⚽ {r.perfScore} · 🔥 {r.buzzScore}
+                  {cur > 0 ? ` · ${cur}/${DAILY_MAX}` : ""}
                 </span>
                 {r.blurb && <span className="mt-0.5 block text-[11px] italic text-muted">{r.blurb}</span>}
               </span>
@@ -137,13 +151,11 @@ export function PopularityList({ rows, locale }: { rows: PopularityRow[]; locale
               </span>
               <button
                 type="button"
-                onClick={() => toggle(r.id)}
-                disabled={busy === r.id}
-                className={`shrink-0 rounded-pill px-3 py-1.5 text-xs font-bold transition disabled:opacity-40 ${
-                  isVoted ? "bg-green text-[#06231a]" : "border border-green/50 text-green"
-                }`}
+                onClick={() => vote(r.id)}
+                disabled={busy === r.id || maxed}
+                className={`shrink-0 rounded-pill px-3 py-1.5 text-xs font-bold transition disabled:opacity-40 ${btnCls}`}
               >
-                {isVoted ? t.voted : t.vote}
+                {busy === r.id ? "…" : label}
               </button>
             </li>
           );

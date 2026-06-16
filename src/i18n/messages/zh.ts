@@ -99,6 +99,10 @@ export const zh = {
     empty: "暂无球员，稍后再来。",
     note: "仅供娱乐 · 社区投票与公开数据合成 · 不构成预测或背书",
     voteFail: "投票失败，请重试",
+    voteRepeat: "再投 -10",
+    dailyMax: "今日已满",
+    noPoints: "积分不足",
+    points: "积分",
   },
   tiers: {
     bronze: "青铜",

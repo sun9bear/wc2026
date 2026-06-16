@@ -3,10 +3,10 @@ import { createClient } from "@supabase/supabase-js";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { rateLimit } from "@/lib/rateLimit";
 
-// 球员人气投票：投票 / 撤票 / 查询「我投过谁」。
-// 防滥用（对齐 src/app/api/track/route.ts）：同源校验 + IP/用户双限速 + unique(player_id,user_id) 去重 + 匿名 auth 身份。
-// 写只走 service_role（绕 RLS）；读自己的票按 user_id 过滤。
-// 未接 Turnstile：与现有写端点（predict/checkin/combo）一致，避免 fail-closed 误杀；遇刷量再加（见设计 §10）。
+// 球员人气投票（积分经济）：每用户每球员每天 第1票免费、第2-5票各扣 10 积分、每天最多 5 票。
+// 核心逻辑在 DB RPC cast_player_vote（advisory lock 下原子 计数→收费→落票，杜绝并发刷免费/超额）。
+// 投票不可撤、积分不退；"每天"= UTC 日。排名票数=累计总票（player_vote_counts 视图）。
+// 路由层：同源 + IP/用户限速 + 匿名 auth 身份校验。
 
 function getIp(req: NextRequest): string {
   return (
@@ -37,44 +37,51 @@ async function getUserId(req: NextRequest): Promise<string | null> {
   return data.user?.id ?? null;
 }
 
-// GET ?mine=1 → 当前用户投过的 player_id 列表（未登录返回空）。
+function todayStartISO(): string {
+  return new Date().toISOString().slice(0, 10) + "T00:00:00.000Z"; // 当日 UTC 0 点
+}
+
+// GET ?mine=1 → 当前用户今日各球员已投票数 + 积分余额（未登录返回空）。
 export async function GET(req: NextRequest) {
-  // 限速读路径（防认证读端点被高速刷库；GET 同源 Origin 可缺失，故只限速不校同源）。
   if (!rateLimit(`vote_get:${getIp(req)}`, 30, 60_000)) {
-    return NextResponse.json({ voted: [] }, { status: 429 });
+    return NextResponse.json({ mine: {}, balance: null }, { status: 429 });
   }
   const userId = await getUserId(req);
-  if (!userId) return NextResponse.json({ voted: [] });
+  if (!userId) return NextResponse.json({ mine: {}, balance: null });
   const db = getServerSupabase();
-  const { data } = await db.from("player_votes").select("player_id").eq("user_id", userId);
-  const voted = ((data as { player_id: string }[] | null) ?? []).map((r) => r.player_id);
-  return NextResponse.json({ voted });
+  const [vRes, pRes] = await Promise.all([
+    db.from("player_votes").select("player_id").eq("user_id", userId).gte("created_at", todayStartISO()),
+    db.from("profiles").select("points_balance").eq("user_id", userId).maybeSingle(),
+  ]);
+  const mine: Record<string, number> = {};
+  for (const v of (vRes.data as { player_id: string }[] | null) ?? []) {
+    mine[v.player_id] = (mine[v.player_id] ?? 0) + 1;
+  }
+  const balance = (pRes.data as { points_balance: number } | null)?.points_balance ?? null;
+  return NextResponse.json({ mine, balance });
 }
 
 export async function POST(req: NextRequest) {
   if (!sameOrigin(req)) return NextResponse.json({ error: "forbidden" }, { status: 403 });
-
   const ip = getIp(req);
   if (!rateLimit(`vote:${ip}`, 30, 60_000)) {
     return NextResponse.json({ error: "too_many_requests" }, { status: 429 });
   }
-
   const userId = await getUserId(req);
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   if (!rateLimit(`vote_u:${userId}`, 20, 60_000)) {
     return NextResponse.json({ error: "too_many_requests" }, { status: 429 });
   }
 
-  const body = (await req.json().catch(() => null)) as { playerId?: string; action?: string } | null;
+  const body = (await req.json().catch(() => null)) as { playerId?: string } | null;
   const playerId = body?.playerId;
-  const action = body?.action === "unvote" ? "unvote" : "vote";
   if (!playerId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(playerId)) {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
 
   const db = getServerSupabase();
 
-  // 候选必须存在且在榜（防对任意 UUID 灌票）。
+  // 候选必须存在且在榜（清晰的 404，且避免对任意 UUID 起锁）。
   const { data: pRow } = await db
     .from("players")
     .select("id")
@@ -83,24 +90,33 @@ export async function POST(req: NextRequest) {
     .maybeSingle();
   if (!pRow) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
-  if (action === "vote") {
-    const { error } = await db
-      .from("player_votes")
-      .upsert({ player_id: playerId, user_id: userId }, { onConflict: "player_id,user_id" });
-    if (error) return NextResponse.json({ error: "write_failed" }, { status: 500 });
-  } else {
-    const { error } = await db
-      .from("player_votes")
-      .delete()
-      .eq("player_id", playerId)
-      .eq("user_id", userId);
-    if (error) return NextResponse.json({ error: "write_failed" }, { status: 500 });
+  // 原子投票（计数+收费+落票，advisory lock 串行化）。
+  const { data: result, error: rpcErr } = await db.rpc("cast_player_vote", {
+    p_user: userId,
+    p_player: playerId,
+  });
+  if (rpcErr) {
+    console.error("cast_player_vote failed:", rpcErr.message);
+    return NextResponse.json({ error: "write_failed" }, { status: 500 });
+  }
+  const r = (result ?? {}) as {
+    error?: string;
+    votes?: number;
+    today_count?: number;
+    cost?: number;
+    balance?: number | null;
+  };
+  if (r.error === "daily_limit") return NextResponse.json({ error: "daily_limit" }, { status: 409 });
+  if (r.error === "insufficient_points") {
+    return NextResponse.json({ error: "insufficient_points" }, { status: 402 });
   }
 
-  const { count } = await db
-    .from("player_votes")
-    .select("*", { count: "exact", head: true })
-    .eq("player_id", playerId);
-
-  return NextResponse.json({ ok: true, playerId, voted: action === "vote", votes: count ?? 0 });
+  return NextResponse.json({
+    ok: true,
+    playerId,
+    votes: r.votes ?? 0,
+    todayCount: r.today_count ?? 0,
+    cost: r.cost ?? 0,
+    balance: r.balance ?? null,
+  });
 }
