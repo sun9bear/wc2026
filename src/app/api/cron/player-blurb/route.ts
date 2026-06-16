@@ -27,23 +27,31 @@ export async function GET(req: NextRequest) {
 
   const [{ data: pData }, { data: mData }] = await Promise.all([
     db.from("players").select("id, name, team_name, position").eq("is_active", true),
-    db.from("player_metrics").select("player_id, ai_blurb, ai_blurb_en"),
+    db.from("player_metrics").select("player_id, ai_blurb, ai_blurb_en, ai_updated_at"),
   ]);
   const players =
     (pData as { id: string; name: string; team_name: string; position: string | null }[] | null) ?? [];
   const have = new Map(
-    ((mData as { player_id: string; ai_blurb: string | null; ai_blurb_en: string | null }[] | null) ?? []).map(
-      (m) => [m.player_id, m] as const
-    )
+    (
+      (mData as
+        | { player_id: string; ai_blurb: string | null; ai_blurb_en: string | null; ai_updated_at: string | null }[]
+        | null) ?? []
+    ).map((m) => [m.player_id, m] as const)
   );
+  const staleAt = (id: string) => {
+    const m = have.get(id);
+    return m?.ai_updated_at ? Date.parse(m.ai_updated_at) : 0;
+  };
 
+  // 缺任一语种即需处理；按「最久未尝试优先」轮转 + 每轮 CAP 名 →
+  // 不卡在前几名(某语种持续 429)，且最终补齐全部(含 en，随 Gemini 限额逐轮恢复)。
   const todo = players
     .filter((p) => {
       if (force) return true;
       const m = have.get(p.id);
-      // 有任一语种短评即视为已处理：避免某语种（如 Gemini 限流）持续失败时卡在同一批、无法推进到后续球员。
-      return !m?.ai_blurb && !m?.ai_blurb_en;
+      return !m?.ai_blurb || !m?.ai_blurb_en;
     })
+    .sort((a, b) => staleAt(a.id) - staleAt(b.id))
     .slice(0, CAP);
 
   const now = new Date().toISOString();
