@@ -29,13 +29,17 @@ export async function GET(req: NextRequest) {
   for (const p of players) {
     if (!p.wiki_title) continue;
     const views = await fetchPageviews(p.wiki_title);
-    const { error } = await db
-      .from("player_metrics")
-      .upsert(
-        { player_id: p.id, buzz_raw: views, buzz_updated_at: now },
-        { onConflict: "player_id" }
-      );
-    if (!error) updated++;
+    // views=0 多为抓取失败/429 → 跳过，保留上次好值（绝不把已有热度清成 0）。
+    if (views > 0) {
+      const { error } = await db
+        .from("player_metrics")
+        .upsert(
+          { player_id: p.id, buzz_raw: views, buzz_updated_at: now },
+          { onConflict: "player_id" }
+        );
+      if (!error) updated++;
+    }
+    await new Promise((r) => setTimeout(r, 200)); // 节流，避免 wikimedia 突发 429
   }
 
   return NextResponse.json({ ok: true, updated, total: players.length });

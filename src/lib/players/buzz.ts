@@ -26,13 +26,20 @@ export async function fetchPageviews(wikiTitle: string, days = 7): Promise<numbe
   // 当日 pageviews 未结算（Wikimedia 对未完成日整段 404）→ end 取昨日，回看 days 个完整日。
   const end = new Date(Date.now() - 86_400_000);
   const start = new Date(end.getTime() - (days - 1) * 86_400_000);
-  try {
-    const res = await fetch(pageviewsUrl(wikiTitle, start, end), {
-      headers: { "User-Agent": UA, "Api-User-Agent": UA },
-    });
-    if (!res.ok) return 0;
-    return sumViews(await res.json());
-  } catch {
-    return 0;
+  const url = pageviewsUrl(wikiTitle, start, end);
+  // Wikimedia 对突发请求会 429（与标题无关，实测）→ 退避重试；批量间仍需节流（见 cron 循环）。
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(url, { headers: { "User-Agent": UA, "Api-User-Agent": UA } });
+      if (res.status === 429) {
+        await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
+        continue;
+      }
+      if (!res.ok) return 0;
+      return sumViews(await res.json());
+    } catch {
+      return 0;
+    }
   }
+  return 0;
 }
