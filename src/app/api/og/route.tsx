@@ -4,6 +4,7 @@ import { getForecast } from "@/lib/prob/pipeline";
 import { findTeam } from "@/lib/prob/findTeam";
 import { teamName, flagUrl } from "@/lib/football/teams";
 import { getRanking } from "@/lib/players/getRanking";
+import { nameZhBySlug } from "@/data/players.seed";
 import { type Locale, isLocale } from "@/i18n";
 import { findBannedTermsStrict } from "@/lib/compliance/bannedTerms";
 
@@ -95,7 +96,7 @@ export async function GET(req: Request) {
     let rfonts: { name: string; data: ArrayBuffer; weight: 700 }[] = [];
     if (locale === "zh") {
       const txt =
-        ranking.map((r) => r.name).join("") +
+        ranking.map((r) => nameZhBySlug.get(r.slug) ?? r.name).join("") +
         ranking.map((r) => teamName(r.teamName, "zh")).join("") +
         "世界杯球迷最爱社区人气指数仅供娱乐扫码投票公开数据更新于0123456789.%· Top";
       const f = await loadZhFont(txt);
@@ -154,7 +155,7 @@ export async function GET(req: Request) {
                     ) : (
                       <div style={{ display: "flex", width: 54, height: 36, borderRadius: 5, backgroundColor: "#1B232D" }} />
                     )}
-                    <div style={{ display: "flex", fontSize: 34, fontWeight: 700, color: "#E8EDF2" }}>{r.name}</div>
+                    <div style={{ display: "flex", fontSize: 34, fontWeight: 700, color: "#E8EDF2" }}>{locale === "zh" ? nameZhBySlug.get(r.slug) ?? r.name : r.name}</div>
                     <div style={{ display: "flex", fontSize: 22, color: "#5a6472" }}>{teamName(r.teamName, locale)}</div>
                   </div>
                   <div style={{ display: "flex", width: 90, justifyContent: "flex-end", fontSize: 34, fontWeight: 700, color: "#1BE27F" }}>{r.index}</div>

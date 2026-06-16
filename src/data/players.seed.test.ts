@@ -27,6 +27,7 @@ describe("players.seed", () => {
   it("name / wikiTitle / position 合法", () => {
     for (const p of PLAYERS) {
       expect(p.name.length).toBeGreaterThan(1);
+      expect(p.nameZh.length).toBeGreaterThan(0); // zh 渲染依赖
       expect(p.wikiTitle).toMatch(/^\S+$/); // 下划线连接，无空格
       expect(["GK", "DF", "MF", "FW"]).toContain(p.position);
     }

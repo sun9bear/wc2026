@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getRanking } from "@/lib/players/getRanking";
+import { nameZhBySlug } from "@/data/players.seed";
 import { PopularityList } from "@/components/PopularityList";
 import { Disclaimer } from "@/components/Disclaimer";
 import { getDict, localeHref } from "@/i18n";
@@ -36,7 +37,7 @@ export default async function PopularityPage() {
   const rows = ranking.map((r, i) => ({
     id: r.id,
     rank: i + 1,
-    name: r.name,
+    name: locale === "zh" ? nameZhBySlug.get(r.slug) ?? r.name : r.name,
     teamLabel: teamName(r.teamName, locale),
     flag: flagUrl(r.teamName),
     votes: r.votes,
