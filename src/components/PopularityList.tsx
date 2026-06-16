@@ -129,11 +129,15 @@ export function PopularityList({ rows, locale }: { rows: PopularityRow[]; locale
           return (
             <li
               key={r.id}
-              className="flex items-start gap-3 rounded-md border border-border bg-surface-2 p-3"
+              className="flex items-center gap-3 rounded-md border border-border bg-surface-2 p-3"
             >
-              {/* 左列：排名编号在上、头像在下（头像可点进详情；前三名金银铜光晕） */}
-              <div className="flex w-11 shrink-0 flex-col items-center gap-1.5">
-                <span className="font-head text-lg font-bold leading-none text-muted">{r.rank}</span>
+              {/* 左列：排名（前三名金银铜奖牌）在上、头像在下，整列垂直居中 */}
+              <div className="flex w-11 shrink-0 flex-col items-center gap-2.5">
+                {r.rank <= 3 ? (
+                  <span className={`medal medal-${r.rank} font-head h-7 w-7 text-sm`}>{r.rank}</span>
+                ) : (
+                  <span className="font-head text-lg font-bold leading-none text-muted">{r.rank}</span>
+                )}
                 <Link href={detail} aria-label={r.name}>
                   {r.photo ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -161,29 +165,31 @@ export function PopularityList({ rows, locale }: { rows: PopularityRow[]; locale
                 </span>
                 {r.blurb && <span className="mt-0.5 block text-[11px] italic text-muted">{r.blurb}</span>}
               </Link>
-              {/* 右列：综合指数在上、投票按钮在下（按钮放票数下方）；副行提示再投扣分 / 今日已满 */}
-              <div className="flex w-16 shrink-0 flex-col items-center gap-1">
+              {/* 右列：综合指数在上、投票按钮在下，整列垂直居中；按钮与副行贴紧 */}
+              <div className="flex w-16 shrink-0 flex-col items-center gap-2.5">
                 <span
                   className="font-head text-lg font-bold leading-none tabular-nums text-green"
                   aria-label={t.title}
                 >
                   {r.index}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => vote(r.id)}
-                  disabled={busy === r.id || maxed}
-                  className={`w-full rounded-pill px-2 py-1.5 text-xs font-bold transition disabled:opacity-50 ${
-                    maxed ? "border border-border text-muted" : "bg-green text-[#06231a]"
-                  }`}
-                >
-                  {busy === r.id ? "…" : t.vote}
-                </button>
-                {maxed ? (
-                  <span className="text-center text-[10px] leading-tight text-muted">{t.dailyMax}</span>
-                ) : cur > 0 ? (
-                  <span className="text-center text-[10px] leading-tight text-gold">{t.voteRepeat}</span>
-                ) : null}
+                <div className="flex w-full flex-col items-center gap-0.5">
+                  <button
+                    type="button"
+                    onClick={() => vote(r.id)}
+                    disabled={busy === r.id || maxed}
+                    className={`w-full rounded-pill px-2 py-1.5 text-xs font-bold transition disabled:opacity-50 ${
+                      maxed ? "border border-border text-muted" : "bg-green text-[#06231a]"
+                    }`}
+                  >
+                    {busy === r.id ? "…" : t.vote}
+                  </button>
+                  {maxed ? (
+                    <span className="text-center text-[10px] leading-tight text-muted">{t.dailyMax}</span>
+                  ) : cur > 0 ? (
+                    <span className="text-center text-[10px] leading-tight text-gold">{t.voteRepeat}</span>
+                  ) : null}
+                </div>
               </div>
             </li>
           );
