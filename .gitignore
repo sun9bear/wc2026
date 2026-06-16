@@ -36,3 +36,9 @@ Thumbs.db
 # 机密（凭据/密钥，绝不提交）
 docs/secret/
 .gstack/
+
+# CodeX 数据收集 WIP（H5 游戏用，非运行时）。根锚定 / —— 只忽略根目录这两个，
+# 绝不可写成无斜杠的 data/（那会连被 app 导入的 src/data/ 一起忽略 → 构建挂）。
+# Vercel CLI 部署遵守 .gitignore（无 .vercelignore 时）→ 这两项下次部署也不再上传。
+/data/
+/logo2.png
