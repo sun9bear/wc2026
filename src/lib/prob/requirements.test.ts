@@ -88,9 +88,7 @@ describe("computeRequirements", () => {
   });
 
   it("结构不完整(<12 组)返回 null", () => {
-    const bad = { ...(data as object), groupTeams: { A: ["A1", "A2", "A3", "A4"] } } as Parameters<
-      typeof computeRequirements
-    >[0];
+    const bad = { ...data, groupTeams: { A: ["A1", "A2", "A3", "A4"] } };
     expect(computeRequirements(bad, "A1")).toBeNull();
   });
 });
