@@ -63,3 +63,6 @@ export const PLAYERS: PlayerSeed[] = [
 
 /** slug → 中文常用译名（zh 渲染用；非 zh 仍显示拉丁原名）。 */
 export const nameZhBySlug = new Map<string, string>(PLAYERS.map((p) => [p.slug, p.nameZh]));
+
+/** slug → 英文维基条目名（详情页 Wikidata 事实抓取 + 维基外链用）。 */
+export const wikiTitleBySlug = new Map<string, string>(PLAYERS.map((p) => [p.slug, p.wikiTitle]));

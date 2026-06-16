@@ -37,6 +37,7 @@ export default async function PopularityPage() {
   // 服务端解析展示字段（国旗 + 本地化队名），客户端岛只管渲染与投票。
   const rows = ranking.map((r, i) => ({
     id: r.id,
+    slug: r.slug,
     rank: i + 1,
     name: locale === "zh" ? nameZhBySlug.get(r.slug) ?? r.name : r.name,
     teamLabel: teamName(r.teamName, locale),

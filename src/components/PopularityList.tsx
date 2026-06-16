@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
-import { getDict, type Locale } from "@/i18n";
+import { getDict, localeHref, type Locale } from "@/i18n";
 
 export interface PopularityRow {
   id: string;
+  slug: string;
   rank: number;
   name: string;
   teamLabel: string;
@@ -137,7 +139,12 @@ export function PopularityList({ rows, locale }: { rows: PopularityRow[]; locale
               )}
               <span className="min-w-0 flex-1">
                 <span className="block truncate">
-                  <span className="text-sm font-medium">{r.name}</span>
+                  <Link
+                    href={localeHref(locale, `/player/${r.slug}`)}
+                    className="text-sm font-medium hover:text-green hover:underline"
+                  >
+                    {r.name}
+                  </Link>
                   <span className="ml-1.5 text-[11px] text-muted">{r.teamLabel}</span>
                 </span>
                 {/* 分项拆解（透明）：🗳 总票 · ⚽ 表现0-100 · 🔥 热度0-100 · 今日x/5 */}

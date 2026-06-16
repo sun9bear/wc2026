@@ -4,6 +4,7 @@ import { teamSlug } from "@/lib/prob/findTeam";
 import { getSettledIndex } from "@/lib/seo/freshness";
 import { LOCALES, localeHref } from "@/i18n";
 import { hreflangLanguages } from "@/lib/seo/canonical";
+import { PLAYERS } from "@/data/players.seed";
 
 const BASE = "https://www.wc2026.cool";
 const LEGAL_LASTMOD = "2026-06-13"; // 法务/静态页内容最后修订（真实旧固定日期，与赛事新鲜页对比）
@@ -46,6 +47,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/forecast/best-thirds", changeFrequency: "hourly", priority: 0.85 },
     { path: "/scorers", changeFrequency: "hourly", priority: 0.8 },
     { path: "/popularity", changeFrequency: "daily", priority: 0.7 },
+    // 球员详情着陆页（41 名策展球星 × 6 语）
+    ...PLAYERS.map((p) => ({
+      path: `/player/${p.slug}`,
+      changeFrequency: "daily" as const,
+      priority: 0.6,
+    })),
     { path: "/calculator", changeFrequency: "daily", priority: 0.85 },
     { path: "/rules", changeFrequency: "monthly", priority: 0.8, lastModified: "2026-06-14" },
     // 12 个按组着陆页（脉冲式搜索："Group A who advances" / "X 组出线形势"）
