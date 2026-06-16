@@ -24,6 +24,8 @@ export interface AdvanceRecord {
   p: number; // 该战绩平均出线概率 0-1
   pLow: number; // 同战绩不同对手安排的最低概率
   pHigh: number;
+  rankLo: number; // 该战绩下小组名次主导区间（出现率≥10%）的最高名次（数字最小）
+  rankHi: number; // …最低名次（数字最大）
 }
 export interface AdvanceRequirements {
   teamId: string;
@@ -68,15 +70,15 @@ function advanceProb(
   rating: Map<string, number>,
   runs: number,
   dim: number
-): number {
+): { adv: number; ranks: number[] } {
   const ordered = [...letters.filter((g) => g !== targetGroup), targetGroup];
   const sRng = mulberry32(SEED); // 比分抽样流
   const tRng = mulberry32(SEED + 7); // 排名平局流（独立，避免抽样被平局消耗错位）
+  const ranks = [0, 0, 0, 0, 0]; // 下标 1..4 = 小组名次出现次数
   let adv = 0;
   for (let run = 0; run < runs; run++) {
     const thirdRows = [];
-    let top2 = false;
-    let isThird = false;
+    let targetRank = 4;
     for (const g of ordered) {
       const results = [...playedByGroup.get(g)!];
       for (const m of otherRemByGroup.get(g)!) {
@@ -85,19 +87,33 @@ function advanceProb(
       }
       const order = rankGroup(groups[g], results, tRng, rating);
       if (g === targetGroup) {
-        if (order[0]?.teamId === targetId || order[1]?.teamId === targetId) top2 = true;
-        else if (order[2]?.teamId === targetId) isThird = true;
+        const idx = order.findIndex((o) => o.teamId === targetId);
+        targetRank = idx >= 0 ? idx + 1 : 4;
       }
       if (order[2]) thirdRows.push(order[2]);
     }
-    if (top2) {
+    ranks[targetRank]++;
+    if (targetRank <= 2) {
       adv++;
-    } else if (isThird) {
+    } else if (targetRank === 3) {
       const ranked = rankThirds(thirdRows, tRng, rating);
       if (ranked.slice(0, 8).includes(targetId)) adv++;
     }
   }
-  return adv / runs;
+  return { adv, ranks };
+}
+
+// 小组名次主导区间：出现率 ≥10% 的名次的 [最高, 最低]；都不足则取众数。
+function rankRange(ranks: number[]): { lo: number; hi: number } {
+  const total = ranks.reduce((s, x) => s + x, 0) || 1;
+  const sig: number[] = [];
+  for (let r = 1; r <= 4; r++) if (ranks[r] / total >= 0.1) sig.push(r);
+  if (!sig.length) {
+    let m = 1;
+    for (let r = 2; r <= 4; r++) if (ranks[r] > ranks[m]) m = r;
+    sig.push(m);
+  }
+  return { lo: Math.min(...sig), hi: Math.max(...sig) };
 }
 
 export function computeRequirements(
@@ -153,7 +169,7 @@ export function computeRequirements(
 
   const byRecord = new Map<
     string,
-    { w: number; d: number; l: number; pts: number; gd: number; ps: number[] }
+    { w: number; d: number; l: number; pts: number; gd: number; ps: number[]; rankSum: number[] }
   >();
   for (const combo of combos) {
     const forced: GroupResult[] = targetRem.map((m, i) => {
@@ -180,7 +196,7 @@ export function computeRequirements(
     const playedByGroup = new Map(basePlayedByGroup);
     playedByGroup.set(tg, [...basePlayedByGroup.get(tg)!, ...forced]);
 
-    const p = advanceProb(
+    const { adv, ranks } = advanceProb(
       targetId,
       tg,
       letters,
@@ -191,27 +207,34 @@ export function computeRequirements(
       runs,
       dim
     );
+    const p = adv / runs;
 
     const w = combo.filter((o) => o === "W").length;
     const d = combo.filter((o) => o === "D").length;
     const l = combo.filter((o) => o === "L").length;
     const key = `${row.pts}|${row.gd}`;
-    const e = byRecord.get(key) ?? { w, d, l, pts: row.pts, gd: row.gd, ps: [] };
+    const e = byRecord.get(key) ?? { w, d, l, pts: row.pts, gd: row.gd, ps: [], rankSum: [0, 0, 0, 0, 0] };
     e.ps.push(p);
+    for (let i = 0; i < ranks.length; i++) e.rankSum[i] += ranks[i];
     byRecord.set(key, e);
   }
 
   const records: AdvanceRecord[] = [...byRecord.values()]
-    .map((e) => ({
-      w: e.w,
-      d: e.d,
-      l: e.l,
-      pts: e.pts,
-      gd: e.gd,
-      p: e.ps.reduce((s, x) => s + x, 0) / e.ps.length,
-      pLow: Math.min(...e.ps),
-      pHigh: Math.max(...e.ps),
-    }))
+    .map((e) => {
+      const { lo, hi } = rankRange(e.rankSum);
+      return {
+        w: e.w,
+        d: e.d,
+        l: e.l,
+        pts: e.pts,
+        gd: e.gd,
+        p: e.ps.reduce((s, x) => s + x, 0) / e.ps.length,
+        pLow: Math.min(...e.ps),
+        pHigh: Math.max(...e.ps),
+        rankLo: lo,
+        rankHi: hi,
+      };
+    })
     .sort((a, b) => b.pts - a.pts || b.gd - a.gd);
 
   // 保底出线门槛：积分最低、且「最坏对手安排」仍 ≥99.5% 的战绩。

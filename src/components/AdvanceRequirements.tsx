@@ -9,6 +9,7 @@ interface UI {
   remaining: string;
   home: string;
   away: string;
+  rank: (lo: number, hi: number) => string;
   win: string;
   draw: string;
   loss: string;
@@ -25,6 +26,7 @@ interface UI {
 const T: Record<Locale, UI> = {
   zh: {
     title: "🎯 出线门槛",
+    rank: (lo, hi) => (lo === hi ? `小组第${lo}` : `小组第${lo}-${hi}`),
     remaining: "剩余",
     home: "主",
     away: "客",
@@ -34,7 +36,7 @@ const T: Record<Locale, UI> = {
     allPlayed: "已踢完",
     clinch: (pts, gd) => `拿到 ${pts} 分（净胜 ${gd}）即锁定出线`,
     more: (n) => `还需 +${n} 分`,
-    already: "🏆 已确定出线！",
+    already: "🎆 已确定出线！",
     noClinch: "靠自身已无法 100% 保证，需看其他小组场次",
     curPts: (n) => `当前 ${n} 分`,
     note: "净胜球按 主胜1-0/平1-1/客胜0-1 估算；基于 Elo 模型上千次抽样，仅供娱乐",
@@ -42,6 +44,7 @@ const T: Record<Locale, UI> = {
   },
   en: {
     title: "🎯 What you need",
+    rank: (lo, hi) => (lo === hi ? `#${lo} in group` : `#${lo}–${hi} in group`),
     remaining: "Left",
     home: "H",
     away: "A",
@@ -51,7 +54,7 @@ const T: Record<Locale, UI> = {
     allPlayed: "Done",
     clinch: (pts, gd) => `${pts} pts (GD ${gd}) clinches a spot`,
     more: (n) => `+${n} pt${n > 1 ? "s" : ""} to go`,
-    already: "🏆 Already through!",
+    already: "🎆 Already through!",
     noClinch: "Can't guarantee it on your own — depends on other groups",
     curPts: (n) => `now ${n} pts`,
     note: "GD estimated as 1-0 / 1-1 / 0-1; based on thousands of Elo-model sims, for fun only",
@@ -59,6 +62,7 @@ const T: Record<Locale, UI> = {
   },
   es: {
     title: "🎯 Lo que necesitas",
+    rank: (lo, hi) => (lo === hi ? `#${lo} del grupo` : `#${lo}–${hi} del grupo`),
     remaining: "Faltan",
     home: "L",
     away: "V",
@@ -68,7 +72,7 @@ const T: Record<Locale, UI> = {
     allPlayed: "Listo",
     clinch: (pts, gd) => `${pts} pts (DG ${gd}) asegura el pase`,
     more: (n) => `faltan +${n}`,
-    already: "🏆 ¡Ya clasificado!",
+    already: "🎆 ¡Ya clasificado!",
     noClinch: "No puedes asegurarlo solo — depende de otros grupos",
     curPts: (n) => `ahora ${n} pts`,
     note: "DG estimada como 1-0 / 1-1 / 0-1; miles de simulaciones del modelo Elo, solo por diversión",
@@ -76,6 +80,7 @@ const T: Record<Locale, UI> = {
   },
   pt: {
     title: "🎯 O que você precisa",
+    rank: (lo, hi) => (lo === hi ? `#${lo} do grupo` : `#${lo}–${hi} do grupo`),
     remaining: "Faltam",
     home: "C",
     away: "F",
@@ -85,7 +90,7 @@ const T: Record<Locale, UI> = {
     allPlayed: "Fim",
     clinch: (pts, gd) => `${pts} pts (SG ${gd}) garante a vaga`,
     more: (n) => `faltam +${n}`,
-    already: "🏆 Já classificado!",
+    already: "🎆 Já classificado!",
     noClinch: "Não dá para garantir sozinho — depende de outros grupos",
     curPts: (n) => `agora ${n} pts`,
     note: "SG estimado como 1-0 / 1-1 / 0-1; milhares de simulações do modelo Elo, só diversão",
@@ -93,6 +98,7 @@ const T: Record<Locale, UI> = {
   },
   de: {
     title: "🎯 Was du brauchst",
+    rank: (lo, hi) => (lo === hi ? `Gruppe #${lo}` : `Gruppe #${lo}–${hi}`),
     remaining: "Offen",
     home: "H",
     away: "A",
@@ -102,7 +108,7 @@ const T: Record<Locale, UI> = {
     allPlayed: "Fertig",
     clinch: (pts, gd) => `${pts} Pkt (TD ${gd}) sichert das Weiterkommen`,
     more: (n) => `noch +${n}`,
-    already: "🏆 Schon weiter!",
+    already: "🎆 Schon weiter!",
     noClinch: "Allein nicht sicherbar — hängt von anderen Gruppen ab",
     curPts: (n) => `aktuell ${n} Pkt`,
     note: "TD genähert als 1-0 / 1-1 / 0-1; Tausende Elo-Modell-Simulationen, nur zum Spaß",
@@ -110,6 +116,7 @@ const T: Record<Locale, UI> = {
   },
   fr: {
     title: "🎯 Ce qu'il te faut",
+    rank: (lo, hi) => (lo === hi ? `#${lo} du groupe` : `#${lo}–${hi} du groupe`),
     remaining: "Restant",
     home: "D",
     away: "E",
@@ -119,7 +126,7 @@ const T: Record<Locale, UI> = {
     allPlayed: "Fini",
     clinch: (pts, gd) => `${pts} pts (diff. ${gd}) qualifie d'office`,
     more: (n) => `+${n} à prendre`,
-    already: "🏆 Déjà qualifié !",
+    already: "🎆 Déjà qualifié !",
     noClinch: "Pas garanti seul — dépend des autres groupes",
     curPts: (n) => `${n} pts actuellement`,
     note: "Diff. estimée 1-0 / 1-1 / 0-1 ; des milliers de simulations du modèle Elo, pour le fun",
@@ -199,11 +206,11 @@ export function AdvanceRequirements({
                 <span className="font-medium">{recordLabel(r, u)}</span>
                 <span className="ml-2 text-[11px] tabular-nums text-muted">
                   {r.pts}
-                  {locale === "zh" ? " 分" : " pts"} · {signed(r.gd)}
+                  {locale === "zh" ? " 分" : " pts"} · {signed(r.gd)} · {u.rank(r.rankLo, r.rankHi)}
                 </span>
               </span>
               <span className={`shrink-0 font-head font-bold tabular-nums ${color}`}>
-                {clinched && <span className="mr-1 text-[10px] font-semibold">🏆 {u.locked}</span>}
+                {clinched && <span className="mr-1 text-[10px] font-semibold">🎆 {u.locked}</span>}
                 {range ? `${lo}–${hi}%` : `${v}%`}
               </span>
             </div>

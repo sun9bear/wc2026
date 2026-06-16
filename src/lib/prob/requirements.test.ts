@@ -56,6 +56,11 @@ describe("computeRequirements", () => {
     for (const r of req.records) expect(r.p).toBe(1);
     // 战绩按积分降序：9 / 7 / 6
     expect(req.records.map((r) => r.pts)).toEqual([9, 7, 6]);
+    // 小组名次恒为第 1~2（A3=3、A2=0 已被甩开）
+    for (const r of req.records) {
+      expect(r.rankLo).toBeGreaterThanOrEqual(1);
+      expect(r.rankHi).toBeLessThanOrEqual(2);
+    }
     // 保底门槛：最低保证(负 A4)=6 分，净胜球 +1（2 胜 -1 负）
     expect(req.clinchPts).toBe(6);
     expect(req.clinchGd).toBe(1);
