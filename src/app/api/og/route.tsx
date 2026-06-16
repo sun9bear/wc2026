@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 import QRCode from "qrcode";
 import { getForecast } from "@/lib/prob/pipeline";
+import { getAdvanceRequirements } from "@/lib/prob/requirements";
 import { findTeam } from "@/lib/prob/findTeam";
 import { teamName, flagUrl } from "@/lib/football/teams";
 import { getRanking } from "@/lib/players/getRanking";
@@ -873,7 +874,7 @@ export async function GET(req: Request) {
   // 文案
   let fonts: { name: string; data: ArrayBuffer; weight: 700 }[] = [];
   const zhText = hit
-    ? `${hit.team.zh}组第名当前出线概率夺冠万次蒙特卡洛模拟更新于0123456789ABCDEFGHIJKL.%· `
+    ? `${hit.team.zh}组第名当前出线概率夺冠万次蒙特卡洛模拟更新于0123456789ABCDEFGHIJKL.%· 门槛拿到净胜球即锁定还需已确定需看其他小胜平负分场（）！+-`
     : "";
   // 署名标签（任务 C「我的主队」分享图）：用户经 slug 间接可控 → 过雷词闸 + 截断 fail-closed。
   const tagRaw = (searchParams.get("tag") ?? "").replace(/\s+/g, " ").slice(0, 24).trim();
@@ -997,6 +998,34 @@ export async function GET(req: Request) {
   const champ = pct(t.pChampion);
   const advColor = (t.pAdvance > 1 ? t.pAdvance : t.pAdvance * 100) >= 50 ? "#1BE27F" : "#FFB02E";
 
+  // 出线门槛（结合计算器新功能）：复用缓存的蒙卡门槛数据，渲染到分享卡——失败回 null 不影响主卡。
+  const reqs = await getAdvanceRequirements(t.id).catch(() => null);
+  const RQ = (
+    {
+      zh: { title: "🎯 出线门槛", clinch: (p: number, g: string) => `拿到 ${p} 分（净胜 ${g}）即锁定`, more: (n: number) => `还需 +${n} 分`, already: "🎆 已确定出线！", none: "需看其他小组场次", pts: "分", win: "胜", draw: "平", loss: "负", rank: (lo: number, hi: number) => (lo === hi ? `小组第${lo}` : `小组第${lo}-${hi}`) },
+      en: { title: "🎯 What you need", clinch: (p: number, g: string) => `${p} pts (GD ${g}) clinches`, more: (n: number) => `+${n} to go`, already: "🎆 Already through!", none: "depends on other groups", pts: "pts", win: "W", draw: "D", loss: "L", rank: (lo: number, hi: number) => (lo === hi ? `#${lo} in grp` : `#${lo}–${hi} in grp`) },
+      es: { title: "🎯 Lo que necesitas", clinch: (p: number, g: string) => `${p} pts (DG ${g}) asegura`, more: (n: number) => `faltan +${n}`, already: "🎆 ¡Ya clasificado!", none: "depende de otros grupos", pts: "pts", win: "G", draw: "E", loss: "P", rank: (lo: number, hi: number) => (lo === hi ? `#${lo} grupo` : `#${lo}–${hi} grupo`) },
+      pt: { title: "🎯 O que precisa", clinch: (p: number, g: string) => `${p} pts (SG ${g}) garante`, more: (n: number) => `faltam +${n}`, already: "🎆 Já classificado!", none: "depende de outros grupos", pts: "pts", win: "V", draw: "E", loss: "D", rank: (lo: number, hi: number) => (lo === hi ? `#${lo} grupo` : `#${lo}–${hi} grupo`) },
+      de: { title: "🎯 Was du brauchst", clinch: (p: number, g: string) => `${p} Pkt (TD ${g}) sichert`, more: (n: number) => `noch +${n}`, already: "🎆 Schon weiter!", none: "hängt von anderen Gruppen ab", pts: "Pkt", win: "S", draw: "U", loss: "N", rank: (lo: number, hi: number) => (lo === hi ? `Gr. #${lo}` : `Gr. #${lo}–${hi}`) },
+      fr: { title: "🎯 Ce qu'il te faut", clinch: (p: number, g: string) => `${p} pts (diff. ${g}) qualifie`, more: (n: number) => `+${n} à prendre`, already: "🎆 Déjà qualifié !", none: "dépend des autres groupes", pts: "pts", win: "V", draw: "N", loss: "D", rank: (lo: number, hi: number) => (lo === hi ? `#${lo} gr.` : `#${lo}–${hi} gr.`) },
+    } as Record<Locale, { title: string; clinch: (p: number, g: string) => string; more: (n: number) => string; already: string; none: string; pts: string; win: string; draw: string; loss: string; rank: (lo: number, hi: number) => string }>
+  )[locale];
+
+  const rPct = (p: number) => (p >= 0.995 ? 100 : p <= 0.005 ? 0 : Math.round(p * 100));
+  const sgd = (n: number) => `${n > 0 ? "+" : ""}${n}`;
+  const recLabel = (r: { w: number; d: number; l: number }) =>
+    [r.w ? `${r.w}${RQ.win}` : "", r.d ? `${r.d}${RQ.draw}` : "", r.l ? `${r.l}${RQ.loss}` : ""]
+      .filter(Boolean)
+      .join(" ");
+  const topRecords = reqs ? reqs.records.slice(0, 3) : [];
+  const need = reqs && reqs.clinchPts !== null ? reqs.clinchPts - reqs.curPts : null;
+  const clinchText =
+    reqs && reqs.clinchPts !== null
+      ? need !== null && need <= 0
+        ? RQ.already
+        : `${RQ.clinch(reqs.clinchPts, sgd(reqs.clinchGd ?? 0))} · ${RQ.more(need ?? 0)}`
+      : RQ.none;
+
   return new ImageResponse(
     (
       <div style={base}>
@@ -1005,43 +1034,70 @@ export async function GET(req: Request) {
           <div style={{ display: "flex", alignItems: "center", gap: 28, flex: 1, minWidth: 0 }}>
             {t.flag ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={t.flag.replace("/w80/", "/w160/")} width={150} height={100} style={{ borderRadius: 10, objectFit: "cover" }} />
+              <img src={t.flag.replace("/w80/", "/w160/")} width={140} height={94} style={{ borderRadius: 10, objectFit: "cover" }} />
             ) : (
-              <div style={{ display: "flex", fontSize: 96 }}>⚽</div>
+              <div style={{ display: "flex", fontSize: 88 }}>⚽</div>
             )}
             <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
-              <div style={{ display: "flex", fontSize: 64, fontWeight: 700, color: "#E8EDF2", lineHeight: 1.05 }}>{name}</div>
-              <div style={{ display: "flex", fontSize: 30, color: "#8A97A6" }}>
-                {L.group(hit.letter, hit.rank)}
-              </div>
+              <div style={{ display: "flex", fontSize: 60, fontWeight: 700, color: "#E8EDF2", lineHeight: 1.05 }}>{name}</div>
+              <div style={{ display: "flex", fontSize: 28, color: "#8A97A6" }}>{L.group(hit.letter, hit.rank)}</div>
               {tag ? (
-                <div style={{ display: "flex", fontSize: 28, color: "#1BE27F", marginTop: 4 }}>⭐ {tag}</div>
+                <div style={{ display: "flex", fontSize: 26, color: "#1BE27F", marginTop: 2 }}>⭐ {tag}</div>
               ) : null}
             </div>
           </div>
-          <div style={{ display: "flex", fontSize: 32, fontWeight: 700, color: "#1BE27F", flexShrink: 0 }}>wc2026.cool</div>
+          <div style={{ display: "flex", fontSize: 30, fontWeight: 700, color: "#1BE27F", flexShrink: 0 }}>wc2026.cool</div>
         </div>
 
-        {/* 中部：出线概率大数字 + 夺冠 */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexGrow: 1, gap: 4 }}>
-          <div style={{ display: "flex", fontSize: 42, color: "#8A97A6" }}>{L.advance}</div>
-          <div style={{ display: "flex", fontSize: 250, fontWeight: 700, lineHeight: 1, color: advColor }}>{adv}%</div>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 16, marginTop: 28 }}>
-            <div style={{ display: "flex", fontSize: 34, color: "#8A97A6" }}>{L.champion}</div>
-            <div style={{ display: "flex", fontSize: 66, fontWeight: 700, color: "#E8EDF2" }}>{champ}%</div>
+        {/* 中部：出线概率大数字 + 夺冠（紧凑，给门槛留位） */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+          <div style={{ display: "flex", fontSize: 36, color: "#8A97A6" }}>{L.advance}</div>
+          <div style={{ display: "flex", fontSize: 188, fontWeight: 700, lineHeight: 1, color: advColor }}>{adv}%</div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 14, marginTop: 10 }}>
+            <div style={{ display: "flex", fontSize: 30, color: "#8A97A6" }}>{L.champion}</div>
+            <div style={{ display: "flex", fontSize: 52, fontWeight: 700, color: "#E8EDF2" }}>{champ}%</div>
           </div>
         </div>
 
+        {/* 出线门槛面板：锁定横幅 + 前 3 档战绩（积分/净胜/小组名次/出线%） */}
+        {topRecords.length ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ display: "flex", fontSize: 30, fontWeight: 700, color: "#E8EDF2" }}>{RQ.title}</div>
+            <div style={{ display: "flex", alignItems: "center", height: 64, borderRadius: 12, border: "2px solid #1BE27F", backgroundColor: "#0F2018", paddingLeft: 24, paddingRight: 24 }}>
+              <div style={{ display: "flex", fontSize: 28, fontWeight: 700, color: "#1BE27F" }}>{clinchText}</div>
+            </div>
+            {topRecords.map((r) => {
+              const v = rPct(r.p);
+              const clinched = r.pLow >= 0.995;
+              const c = clinched || v >= 60 ? "#1BE27F" : v <= 2 ? "#FF5436" : "#FFB02E";
+              return (
+                <div
+                  key={`${r.pts}-${r.gd}`}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: 62, borderRadius: 10, backgroundColor: clinched ? "#10241B" : "#11161D", paddingLeft: 22, paddingRight: 22 }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                    <div style={{ display: "flex", fontSize: 30, fontWeight: 700, color: "#E8EDF2" }}>{recLabel(r)}</div>
+                    <div style={{ display: "flex", fontSize: 23, color: "#8A97A6" }}>{`${r.pts}${RQ.pts} · ${sgd(r.gd)} · ${RQ.rank(r.rankLo, r.rankHi)}`}</div>
+                  </div>
+                  <div style={{ display: "flex", fontSize: 34, fontWeight: 700, color: c }}>{`${v}%`}</div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div style={{ display: "flex" }} />
+        )}
+
         {/* 底部：模拟次数/更新时间 ｜ 二维码 */}
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 24 }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 26, color: "#5a6472" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 24, color: "#5a6472" }}>
             <div style={{ display: "flex" }}>{L.sims}</div>
             <div style={{ display: "flex" }}>{L.updated}</div>
           </div>
           {qr ? (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={qr} width={150} height={150} style={{ borderRadius: 10 }} />
+              <img src={qr} width={132} height={132} style={{ borderRadius: 10 }} />
               <div style={{ display: "flex", fontSize: 22, color: "#8A97A6" }}>{scanLabel}</div>
             </div>
           ) : null}
