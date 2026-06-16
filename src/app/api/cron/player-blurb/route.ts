@@ -6,9 +6,9 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 // AI 球员短评生成（安全版，不进排名分）。受 CRON_SECRET 保护（三写法）。
-// 每轮最多 CAP 名（控 Gemini 15 RPM）；默认只补缺失，?force=1 全量重生。
-// 仅更新 ai_* 列，不动 buzz 列（与 player-buzz cron 互不覆盖）。
-const CAP = 6;
+// 缺任一语种即处理、最久未尝试优先；并发 CONCURRENCY + 50s 截止守卫 → 一轮基本补满且不超 maxDuration。
+// 仅更新 ai_* 列，不动 buzz 列（与 player-buzz cron 互不覆盖）。?force=1 全量重生。
+const CONCURRENCY = 6;
 
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
@@ -43,31 +43,35 @@ export async function GET(req: NextRequest) {
     return m?.ai_updated_at ? Date.parse(m.ai_updated_at) : 0;
   };
 
-  // 缺任一语种即需处理；按「最久未尝试优先」轮转 + 每轮 CAP 名 →
-  // 不卡在前几名(某语种持续 429)，且最终补齐全部(含 en，随 Gemini 限额逐轮恢复)。
+  // 缺任一语种即需处理；最久未尝试优先（轮转，不卡在前几名）。
   const todo = players
     .filter((p) => {
       if (force) return true;
       const m = have.get(p.id);
       return !m?.ai_blurb || !m?.ai_blurb_en;
     })
-    .sort((a, b) => staleAt(a.id) - staleAt(b.id))
-    .slice(0, CAP);
+    .sort((a, b) => staleAt(a.id) - staleAt(b.id));
 
   const now = new Date().toISOString();
+  const deadline = Date.now() + 50_000; // 留足 maxDuration(60s) 余量，杜绝超时
   let updated = 0;
-  for (const p of todo) {
-    const [zh, en] = await Promise.all([
-      generatePlayerBlurbZh(p.name, p.team_name, p.position ?? ""),
-      generatePlayerBlurbEn(p.name, p.team_name, p.position ?? ""),
-    ]);
-    if (!zh && !en) continue;
-    const patch: Record<string, unknown> = { player_id: p.id, ai_updated_at: now };
-    if (zh) patch.ai_blurb = zh;
-    if (en) patch.ai_blurb_en = en;
-    const { error } = await db.from("player_metrics").upsert(patch, { onConflict: "player_id" });
-    if (!error) updated++;
+  let idx = 0;
+  async function worker(): Promise<void> {
+    while (idx < todo.length && Date.now() < deadline) {
+      const p = todo[idx++];
+      const [zh, en] = await Promise.all([
+        generatePlayerBlurbZh(p.name, p.team_name, p.position ?? ""),
+        generatePlayerBlurbEn(p.name, p.team_name, p.position ?? ""),
+      ]);
+      if (!zh && !en) continue;
+      const patch: Record<string, unknown> = { player_id: p.id, ai_updated_at: now };
+      if (zh) patch.ai_blurb = zh;
+      if (en) patch.ai_blurb_en = en;
+      const { error } = await db.from("player_metrics").upsert(patch, { onConflict: "player_id" });
+      if (!error) updated++;
+    }
   }
+  await Promise.all(Array.from({ length: CONCURRENCY }, () => worker()));
 
-  return NextResponse.json({ ok: true, updated, attempted: todo.length, candidates: players.length });
+  return NextResponse.json({ ok: true, updated, total: todo.length, candidates: players.length });
 }
