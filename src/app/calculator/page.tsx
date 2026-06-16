@@ -7,6 +7,8 @@ import { localizedAlternates, selfUrl } from "@/lib/seo/canonical";
 import { getForecast } from "@/lib/prob/pipeline";
 import { findTeam, teamSlug } from "@/lib/prob/findTeam";
 import { ThirdCalculator } from "@/components/ThirdCalculator";
+import { AdvanceRequirements } from "@/components/AdvanceRequirements";
+import { getAdvanceRequirements } from "@/lib/prob/requirements";
 import { CalculatorFocus } from "@/components/CalculatorFocus";
 import { HeaderShare } from "@/components/HeaderShare";
 import { JsonLd } from "@/lib/seo/jsonLd";
@@ -206,6 +208,7 @@ export default async function CalculatorPage({
   }));
 
   const hit = team ? findTeam(data, team) : null;
+  const requirements = hit ? await getAdvanceRequirements(hit.team.id) : null;
   const allTeams = data.groups
     .flatMap((g) => g.table)
     .map((t) => ({ name: t.name, zh: t.zh, slug: teamSlug(t.name), flag: t.flag }))
@@ -284,6 +287,9 @@ export default async function CalculatorPage({
             : null
         }
       />
+      {hit && requirements && (
+        <AdvanceRequirements data={requirements} locale={locale} teamLabel={nmShare} />
+      )}
       <ThirdCalculator
         locale={locale}
         groups={groups}
