@@ -1,14 +1,16 @@
 // Gemini（REST v1beta）聊天补全，仅服务端使用——本机网络调不通（geo 拦截），生产 Vercel 端可用。
 // 签名对齐 deepseek.ts 的 chat(system, user, timeoutMs)，供英文内容管线替换底层模型。
-// 模型：默认 gemini-3.1-flash-lite（免费档 RPM/RPD 限额更高，避免 429）；若该名失效（404），
-// 自动 ListModels 选最新 flash 重试，并优先 lite 变体（不退回限额更低的满血 flash）。
+// 模型：默认 gemini-2.5-flash-lite——短文案任务(短评/前瞻/冷热门)性价比最优：
+//   2.5-flash-lite 默认【不思考】(3.x 系列默认思考会多烧 token+加延迟，对一行短评纯浪费)，
+//   且 Tier2 限额最宽(RPM 10K / RPD 无限制)、单价最低。质量对短 banter 与 3.x 肉眼无差。
+//   如需更带感的 banter 可改 GEMINI_MODEL=gemini-3.5-flash。若模型名失效(404)自动 ListModels 选最新 flash-lite。
 
 const BASE = "https://generativelanguage.googleapis.com/v1beta";
 
 let resolvedModel: string | null = null;
 
 function preferredModel(): string {
-  return resolvedModel ?? process.env.GEMINI_MODEL ?? "gemini-3.1-flash-lite";
+  return resolvedModel ?? process.env.GEMINI_MODEL ?? "gemini-2.5-flash-lite";
 }
 
 // ListModels 里挑 flash 主线模型（含 lite，排除 8b/image/live/tts/audio 变体）。
