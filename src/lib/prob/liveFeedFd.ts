@@ -46,7 +46,9 @@ async function fetchLiveWcFd(): Promise<FdLiveFixture[]> {
   try {
     const r = await fetch(
       "https://api.football-data.org/v4/competitions/WC/matches?status=IN_PLAY,PAUSED",
-      { headers: { "X-Auth-Token": key } }
+      // X-Api-Version: v4.1 → 启用 minute/injuryTime 字段（作者 2026-06 邮件新增；不加则无 minute，
+      // 兜底直播会把进行中比赛当成第 0 分钟、实时概率失真）。
+      { headers: { "X-Auth-Token": key, "X-Api-Version": "v4.1" } }
     );
     if (!r.ok) return [];
     const j = (await r.json()) as { matches?: FdMatch[] };
