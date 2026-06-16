@@ -61,6 +61,12 @@ export default async function PopularityPage() {
         </Link>
       </div>
       <p className="mt-1 text-sm text-muted">{t.popularity.subtitle}</p>
+      <Link
+        href={localeHref(locale, "/scorers")}
+        className="mt-1 inline-block text-xs text-green hover:underline"
+      >
+        {locale === "zh" ? "⚽ 射手榜" : "⚽ Top Scorers"} →
+      </Link>
 
       {rows.length === 0 ? (
         <div className="mt-16 text-center">

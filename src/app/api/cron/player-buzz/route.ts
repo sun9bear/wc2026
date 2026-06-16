@@ -1,9 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { fetchPageviews } from "@/lib/players/buzz";
+import { getScorers } from "@/lib/football/getScorers";
+import { normalizeName } from "@/lib/players/perfScore";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
+
+// 射手名 → slug（ASCII kebab，去重音/标点）。
+function slugify(name: string): string {
+  return name
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+}
 
 // 热度同步：每 ~12h 抓各候选维基 pageviews 近 7 日合计 → player_metrics.buzz_raw。
 // 受 CRON_SECRET 保护（与 cron/settle 同三写法）。外部 cron-job.org 调用即可。
@@ -20,6 +33,33 @@ export async function GET(req: NextRequest) {
   const sk = process.env.SUPABASE_SECRET_KEY;
   if (!url || !sk) return NextResponse.json({ error: "服务未配置" }, { status: 500 });
   const db = createClient(url, sk, { auth: { persistSession: false } });
+
+  // 射手自动补充：射手榜中不在候选的球员入库（source='scorers'，按归一化名去重；让名单跟着赛事走）。
+  let supplemented = 0;
+  try {
+    const scorers = await getScorers();
+    if (scorers.length) {
+      const { data: existing } = await db.from("players").select("name");
+      const have = new Set(
+        ((existing as { name: string }[] | null) ?? []).map((e) => normalizeName(e.name))
+      );
+      for (const s of scorers) {
+        const key = normalizeName(s.playerName);
+        // 仅补充进球 ≥3 的标杆射手（金靴竞争者=球迷话题人物）；避免冷门角色球员涌入稀释榜单。
+        if (!key || have.has(key) || (s.goals ?? 0) < 3) continue;
+        const { error } = await db.from("players").upsert(
+          { slug: slugify(s.playerName), name: s.playerName, team_name: s.teamName, source: "scorers", is_active: true },
+          { onConflict: "slug", ignoreDuplicates: true }
+        );
+        if (!error) {
+          have.add(key);
+          supplemented++;
+        }
+      }
+    }
+  } catch {
+    /* 射手补充失败不影响热度同步 */
+  }
 
   const [{ data: pData }, { data: mData }] = await Promise.all([
     db.from("players").select("id, wiki_title").eq("is_active", true),
@@ -54,5 +94,5 @@ export async function GET(req: NextRequest) {
     await new Promise((r) => setTimeout(r, 150)); // 节流，避免 wikimedia 突发 429
   }
 
-  return NextResponse.json({ ok: true, updated, total: players.length });
+  return NextResponse.json({ ok: true, supplemented, updated, total: players.length });
 }

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getLocale } from "@/i18n/server";
 import { getScorers } from "@/lib/football/getScorers";
 import { teamName, flagUrl } from "@/lib/football/teams";
-import { localeHref, type Locale } from "@/i18n";
+import { localeHref, getDict, type Locale } from "@/i18n";
 import { localizedAlternates, selfUrl } from "@/lib/seo/canonical";
 
 // 射手榜（金靴）页：数据 football-data.org，30min 共享缓存。EN-first，6 语种本地化。
@@ -120,6 +120,12 @@ export default async function ScorersPage() {
       </Link>
       <h1 className="font-head mt-2 text-2xl font-bold">⚽ {c.h1}</h1>
       <p className="mt-1 text-[11px] text-muted">{c.source}</p>
+      <Link
+        href={localeHref(locale, "/popularity")}
+        className="mt-2 inline-block text-xs text-green hover:underline"
+      >
+        {getDict(locale).popularity.title} →
+      </Link>
 
       {scorers.length === 0 ? (
         <p className="mt-6 rounded-lg border border-dashed border-border bg-surface p-4 text-center text-sm text-muted">
