@@ -323,7 +323,17 @@ export async function GET(req: Request) {
       return Number.isFinite(v) ? Math.round(Math.min(100, Math.max(0, v))) : null;
     };
     const clean = (s: string | null, max: number) => {
-      const v = (s ?? "").replace(/\s+/g, " ").slice(0, max).trim();
+      const norm = (s ?? "").replace(/\s+/g, " ").trim();
+      // 按词边界截断 + 省略号：避免把 AI 短评砍在半个词上（如 "expecting nin"）。
+      // 回退到 max 内最后一个空格（太靠前则硬切）；中文无空格 → 按字硬切；末尾标点先去再加 …。
+      let v: string;
+      if (norm.length <= max) {
+        v = norm;
+      } else {
+        const cut = norm.slice(0, max);
+        const sp = cut.lastIndexOf(" ");
+        v = (sp > max * 0.6 ? cut.slice(0, sp) : cut).replace(/[\s,;:.!?，、。；：·]+$/u, "") + "…";
+      }
       // 用户可控且渲染到品牌图卡 → 严格雷词闸 fail-closed（NFKC+去零宽+删分隔+子串，抗全角/拆分/驼峰绕过），
       // 与同卡 by/result 同级（findBannedTerms 词边界版会被 BetKing/ｂｅｔ/b.e.t 绕过）。
       return v &&
@@ -477,7 +487,17 @@ export async function GET(req: Request) {
   // 数值由 getMatchReport 经 reportOgPath 传入；用户可控文本过严格雷词闸 fail-closed；队旗仅 flagcdn。
   if (searchParams.get("mode") === "report") {
     const cleanR = (s: string | null, max: number) => {
-      const v = (s ?? "").replace(/\s+/g, " ").slice(0, max).trim();
+      const norm = (s ?? "").replace(/\s+/g, " ").trim();
+      // 按词边界截断 + 省略号：避免把 AI 短评砍在半个词上（如 "expecting nin"）。
+      // 回退到 max 内最后一个空格（太靠前则硬切）；中文无空格 → 按字硬切；末尾标点先去再加 …。
+      let v: string;
+      if (norm.length <= max) {
+        v = norm;
+      } else {
+        const cut = norm.slice(0, max);
+        const sp = cut.lastIndexOf(" ");
+        v = (sp > max * 0.6 ? cut.slice(0, sp) : cut).replace(/[\s,;:.!?，、。；：·]+$/u, "") + "…";
+      }
       return v &&
         findBannedTermsStrict(v, "en").length === 0 &&
         findBannedTermsStrict(v, "zh").length === 0
