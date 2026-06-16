@@ -41,7 +41,8 @@ export async function GET(req: NextRequest) {
     .filter((p) => {
       if (force) return true;
       const m = have.get(p.id);
-      return !m?.ai_blurb || !m?.ai_blurb_en;
+      // 有任一语种短评即视为已处理：避免某语种（如 Gemini 限流）持续失败时卡在同一批、无法推进到后续球员。
+      return !m?.ai_blurb && !m?.ai_blurb_en;
     })
     .slice(0, CAP);
 
