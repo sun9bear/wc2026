@@ -208,10 +208,10 @@ export default async function CalculatorPage({
   const hit = team ? findTeam(data, team) : null;
   const allTeams = data.groups
     .flatMap((g) => g.table)
-    .map((t) => ({ name: t.name, zh: t.zh, slug: teamSlug(t.name) }))
+    .map((t) => ({ name: t.name, zh: t.zh, slug: teamSlug(t.name), flag: t.flag }))
     .sort((a, b) => a.name.localeCompare(b.name));
   const hotTeams = HOT.map((n) => allTeams.find((t) => t.name === n)).filter(
-    (x): x is { name: string; zh: string; slug: string } => !!x
+    (x): x is { name: string; zh: string; slug: string; flag: string | null } => !!x
   );
 
   // 页眉分享（任务 A）：选了队 → 该队 OG 卡（zh 带二维码）；未选 → 仅链接分享整页。

@@ -112,8 +112,8 @@ export function CalculatorFocus({
   focus,
 }: {
   locale: Locale;
-  hot: { name: string; zh: string; slug: string }[];
-  all: { name: string; zh: string; slug: string }[];
+  hot: { name: string; zh: string; slug: string; flag: string | null }[];
+  all: { name: string; zh: string; slug: string; flag: string | null }[];
   focus: FocusTeam | null;
 }) {
   const t = TXT[locale] ?? TXT.en;
@@ -135,22 +135,28 @@ export function CalculatorFocus({
 
   return (
     <div className="mb-4">
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
-        <span className="shrink-0 text-muted">{t.pick}</span>
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        <span className="shrink-0 text-xs text-muted">{t.pick}</span>
         {hot.map((x) => (
           <a
             key={x.slug}
             href={localeHref(locale, `/calculator?team=${x.slug}`)}
             onClick={() => track("calculator_team_selected", { team: x.slug, via: "chip" })}
-            className={`shrink-0 rounded-pill border px-2.5 py-1 ${
-              focus?.slug === x.slug ? "border-green text-green" : "border-border text-muted"
+            className={`flex shrink-0 items-center gap-1.5 rounded-pill border px-3 py-1.5 text-sm font-medium transition ${
+              focus?.slug === x.slug
+                ? "border-green bg-green/15 text-green"
+                : "border-border bg-surface-2 hover:border-green/60"
             }`}
           >
+            {x.flag && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={x.flag} alt="" className="h-4 w-6 shrink-0 rounded-[2px] object-cover ring-1 ring-black/20" />
+            )}
             {label(x)}
           </a>
         ))}
         <select
-          className="shrink-0 rounded-sm border border-border bg-surface-2 px-2 py-1 text-muted"
+          className="shrink-0 rounded-pill border border-border bg-surface-2 px-3 py-1.5 text-sm text-muted"
           value={focus && !hot.some((x) => x.slug === focus.slug) ? focus.slug : ""}
           onChange={(e) => {
             if (e.target.value) {
