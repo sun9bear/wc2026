@@ -305,6 +305,15 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
     de: "Startseite",
     fr: "Accueil",
   };
+  // 事实型描述（无 offers/赔率措辞，含队名+赛事+年份，喂搜索/AI 理解）。
+  const EV_DESC: Record<Locale, string> = {
+    zh: `${evHome} vs ${evAway}，2026 世界杯。出线概率、近期战绩与赛前前瞻。`,
+    en: `${evHome} vs ${evAway} at the World Cup 2026. Win probabilities, recent form and a match preview.`,
+    es: `${evHome} vs ${evAway} en el Mundial 2026. Probabilidades de avance, forma reciente y previa del partido.`,
+    pt: `${evHome} vs ${evAway} na Copa 2026. Probabilidades de avanço, forma recente e prévia do jogo.`,
+    de: `${evHome} vs ${evAway} bei der WM 2026. Weiterkommen-Chancen, aktuelle Form und Spielvorschau.`,
+    fr: `${evHome} vs ${evAway} au Mondial 2026. Probabilités de qualification, forme récente et aperçu du match.`,
+  };
   const matchJsonLd = {
     "@context": "https://schema.org",
     "@graph": [
@@ -312,12 +321,17 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
         "@type": "SportsEvent",
         "@id": `${selfUrl(`/match/${id}`, locale)}#event`,
         name: `${evHome} vs ${evAway}`,
+        description: EV_DESC[locale] ?? EV_DESC.en,
         sport: "Soccer",
         startDate: m.kickoffAt,
         eventStatus: settled
           ? "https://schema.org/EventCompleted"
           : "https://schema.org/EventScheduled",
         competitor: [
+          { "@type": "SportsTeam", name: evHome },
+          { "@type": "SportsTeam", name: evAway },
+        ],
+        performer: [
           { "@type": "SportsTeam", name: evHome },
           { "@type": "SportsTeam", name: evAway },
         ],

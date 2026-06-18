@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { getLocale } from "@/i18n/server";
 import { localeHref, type Locale, BCP47_LOCALE } from "@/i18n";
 import { teamName } from "@/lib/football/teams";
-import { localizedAlternates } from "@/lib/seo/canonical";
+import { localizedAlternates, selfUrl } from "@/lib/seo/canonical";
 import { getForecast } from "@/lib/prob/pipeline";
 import { getSettledIndex } from "@/lib/seo/freshness";
 import { JsonLd } from "@/lib/seo/jsonLd";
@@ -193,6 +193,31 @@ export default async function GroupPage({
     })),
   };
 
+  // BreadcrumbList：首页 › 出线计算器 › X 组（叠加在 ItemList 之上，独立 JsonLd 渲染）。
+  const BC: Record<Locale, { home: string; calc: string; grp: (x: string) => string }> = {
+    zh: { home: "首页", calc: "出线计算器", grp: (x) => `${x} 组` },
+    en: { home: "Home", calc: "Calculator", grp: (x) => `Group ${x}` },
+    es: { home: "Inicio", calc: "Calculadora", grp: (x) => `Grupo ${x}` },
+    pt: { home: "Início", calc: "Calculadora", grp: (x) => `Grupo ${x}` },
+    de: { home: "Startseite", calc: "Rechner", grp: (x) => `Gruppe ${x}` },
+    fr: { home: "Accueil", calc: "Calculateur", grp: (x) => `Groupe ${x}` },
+  };
+  const bc = BC[locale] ?? BC.en;
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: bc.home, item: selfUrl("/", locale) },
+      { "@type": "ListItem", position: 2, name: bc.calc, item: selfUrl("/calculator", locale) },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: bc.grp(X),
+        item: selfUrl(`/calculator/group/${letter}`, locale),
+      },
+    ],
+  };
+
   const RULES_LINK: Record<Locale, string> = {
     zh: "📖 出线规则详解（第三名怎么算）",
     en: "📖 How qualification works (third-place rules)",
@@ -205,6 +230,7 @@ export default async function GroupPage({
   return (
     <PageContainer tier="wide">
       <JsonLd data={groupJsonLd} />
+      <JsonLd data={breadcrumbJsonLd} />
       <div className="flex items-center justify-between">
         <Link href={localeHref(locale, "/calculator")} className="text-xs text-muted">
           {c.back}

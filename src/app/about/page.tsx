@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { getLocale } from "@/i18n/server";
 import { localeHref, type Locale } from "@/i18n";
 import { localizedAlternates } from "@/lib/seo/canonical";
+import { JsonLd } from "@/lib/seo/jsonLd";
 import { PageContainer } from "@/components/PageContainer";
 
 const META: Record<Locale, { title: string; description: string }> = {
@@ -357,6 +358,47 @@ const BODY: Record<Locale, AboutBody> = {
   },
 };
 
+// FAQPage（纯文本，因正文为 JSX 节点不可直接复用）：镜像本页既有 6 语种事实——
+// 免费/无真钱/匿名/积分无现实价值/玩法；合规措辞与正文一致，不引入博彩词。
+const ABOUT_FAQ: Record<Locale, { q: string; a: string }[]> = {
+  zh: [
+    { q: "环球足球预测是免费的吗？涉及真钱吗？", a: "完全免费，不涉及任何真实金钱，只使用虚拟积分游玩。" },
+    { q: "需要注册或填邮箱吗？", a: "不需要。进入即获赠虚拟积分，无需手机号或邮箱，匿名即可玩。" },
+    { q: "积分有现实价值吗？", a: "没有。积分是虚拟道具，无任何现实价值，无法购买、兑换、提现或转让。" },
+    { q: "怎么玩？", a: "在比赛页选择你看好的结果（主胜 / 平局 / 客胜）并投入一些虚拟积分；命中的预测会折算虚拟积分，用来冲排行榜、解锁段位。" },
+  ],
+  en: [
+    { q: "Is World Cup Predictor free? Is any real money involved?", a: "It is completely free and involves no real money — you play with virtual points only." },
+    { q: "Do I need to sign up or give an email?", a: "No. You get free virtual points the moment you join — no phone or email needed, so you can play anonymously." },
+    { q: "Do the points have any real-world value?", a: "No. Points are virtual items with no real-world value. They cannot be purchased, redeemed, withdrawn or transferred." },
+    { q: "How do I play?", a: "Pick the result you believe in on any match page (home win, draw or away win) and put in some virtual points. Correct predictions earn points you can use to climb the leaderboard and unlock ranks." },
+  ],
+  es: [
+    { q: "¿World Cup Predictor es gratis? ¿Hay dinero real?", a: "Es totalmente gratis y no implica dinero real: juegas solo con puntos virtuales." },
+    { q: "¿Hay que registrarse o dar un correo?", a: "No. Recibes puntos virtuales gratis al unirte, sin teléfono ni correo, así que puedes jugar de forma anónima." },
+    { q: "¿Los puntos tienen algún valor real?", a: "No. Los puntos son objetos virtuales sin valor en el mundo real. No se pueden comprar, canjear, retirar ni transferir." },
+    { q: "¿Cómo se juega?", a: "Elige en cualquier página de partido el resultado en el que confías (victoria local, empate o victoria visitante) y pon algunos puntos virtuales. Las predicciones acertadas ganan puntos para subir en la clasificación y desbloquear rangos." },
+  ],
+  pt: [
+    { q: "O World Cup Predictor é grátis? Envolve dinheiro real?", a: "É totalmente grátis e não envolve dinheiro real: você joga apenas com pontos virtuais." },
+    { q: "Preciso me cadastrar ou dar um e-mail?", a: "Não. Você ganha pontos virtuais grátis assim que entra, sem telefone nem e-mail, então pode jogar de forma anônima." },
+    { q: "Os pontos têm algum valor real?", a: "Não. Os pontos são itens virtuais sem valor no mundo real. Não podem ser comprados, resgatados, sacados nem transferidos." },
+    { q: "Como se joga?", a: "Em qualquer página de jogo, escolha o resultado em que acredita (vitória da casa, empate ou vitória de fora) e coloque alguns pontos virtuais. As previsões certas ganham pontos para subir no ranking e desbloquear níveis." },
+  ],
+  de: [
+    { q: "Ist World Cup Predictor kostenlos? Ist echtes Geld im Spiel?", a: "Es ist völlig kostenlos und beinhaltet kein echtes Geld — du spielst nur mit virtuellen Punkten." },
+    { q: "Muss ich mich anmelden oder eine E-Mail angeben?", a: "Nein. Du erhältst beim Beitritt kostenlose virtuelle Punkte, ohne Telefon oder E-Mail, und kannst anonym spielen." },
+    { q: "Haben die Punkte einen realen Wert?", a: "Nein. Punkte sind virtuelle Gegenstände ohne realen Wert. Sie können nicht gekauft, eingelöst, ausgezahlt oder übertragen werden." },
+    { q: "Wie spiele ich?", a: "Wähle auf jeder Spielseite das Ergebnis, an das du glaubst (Heimsieg, Unentschieden oder Auswärtssieg), und setze einige virtuelle Punkte ein. Richtige Vorhersagen bringen Punkte, mit denen du im Ranking aufsteigst und Ränge freischaltest." },
+  ],
+  fr: [
+    { q: "World Cup Predictor est-il gratuit ? Y a-t-il de l'argent réel ?", a: "C'est entièrement gratuit et cela n'implique aucun argent réel : tu joues uniquement avec des points virtuels." },
+    { q: "Faut-il s'inscrire ou donner un e-mail ?", a: "Non. Tu reçois des points virtuels gratuits dès ton arrivée, sans téléphone ni e-mail, et tu peux jouer de façon anonyme." },
+    { q: "Les points ont-ils une valeur réelle ?", a: "Non. Les points sont des objets virtuels sans valeur dans le monde réel. Ils ne peuvent être achetés, échangés, retirés ni transférés." },
+    { q: "Comment jouer ?", a: "Sur n'importe quelle page de match, choisis le résultat auquel tu crois (victoire à domicile, nul ou victoire à l'extérieur) et mise quelques points virtuels. Les bonnes prédictions rapportent des points pour grimper au classement et débloquer des rangs." },
+  ],
+};
+
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   return { ...(META[locale] ?? META.en), alternates: localizedAlternates("/about", locale) };
@@ -374,9 +416,19 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default async function AboutPage() {
   const locale = await getLocale();
   const c = BODY[locale] ?? BODY.en;
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: (ABOUT_FAQ[locale] ?? ABOUT_FAQ.en).map((it) => ({
+      "@type": "Question",
+      name: it.q,
+      acceptedAnswer: { "@type": "Answer", text: it.a },
+    })),
+  };
 
   return (
     <PageContainer tier="prose">
+      <JsonLd data={faqJsonLd} />
       <Link href={localeHref(locale, "/")} className="text-xs text-muted">
         {c.back}
       </Link>

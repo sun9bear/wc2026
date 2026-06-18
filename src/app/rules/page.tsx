@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale } from "@/i18n/server";
-import { localeHref } from "@/i18n";
+import { localeHref, type Locale } from "@/i18n";
 import { localizedAlternates } from "@/lib/seo/canonical";
+import { JsonLd } from "@/lib/seo/jsonLd";
 import { Disclaimer } from "@/components/Disclaimer";
 import { PageContainer } from "@/components/PageContainer";
 
@@ -259,6 +260,47 @@ const COPY = {
   },
 } as const;
 
+// FAQPage 问题串 × 6 语；答案直接复用上方 COPY（已逐字核对 FIFA 规程），不重复翻译、不引入新事实。
+// 映射：Q1→formatBody，Q2→groupIntro+groupList，Q3→thirdIntro+thirdList，Q4→tldr。
+const FAQ_Q: Record<Locale, [string, string, string, string]> = {
+  zh: [
+    "2026 世界杯赛制是怎样的？",
+    "小组排名怎么决定？有哪些决胜判据？",
+    "8 个最佳第三名怎么选出来？",
+    "小组第三还能出线吗？",
+  ],
+  en: [
+    "How does the World Cup 2026 format work?",
+    "How are group standings decided? What are the tie-breakers?",
+    "How are the 8 best third-placed teams chosen?",
+    "Can a team finish third in its group and still advance?",
+  ],
+  es: [
+    "¿Cómo funciona el formato del Mundial 2026?",
+    "¿Cómo se decide la clasificación de grupo? ¿Cuáles son los desempates?",
+    "¿Cómo se eligen los 8 mejores terceros?",
+    "¿Un equipo puede terminar tercero y aun así avanzar?",
+  ],
+  pt: [
+    "Como funciona o formato da Copa 2026?",
+    "Como é decidida a classificação do grupo? Quais são os desempates?",
+    "Como são escolhidos os 8 melhores terceiros?",
+    "Uma seleção pode terminar em terceiro e ainda assim avançar?",
+  ],
+  de: [
+    "Wie funktioniert das Format der WM 2026?",
+    "Wie wird die Gruppenwertung entschieden? Welche Tiebreaker gelten?",
+    "Wie werden die 8 besten Gruppendritten bestimmt?",
+    "Kann ein Team Gruppendritter werden und trotzdem weiterkommen?",
+  ],
+  fr: [
+    "Comment fonctionne le format du Mondial 2026 ?",
+    "Comment le classement de groupe est-il décidé ? Quels sont les départages ?",
+    "Comment les 8 meilleurs troisièmes sont-ils choisis ?",
+    "Une équipe peut-elle finir troisième et se qualifier quand même ?",
+  ],
+};
+
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   const c = COPY[locale];
@@ -272,8 +314,28 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RulesPage() {
   const locale = await getLocale();
   const c = COPY[locale];
+  const q = FAQ_Q[locale] ?? FAQ_Q.en;
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      { "@type": "Question", name: q[0], acceptedAnswer: { "@type": "Answer", text: c.formatBody } },
+      {
+        "@type": "Question",
+        name: q[1],
+        acceptedAnswer: { "@type": "Answer", text: `${c.groupIntro} ${c.groupList.join(" ")}` },
+      },
+      {
+        "@type": "Question",
+        name: q[2],
+        acceptedAnswer: { "@type": "Answer", text: `${c.thirdIntro} ${c.thirdList.join(" ")}` },
+      },
+      { "@type": "Question", name: q[3], acceptedAnswer: { "@type": "Answer", text: c.tldr } },
+    ],
+  };
   return (
     <PageContainer tier="prose">
+      <JsonLd data={faqJsonLd} />
       <Link href={localeHref(locale, "/")} className="text-xs text-muted">
         {c.back}
       </Link>
