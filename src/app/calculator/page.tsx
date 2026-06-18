@@ -6,6 +6,7 @@ import { teamName } from "@/lib/football/teams";
 import { localizedAlternates, selfUrl } from "@/lib/seo/canonical";
 import { getForecast } from "@/lib/prob/pipeline";
 import { findTeam, teamSlug } from "@/lib/prob/findTeam";
+import { PageContainer } from "@/components/PageContainer";
 import { ThirdCalculator } from "@/components/ThirdCalculator";
 import { AdvanceRequirements } from "@/components/AdvanceRequirements";
 import { getAdvanceRequirements } from "@/lib/prob/requirements";
@@ -248,7 +249,7 @@ export default async function CalculatorPage({
     : null;
 
   return (
-    <main className="mx-auto w-full max-w-xl px-4 py-8">
+    <PageContainer tier="wide">
       <JsonLd data={faqJsonLd} />
       <div className="flex items-center justify-between gap-2">
         <Link href={localeHref(locale, "/")} className="shrink-0 text-xs text-muted">
@@ -299,6 +300,6 @@ export default async function CalculatorPage({
         focusLetter={hit?.letter ?? null}
         focusTeamId={hit?.team.id ?? null}
       />
-    </main>
+    </PageContainer>
   );
 }

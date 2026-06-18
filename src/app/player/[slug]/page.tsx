@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getPlayer, getPlayerFacts, getPlayerIntro } from "@/lib/players/getPlayer";
+import { PageContainer } from "@/components/PageContainer";
 import { PlayerVoteButton } from "@/components/PlayerVoteButton";
 import { Disclaimer } from "@/components/Disclaimer";
 import { getDict, localeHref, type Locale } from "@/i18n";
@@ -81,7 +82,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
   const ui = UI[locale];
 
   return (
-    <main className="mx-auto w-full max-w-xl px-4 py-8">
+    <PageContainer tier="prose">
       <Link href={localeHref(locale, "/popularity")} className="text-xs text-muted">
         {t.common.back}
       </Link>
@@ -144,7 +145,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
       {gallery.length >= 2 && (
         <section className="mt-6">
           <h2 className="font-head mb-2 text-sm font-semibold">{ui.photos}</h2>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-2 md:grid-cols-4">
             {gallery.map((g) => (
               <a
                 key={g.file}
@@ -191,6 +192,6 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
       <footer className="mt-6 text-center">
         <Disclaimer />
       </footer>
-    </main>
+    </PageContainer>
   );
 }

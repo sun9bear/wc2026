@@ -4,6 +4,7 @@ import { getRanking } from "@/lib/players/getRanking";
 import { nameZhBySlug } from "@/data/players.seed";
 import { PHOTOS } from "@/data/players.photos";
 import { PopularityList } from "@/components/PopularityList";
+import { PageContainer } from "@/components/PageContainer";
 import { Disclaimer } from "@/components/Disclaimer";
 import { getDict, localeHref } from "@/i18n";
 import { getLocale } from "@/i18n/server";
@@ -53,7 +54,7 @@ export default async function PopularityPage() {
   }));
 
   return (
-    <main className="mx-auto w-full max-w-xl px-4 py-8">
+    <PageContainer tier="standard">
       <div className="flex items-center justify-between">
         <h1 className="font-head text-2xl font-bold">{t.popularity.title}</h1>
         <Link href={localeHref(locale, "/")} className="text-xs text-muted">
@@ -86,6 +87,6 @@ export default async function PopularityPage() {
       <footer className="mt-4 text-center">
         <Disclaimer />
       </footer>
-    </main>
+    </PageContainer>
   );
 }

@@ -284,7 +284,7 @@ export function SettleDrawer({ locale }: { locale: Locale }) {
   const hasLoss = items.some((b) => !b.won);
 
   return (
-    <div className="fixed inset-x-0 bottom-14 z-50 px-3 pb-2">
+    <div className="fixed inset-x-0 bottom-14 z-50 px-3 pb-2 md:bottom-6">
       <div className="mx-auto w-full max-w-xl rounded-lg border border-green/40 bg-surface p-4 shadow-glow">
         <div className="mb-2 flex items-center justify-between">
           <span className="font-head text-sm font-semibold">{t.title}</span>

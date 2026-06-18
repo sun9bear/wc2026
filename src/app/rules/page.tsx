@@ -4,6 +4,7 @@ import { getLocale } from "@/i18n/server";
 import { localeHref } from "@/i18n";
 import { localizedAlternates } from "@/lib/seo/canonical";
 import { Disclaimer } from "@/components/Disclaimer";
+import { PageContainer } from "@/components/PageContainer";
 
 // 常青解释页：2026 新赛制 + 出线/第三名判据（最高需求×最低竞争长尾，最佳 AI 引用候选）。
 // 判据严格对齐 src/lib/prob/standings.ts（已逐字核对 FIFA 规程）：组内相互战绩优先，第三名横排无相互战绩。
@@ -272,7 +273,7 @@ export default async function RulesPage() {
   const locale = await getLocale();
   const c = COPY[locale];
   return (
-    <main className="mx-auto w-full max-w-xl px-4 py-8">
+    <PageContainer tier="prose">
       <Link href={localeHref(locale, "/")} className="text-xs text-muted">
         {c.back}
       </Link>
@@ -313,7 +314,7 @@ export default async function RulesPage() {
       <section className="mt-7 rounded-lg border border-border bg-surface p-4">
         <h2 className="font-head mb-1 text-sm font-semibold">{c.ctaH}</h2>
         <p className="text-sm leading-relaxed text-text/90">{c.ctaBody}</p>
-        <div className="mt-3 space-y-2">
+        <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2">
           <Link
             href={localeHref(locale, "/calculator")}
             className="block rounded-md border border-green/50 px-3 py-2 text-sm font-semibold text-green"
@@ -332,6 +333,6 @@ export default async function RulesPage() {
       <footer className="mt-8 text-center">
         <Disclaimer />
       </footer>
-    </main>
+    </PageContainer>
   );
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getLeaderboard } from "@/lib/leaderboard/getLeaderboard";
+import { PageContainer } from "@/components/PageContainer";
 import { Disclaimer } from "@/components/Disclaimer";
 import { fmtPoints } from "@/lib/format";
 import { getDict, localeHref } from "@/i18n";
@@ -32,7 +33,7 @@ export default async function LeaderboardPage() {
   const rows = await getLeaderboard(locale);
 
   return (
-    <main className="mx-auto w-full max-w-xl px-4 py-8">
+    <PageContainer tier="prose">
       <div className="flex items-center justify-between">
         <h1 className="font-head text-2xl font-bold">{t.leaderboard.title}</h1>
         <Link href={localeHref(locale, "/")} className="text-xs text-muted">
@@ -50,7 +51,7 @@ export default async function LeaderboardPage() {
           {rows.map((r) => (
             <li
               key={r.rank}
-              className="flex items-center gap-3 rounded-md border border-border bg-surface-2 p-3"
+              className="flex items-center gap-3 rounded-md border border-border bg-surface-2 p-3 transition-colors hover:border-green/40"
             >
               <span className="font-head w-6 text-center text-lg font-bold text-muted">
                 {r.rank}
@@ -70,6 +71,6 @@ export default async function LeaderboardPage() {
       <footer className="mt-8 text-center">
         <Disclaimer />
       </footer>
-    </main>
+    </PageContainer>
   );
 }

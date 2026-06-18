@@ -5,6 +5,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Oswald, Inter } from "next/font/google";
 import "./globals.css";
 import { BottomNav } from "@/components/BottomNav";
+import { TopNav } from "@/components/TopNav";
 import { Footer } from "@/components/Footer";
 import { ToastProvider } from "@/components/Toast";
 import { getLocale } from "@/i18n/server";
@@ -165,10 +166,12 @@ export default async function RootLayout({
       lang={locale}
       className={`${oswald.variable} ${inter.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-bg text-text font-body pb-16">
+      {/* pb-16 仅手机端为固定底部栏留白；桌面端底部栏隐藏、改顶部栏，无需留白。 */}
+      <body className="min-h-full flex flex-col bg-bg text-text font-body pb-16 md:pb-0">
         <JsonLd data={siteJsonLd} />
         <LocaleProvider locale={locale}>
           <ToastProvider>
+            <TopNav locale={locale} />
             {children}
             <Footer locale={locale} />
             <BottomNav locale={locale} />
@@ -180,7 +183,7 @@ export default async function RootLayout({
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6993272715247473"
           crossOrigin="anonymous"
-          strategy="beforeInteractive"
+          strategy="afterInteractive"
         />
       </body>
     </html>

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getLeagueBoard } from "@/lib/league/getLeagueBoard";
 import { normalizeLeagueCode } from "@/lib/league/code";
 import { InviteCopy } from "@/components/InviteCopy";
+import { PageContainer } from "@/components/PageContainer";
 import { Disclaimer } from "@/components/Disclaimer";
 import { fmtPoints } from "@/lib/format";
 import { getLocale } from "@/i18n/server";
@@ -106,7 +107,7 @@ export default async function LeagueBoardPage({
   if (!board) notFound();
 
   return (
-    <main className="mx-auto w-full max-w-xl px-4 py-8">
+    <PageContainer tier="standard">
       <div className="flex items-center justify-between">
         <h1 className="font-head text-2xl font-bold">🛡 {board.name}</h1>
         <Link href="/league" className="text-xs text-muted">
@@ -165,6 +166,6 @@ export default async function LeagueBoardPage({
       <footer className="mt-8 text-center">
         <Disclaimer />
       </footer>
-    </main>
+    </PageContainer>
   );
 }

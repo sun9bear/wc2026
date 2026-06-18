@@ -11,6 +11,7 @@ import { JsonLd } from "@/lib/seo/jsonLd";
 import { teamSlug } from "@/lib/prob/findTeam";
 import { LocalTime } from "@/components/LocalTime";
 import { Disclaimer } from "@/components/Disclaimer";
+import { PageContainer } from "@/components/PageContainer";
 
 export const maxDuration = 60;
 
@@ -202,7 +203,7 @@ export default async function GroupPage({
   };
 
   return (
-    <main className="mx-auto w-full max-w-xl px-4 py-8">
+    <PageContainer tier="wide">
       <JsonLd data={groupJsonLd} />
       <div className="flex items-center justify-between">
         <Link href={localeHref(locale, "/calculator")} className="text-xs text-muted">
@@ -264,7 +265,7 @@ export default async function GroupPage({
       {fixtures.length > 0 && (
         <>
           <h2 className="font-head mb-2 mt-6 text-sm font-semibold">{c.fixtures}</h2>
-          <ul className="space-y-1.5 text-sm">
+          <ul className="grid grid-cols-1 gap-2 md:grid-cols-2 text-sm">
             {fixtures.map((m) => (
               <li key={m.id}>
                 <Link
@@ -304,6 +305,6 @@ export default async function GroupPage({
       <footer className="mt-8 text-center">
         <Disclaimer />
       </footer>
-    </main>
+    </PageContainer>
   );
 }

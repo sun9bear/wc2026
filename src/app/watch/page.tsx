@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getLocale } from "@/i18n/server";
 import { localeHref, type Locale } from "@/i18n";
 import { localizedAlternates } from "@/lib/seo/canonical";
+import { PageContainer } from "@/components/PageContainer";
 
 // 观赛指南：按地区列官方转播/流媒体渠道（双语，随 locale 切换）。
 // 纯官方转播链接，无任何联盟/追踪链接。
@@ -323,14 +324,14 @@ export default async function WatchPage() {
   const locale = await getLocale();
   const c = COPY[locale] ?? COPY.en;
   return (
-    <main className="mx-auto w-full max-w-xl px-4 py-8">
+    <PageContainer tier="standard">
       <Link href={localeHref(locale, "/")} className="text-xs text-muted">
         {c.back}
       </Link>
       <h1 className="font-head mt-3 text-2xl font-bold">📺 {c.h1}</h1>
       <p className="mt-1 mb-5 text-xs text-muted">{c.intro}</p>
 
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
         {c.sections.map((s) => (
           <section key={s.title} className="rounded-lg border border-border bg-surface p-4">
             <h2 className="font-head text-sm font-semibold">
@@ -350,6 +351,6 @@ export default async function WatchPage() {
       </div>
 
       <p className="mt-6 text-center text-[10px] leading-relaxed text-muted">{c.note}</p>
-    </main>
+    </PageContainer>
   );
 }

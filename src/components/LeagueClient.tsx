@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+import { PageContainer } from "@/components/PageContainer";
 import { localeHref } from "@/i18n";
 import type { Locale } from "@/i18n";
 
@@ -313,7 +314,7 @@ export function LeagueClient({ locale }: { locale: Locale }) {
   };
 
   return (
-    <main className="mx-auto w-full max-w-xl px-4 py-8">
+    <PageContainer tier="standard">
       <div className="flex items-center justify-between">
         <h1 className="font-head text-2xl font-bold">{t.title}</h1>
         <Link href={localeHref(locale, "/")} className="text-xs text-muted">
@@ -414,7 +415,7 @@ export function LeagueClient({ locale }: { locale: Locale }) {
       {mine.length > 0 && (
         <section className="mt-6">
           <h2 className="font-head mb-2 text-sm font-semibold">{t.mine}</h2>
-          <ul className="space-y-2">
+          <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {mine.map((l) => (
               <li key={l.code}>
                 <Link
@@ -429,6 +430,6 @@ export function LeagueClient({ locale }: { locale: Locale }) {
           </ul>
         </section>
       )}
-    </main>
+    </PageContainer>
   );
 }

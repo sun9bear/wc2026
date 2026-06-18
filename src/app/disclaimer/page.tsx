@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { getLocale } from "@/i18n/server";
 import { localeHref } from "@/i18n";
 import { localizedAlternates } from "@/lib/seo/canonical";
+import { PageContainer } from "@/components/PageContainer";
 
 // 免责声明（双语，locale-adaptive）：EN-first 爬虫/英文用户看到英文版——尤其「无官方关联」段
 // 是商标抗辩 + AdSense IP 审核的关键面，必须对英文受众可读。英文文案避开雷词（用 reward 不用 multiplier）。
@@ -193,7 +194,7 @@ export default async function DisclaimerPage() {
   const locale = await getLocale();
   const c = COPY[locale];
   return (
-    <main className="mx-auto w-full max-w-xl px-4 py-8">
+    <PageContainer tier="prose">
       <Link href={localeHref(locale, "/")} className="text-xs text-muted">
         {c.back}
       </Link>
@@ -233,6 +234,6 @@ export default async function DisclaimerPage() {
           {c.privacy}
         </Link>
       </p>
-    </main>
+    </PageContainer>
   );
 }

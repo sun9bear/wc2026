@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { getLocale } from "@/i18n/server";
 import { localeHref, type Locale } from "@/i18n";
 import { localizedAlternates } from "@/lib/seo/canonical";
+import { PageContainer } from "@/components/PageContainer";
 
 const META: Record<Locale, { title: string; description: string }> = {
   zh: {
@@ -375,7 +376,7 @@ export default async function AboutPage() {
   const c = BODY[locale] ?? BODY.en;
 
   return (
-    <main className="mx-auto w-full max-w-xl px-4 py-8">
+    <PageContainer tier="prose">
       <Link href={localeHref(locale, "/")} className="text-xs text-muted">
         {c.back}
       </Link>
@@ -418,6 +419,6 @@ export default async function AboutPage() {
           {c.disclaimer}
         </Link>
       </p>
-    </main>
+    </PageContainer>
   );
 }

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { getLocale } from "@/i18n/server";
 import { localeHref } from "@/i18n";
 import { localizedAlternates } from "@/lib/seo/canonical";
+import { PageContainer } from "@/components/PageContainer";
 
 // 双语隐私政策：/privacy 出英文、/zh/privacy 出中文，使既有 reciprocal hreflang 成立
 // （与 /disclaimer、/about 同等待遇——避免「根 URL 声明 en 却渲染中文」的 hreflang/内容矛盾）。
@@ -273,7 +274,7 @@ export default async function PrivacyPage() {
   const locale = await getLocale();
   const c = COPY[locale];
   return (
-    <main className="mx-auto w-full max-w-xl px-4 py-8">
+    <PageContainer tier="prose">
       <Link href={localeHref(locale, "/")} className="text-xs text-muted">
         {c.back}
       </Link>
@@ -336,6 +337,6 @@ export default async function PrivacyPage() {
           </p>
         </Section>
       </div>
-    </main>
+    </PageContainer>
   );
 }

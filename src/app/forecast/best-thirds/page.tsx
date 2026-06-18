@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PageContainer } from "@/components/PageContainer";
 import { getLocale } from "@/i18n/server";
 import { getForecast, type ForecastData } from "@/lib/prob/pipeline";
 import { JsonLd } from "@/lib/seo/jsonLd";
@@ -221,10 +222,10 @@ export default async function BestThirdsPage() {
 
   if (!data || data.thirds.length === 0) {
     return (
-      <main className="mx-auto w-full max-w-xl px-4 py-8">
+      <PageContainer tier="standard">
         <h1 className="font-head text-2xl font-bold">🥉 {c.h1}</h1>
         <p className="mt-4 text-sm text-muted">{c.naMsg}</p>
-      </main>
+      </PageContainer>
     );
   }
 
@@ -299,7 +300,7 @@ export default async function BestThirdsPage() {
   const thrdLabel = thirdLabel[locale] ?? thirdLabel.en;
 
   return (
-    <main className="mx-auto w-full max-w-xl px-4 py-8">
+    <PageContainer tier="standard">
       <JsonLd data={itemListJsonLd} />
       <Link href={localeHref(locale, "/forecast")} className="text-xs text-muted">
         {c.back}
@@ -329,6 +330,7 @@ export default async function BestThirdsPage() {
 
       <p className="mt-3 text-sm leading-relaxed text-text/90">{c.intro}</p>
 
+      <div className="md:grid md:grid-cols-2 md:gap-6">
       <section className="mt-6">
         <h2 className="font-head mb-2 text-sm font-semibold text-green">{c.rankH}</h2>
         <p className="mb-2 text-[10px] text-muted">{c.rankNote}</p>
@@ -383,6 +385,7 @@ export default async function BestThirdsPage() {
           </div>
         </section>
       )}
+      </div>
 
       <section className="mt-7 rounded-lg border border-border bg-surface p-4">
         <h2 className="font-head mb-1 text-sm font-semibold">{c.ctaH}</h2>
@@ -414,6 +417,6 @@ export default async function BestThirdsPage() {
         <p>{c.fun}</p>
         <Disclaimer />
       </footer>
-    </main>
+    </PageContainer>
   );
 }

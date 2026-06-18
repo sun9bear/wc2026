@@ -7,6 +7,7 @@ import { teamName } from "@/lib/football/teams";
 import { combinedMultiplier } from "@/lib/odds/pooledOdds";
 import { quotePayout } from "@/lib/bets/quote";
 import { Disclaimer } from "@/components/Disclaimer";
+import { PageContainer } from "@/components/PageContainer";
 import { Skeleton } from "@/components/Skeleton";
 import { LocalTime } from "@/components/LocalTime";
 import { useToast } from "@/components/Toast";
@@ -152,7 +153,7 @@ export function ComboClient({ locale }: { locale: Locale }) {
   }
 
   return (
-    <main className="mx-auto w-full max-w-xl px-4 py-8">
+    <PageContainer tier="standard">
       <div className="flex items-center justify-between">
         <h1 className="font-head text-2xl font-bold">{t.combo.title}</h1>
         <Link href={localeHref(locale, "/")} className="text-xs text-muted">
@@ -206,7 +207,7 @@ export function ComboClient({ locale }: { locale: Locale }) {
       </div>
 
       <div className="fixed inset-x-0 bottom-14 border-t border-border bg-bg/95 backdrop-blur">
-        <div className="mx-auto w-full max-w-xl px-4 py-3">
+        <div className="mx-auto w-full max-w-5xl px-4 py-3">
           <div className="flex items-center justify-between text-xs text-muted">
             <span>
               {t.combo.selectedA} <b className="font-head text-text">{legs}</b> {t.combo.selectedB}{" "}
@@ -238,6 +239,6 @@ export function ComboClient({ locale }: { locale: Locale }) {
           </div>
         </div>
       </div>
-    </main>
+    </PageContainer>
   );
 }

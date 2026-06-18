@@ -7,7 +7,8 @@
   --color-surface-2: #1b232d;
   --color-border: #283340;
   --color-text: #e8edf2;
-  --color-muted: #8a97a6;
+  /* muted 从 #8a97a6(≈4.2:1 不达 AA) 提亮到 #9baabc(≈5:1)，过 WCAG AA 4.5:1，仍保留次级灰调 */
+  --color-muted: #9baabc;
   --color-green: #1be27f;
   --color-blue: #2e9bff;
   --color-amber: #ffb02e;
@@ -114,6 +115,14 @@ body {
 .medal-3 {
   background: linear-gradient(145deg, #f0b985 0%, #d8954e 50%, #a96b34 100%);
   box-shadow: 0 0 10px rgba(216, 149, 78, 0.55), inset 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+/* 键盘可达：统一焦点环（仅键盘 Tab 触发，鼠标点击不显示）。
+   :where() 零特异性，组件需要时可自行覆盖。修复全站无 focus-visible 的 a11y 缺口。 */
+:where(a, button, select, input, textarea, summary, [role="button"], [tabindex]):focus-visible {
+  outline: 2px solid var(--color-green);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 /* 入场淡入上浮 */

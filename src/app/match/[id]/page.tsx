@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { after } from "next/server";
 import { getMatchDetail } from "@/lib/markets/getMatchDetail";
 import { getMatchExtra } from "@/lib/football/getMatchExtra";
+import { PageContainer } from "@/components/PageContainer";
 import { MarketPicks } from "@/components/MarketPicks";
 import { MatchProbTrend } from "@/components/MatchProbTrend";
 import { ScoreProbs } from "@/components/ScoreProbs";
@@ -375,7 +376,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
   };
 
   return (
-    <main className="mx-auto w-full max-w-xl px-4 py-8">
+    <PageContainer tier="standard">
       <JsonLd data={matchJsonLd} />
       {/* 语义 h1（视觉隐藏，不改版式；给爬虫/AI 明确实体标题）。 */}
       <h1 className="sr-only">
@@ -469,10 +470,12 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
               <span className="live-dot" /> {t.match.livePicks}
             </h2>
             <MarketPicks marketId={m.market.id} selections={m.market.selections} locale={locale} />
-            {scoreline && (
-              <ScoreProbs data={scoreline} locale={locale} home={m.home} away={m.away} />
-            )}
-            <MatchProbTrend matchId={id} locale={locale} />
+            <div className="md:grid md:grid-cols-2 md:gap-4">
+              {scoreline && (
+                <ScoreProbs data={scoreline} locale={locale} home={m.home} away={m.away} />
+              )}
+              <MatchProbTrend matchId={id} locale={locale} />
+            </div>
             {impliedSplit && (
               <MatchPreviewShare
                 home={teamName(m.home.name, locale)}
@@ -512,6 +515,6 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
       <footer className="mt-8 text-center">
         <Disclaimer />
       </footer>
-    </main>
+    </PageContainer>
   );
 }

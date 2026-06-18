@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PageContainer } from "@/components/PageContainer";
 import { getLocale } from "@/i18n/server";
 import { getForecast, type ForecastData } from "@/lib/prob/pipeline";
 import { getTeamAdvanceTrends } from "@/lib/prob/getTrends";
@@ -225,10 +226,10 @@ export default async function ForecastPage() {
 
   if (!data) {
     return (
-      <main className="mx-auto w-full max-w-xl px-4 py-8">
+      <PageContainer tier="wide">
         <h1 className="font-head text-2xl font-bold">📊 {c.h1}</h1>
         <p className="mt-4 text-sm text-muted">数据暂不可用，请稍后再试 / Data temporarily unavailable.</p>
-      </main>
+      </PageContainer>
     );
   }
 
@@ -278,7 +279,7 @@ export default async function ForecastPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-xl px-4 py-8">
+    <PageContainer tier="wide">
       <JsonLd data={datasetJsonLd} />
       <h1 className="font-head text-2xl font-bold">📊 {c.h1}</h1>
       <p className="mt-1 text-[11px] text-muted">
@@ -381,7 +382,7 @@ export default async function ForecastPage() {
 
       <section className="mt-7">
         <h2 className="font-head mb-2 text-sm font-semibold">{c.matches}</h2>
-        <div className="space-y-2">
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
           {upcoming.map((m) => (
             <TrackedLink
               key={m.id}
@@ -472,7 +473,7 @@ export default async function ForecastPage() {
       {data.simOk && (
         <section className="mt-7">
           <h2 className="font-head mb-2 text-sm font-semibold">{c.groups}</h2>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {data.groups.map((g) => (
               <div key={g.letter} className="rounded-lg border border-border bg-surface p-3">
                 <div className="font-head mb-1.5 text-xs font-semibold text-muted">
@@ -499,6 +500,6 @@ export default async function ForecastPage() {
         <p>{c.method}</p>
         <p>{c.fun}</p>
       </footer>
-    </main>
+    </PageContainer>
   );
 }

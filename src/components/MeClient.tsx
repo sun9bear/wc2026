@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
+import { PageContainer } from "@/components/PageContainer";
 import { Disclaimer } from "@/components/Disclaimer";
 import { CheckinCard } from "@/components/CheckinCard";
 import { MyTeamCard } from "@/components/MyTeamCard";
@@ -347,7 +348,7 @@ export function MeClient({ locale }: { locale: Locale }) {
   }, []);
 
   return (
-    <main className="mx-auto w-full max-w-xl px-4 py-8">
+    <PageContainer tier="standard">
       <div className="flex items-center justify-between">
         <h1 className="font-head text-2xl font-bold">{t.me.title}</h1>
         <Link href={localeHref(locale, "/")} className="text-xs text-muted">
@@ -518,7 +519,7 @@ export function MeClient({ locale }: { locale: Locale }) {
             {t.leaderboard.title}
           </Link>
 
-          <div className="mt-4 grid grid-cols-2 gap-3">
+          <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
             <Tile value={`${data.hitRate}%`} label={t.me.hitRate} color="text-green" />
             <Tile value={data.won} label={t.me.wins} color="text-gold" />
             <Tile value={data.total} label={t.me.total} />
@@ -563,7 +564,7 @@ export function MeClient({ locale }: { locale: Locale }) {
               <h2 className="font-head mb-2 mt-6 text-sm font-semibold">
                 {t.me.achievements} · {data.achievements.filter((a) => a.earned).length}/{data.achievements.length}
               </h2>
-              <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+              <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
                 {data.achievements.map((a) => (
                   <div
                     key={a.id}
@@ -585,6 +586,6 @@ export function MeClient({ locale }: { locale: Locale }) {
       <footer className="mt-8 text-center">
         <Disclaimer />
       </footer>
-    </main>
+    </PageContainer>
   );
 }

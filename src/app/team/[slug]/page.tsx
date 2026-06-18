@@ -5,6 +5,7 @@ import { getLocale } from "@/i18n/server";
 import { getTeamDetail, type TeamResult } from "@/lib/prob/getTeamDetail";
 import { getSettledIndex } from "@/lib/seo/freshness";
 import { JsonLd } from "@/lib/seo/jsonLd";
+import { PageContainer } from "@/components/PageContainer";
 import { HeaderShare } from "@/components/HeaderShare";
 import { SetMyTeamButton } from "@/components/SetMyTeamButton";
 import { LocalTime } from "@/components/LocalTime";
@@ -301,7 +302,7 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
   };
 
   return (
-    <main className="mx-auto w-full max-w-xl px-4 py-8">
+    <PageContainer tier="prose">
       <JsonLd data={teamJsonLd} />
       <div className="flex items-center justify-between">
         <Link href={localeHref(locale, "/")} className="text-xs text-muted">
@@ -416,6 +417,6 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
       <footer className="mt-6 text-center">
         <Disclaimer />
       </footer>
-    </main>
+    </PageContainer>
   );
 }

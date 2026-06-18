@@ -298,7 +298,7 @@ export function ThirdCalculator({
         </button>
       </div>
 
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
         {groups
           .filter((g) => groupsWithMatches.has(g.letter))
           // 焦点组（?team= 选中的队所在组）排最前，用户落地即见自己的组
@@ -364,7 +364,7 @@ export function ThirdCalculator({
                             className={`flex-1 rounded-sm border py-2 text-[12px] transition ${
                               (picks[m.id] ?? m.likely) === opt
                                 ? "border-green bg-green/15 text-green"
-                                : "border-border bg-surface-2 text-muted"
+                                : "border-border bg-surface-2 text-muted transition-colors hover:border-green/50"
                             }`}
                           >
                             {t[opt]}

@@ -135,7 +135,7 @@ export function CalculatorFocus({
 
   return (
     <div className="mb-4">
-      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 md:flex-wrap md:overflow-visible">
         <span className="shrink-0 text-xs text-muted">{t.pick}</span>
         {hot.map((x) => (
           <a

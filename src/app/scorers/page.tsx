@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getLocale } from "@/i18n/server";
 import { getScorers } from "@/lib/football/getScorers";
 import { teamName, flagUrl } from "@/lib/football/teams";
+import { PageContainer } from "@/components/PageContainer";
 import { localeHref, getDict, type Locale } from "@/i18n";
 import { localizedAlternates, selfUrl } from "@/lib/seo/canonical";
 
@@ -114,7 +115,7 @@ export default async function ScorersPage() {
   const scorers = await getScorers().catch(() => []);
 
   return (
-    <main className="mx-auto w-full max-w-xl px-4 py-8">
+    <PageContainer tier="prose">
       <Link href={localeHref(locale, "/")} className="text-xs text-muted">
         {c.back}
       </Link>
@@ -174,6 +175,6 @@ export default async function ScorersPage() {
           })}
         </ol>
       )}
-    </main>
+    </PageContainer>
   );
 }

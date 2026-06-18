@@ -112,7 +112,7 @@ export function PopularityList({ rows, locale }: { rows: PopularityRow[]; locale
         </p>
       )}
       {err && <p className="mt-2 text-center text-xs text-red">{err}</p>}
-      <ul className="mt-3 space-y-2">
+      <ul className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2">
         {rows.map((r) => {
           const cur = myToday[r.id] ?? 0;
           const maxed = cur >= DAILY_MAX;

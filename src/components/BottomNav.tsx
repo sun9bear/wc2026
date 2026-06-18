@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { getDict, localeHref, stripLocale, type Locale } from "@/i18n";
 import { SETTLE_NEW_EVENT, SETTLE_SEEN_EVENT } from "@/components/SettleDrawer";
+import { buildNavTabs, isNavActive } from "@/components/nav-tabs";
 
 export function BottomNav({ locale }: { locale: Locale }) {
   const pathname = usePathname();
@@ -31,29 +32,20 @@ export function BottomNav({ locale }: { locale: Locale }) {
       window.removeEventListener(SETTLE_SEEN_EVENT, sync);
     };
   }, []);
-  // 小组赛期间"出线计算器"占主导航位（独家传播资产）；串关入口在首页与 /me。
-  // 淘汰赛阶段（6/28+）视数据评估是否换回 combo。
-  // 排行榜让位「人气榜」(可分享资产)；积分排行入口移至 /me 页二级入口。
-  const tabs = [
-    { href: "/", label: nav.predict, icon: "⚽" },
-    { href: "/calculator", label: nav.calc, icon: "🧮" },
-    { href: "/forecast", label: nav.forecast, icon: "📊" },
-    { href: "/popularity", label: nav.popularity, icon: "⭐" },
-    { href: "/me", label: nav.me, icon: "👤" },
-  ];
+  // Tab 配置与高亮逻辑见 nav-tabs.ts（与桌面 TopNav 共用真理源）。
+  const tabs = buildNavTabs(nav);
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 h-14 border-t border-border bg-surface/95 backdrop-blur">
+    // md+ 由桌面端 TopNav 接管，底部栏仅手机端显示。
+    <nav className="fixed inset-x-0 bottom-0 z-40 h-14 border-t border-border bg-surface/95 backdrop-blur md:hidden">
       <div className="mx-auto flex h-full max-w-xl">
         {tabs.map((t) => {
-          const active =
-            t.href === "/"
-              ? bare === "/" || bare.startsWith("/match")
-              : bare.startsWith(t.href);
+          const active = isNavActive(bare, t.href);
           return (
             <Link
               key={t.href}
               href={localeHref(locale, t.href)}
+              aria-current={active ? "page" : undefined}
               className={`flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] ${
                 active ? "text-green" : "text-muted"
               }`}
