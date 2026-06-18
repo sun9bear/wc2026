@@ -155,7 +155,7 @@ export function ComboClient({ locale }: { locale: Locale }) {
   return (
     <PageContainer tier="standard">
       <div className="flex items-center justify-between">
-        <h1 className="font-head text-2xl font-bold">{t.combo.title}</h1>
+        <h1 className="font-head text-2xl font-bold md:text-3xl">{t.combo.title}</h1>
         <Link href={localeHref(locale, "/")} className="text-xs text-muted">
           {t.common.back}
         </Link>
@@ -178,7 +178,7 @@ export function ComboClient({ locale }: { locale: Locale }) {
       <div className="pb-52">
         {matches.map((m) => (
           <div key={m.id} className="mb-3 rounded-lg border border-border bg-surface p-3">
-            <div className="mb-2 text-[11px] text-muted">
+            <div className="mb-2 text-[11px] text-muted md:text-xs">
               {teamName(m.home, locale)} vs {teamName(m.away, locale)} ·{" "}
               <LocalTime iso={m.kickoffAt} locale={locale} mode="datetime" />
             </div>
@@ -194,7 +194,7 @@ export function ComboClient({ locale }: { locale: Locale }) {
                       on ? "border-green bg-green/15 shadow-glow" : "border-border bg-surface-2"
                     }`}
                   >
-                    <div className="text-[10px] text-muted">{codeLabel[s.code] ?? s.label}</div>
+                    <div className="text-[10px] text-muted md:text-xs">{codeLabel[s.code] ?? s.label}</div>
                     <div className={`font-head font-bold ${on ? "text-green" : ""}`}>
                       {s.multiplier.toFixed(2)}
                     </div>

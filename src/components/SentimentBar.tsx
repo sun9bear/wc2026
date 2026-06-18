@@ -24,8 +24,8 @@ export function SentimentBar({
   if (total <= 0) {
     return (
       <div className="rounded-lg border border-border bg-surface p-4">
-        <div className="mb-1 text-[11px] text-muted">{t.match.sentimentTitle}</div>
-        <p className="text-sm text-muted">{t.match.sentimentEmpty}</p>
+        <div className="mb-1 text-[11px] md:text-xs text-muted">{t.match.sentimentTitle}</div>
+        <p className="text-sm md:text-base text-muted">{t.match.sentimentEmpty}</p>
       </div>
     );
   }
@@ -41,7 +41,7 @@ export function SentimentBar({
 
   return (
     <div className="rounded-lg border border-border bg-surface p-4">
-      <div className="mb-2 text-[11px] text-muted">{t.match.sentimentTitle}</div>
+      <div className="mb-2 text-[11px] md:text-xs text-muted">{t.match.sentimentTitle}</div>
       <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-surface-2">
         {rows.map((r) => (
           <div

@@ -169,7 +169,7 @@ export function MyTeamCard({ locale }: { locale: Locale }) {
     return (
       <Link
         href={localeHref(locale, "/forecast")}
-        className="mt-3 block rounded-lg border border-dashed border-border bg-surface-2 px-4 py-3 text-xs text-muted transition hover:border-green/50 hover:text-green"
+        className="mt-3 block rounded-lg border border-dashed border-border bg-surface-2 px-4 py-3 text-xs md:text-sm text-muted transition hover:border-green/50 hover:text-green"
       >
         {c.empty}
       </Link>
@@ -191,7 +191,7 @@ export function MyTeamCard({ locale }: { locale: Locale }) {
   return (
     <div className="mt-3 rounded-lg border border-green/40 bg-surface p-4">
       <div className="mb-3 flex items-center justify-between">
-        <span className="text-[11px] text-muted">{c.title}</span>
+        <span className="text-[11px] md:text-xs text-muted">{c.title}</span>
         <HeaderShare
           locale={locale}
           shareUrl={`${SITE}/team/${d.slug}`}
@@ -210,29 +210,29 @@ export function MyTeamCard({ locale }: { locale: Locale }) {
         )}
         <div className="flex-1">
           <div className="font-head text-lg font-bold">{nm}</div>
-          <div className="text-[11px] text-green">{c.detail}</div>
+          <div className="text-[11px] md:text-xs text-green">{c.detail}</div>
         </div>
       </Link>
 
       <div className="mt-3 grid grid-cols-3 gap-2 text-center">
         <div className="rounded-md border border-border bg-surface-2 py-2">
           <div className="font-head text-xl font-bold text-green">{adv}%</div>
-          <div className="text-[10px] text-muted">{c.advance}</div>
+          <div className="text-[10px] md:text-xs text-muted">{c.advance}</div>
         </div>
         <div className="rounded-md border border-border bg-surface-2 py-2">
           <div className="font-head text-xl font-bold text-gold">{champ}%</div>
-          <div className="text-[10px] text-muted">{c.champion}</div>
+          <div className="text-[10px] md:text-xs text-muted">{c.champion}</div>
         </div>
         <div className="rounded-md border border-border bg-surface-2 py-2">
           <div className="font-head text-xl font-bold">{d.rating}</div>
-          <div className="text-[10px] text-muted">{c.rating}</div>
+          <div className="text-[10px] md:text-xs text-muted">{c.rating}</div>
         </div>
       </div>
 
       {d.next && (
         <Link
           href={localeHref(locale, `/match/${d.next.matchId}`)}
-          className="mt-3 flex items-center justify-between rounded-md border border-border bg-surface-2 px-3 py-2 text-xs transition hover:border-green/50"
+          className="mt-3 flex items-center justify-between rounded-md border border-border bg-surface-2 px-3 py-2 text-xs md:text-sm transition hover:border-green/50"
         >
           <span className="flex items-center gap-1.5 text-muted">
             {c.next}

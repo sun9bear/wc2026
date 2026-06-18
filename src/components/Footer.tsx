@@ -6,7 +6,7 @@ import { LangToggle } from "@/components/LangToggle";
 export function Footer({ locale }: { locale: Locale }) {
   const t = getDict(locale);
   return (
-    <footer className="mx-auto w-full max-w-5xl px-4 pb-8 pt-12 text-center text-[11px] leading-relaxed text-muted">
+    <footer className="mx-auto w-full max-w-5xl px-4 pb-8 pt-12 text-center text-[11px] leading-relaxed text-muted md:text-xs">
       <nav className="mb-3 flex items-center justify-center gap-3">
         <Link href={localeHref(locale, "/calculator")} className="transition-colors hover:text-text">
           {t.footer.calculator}

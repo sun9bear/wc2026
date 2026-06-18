@@ -128,7 +128,7 @@ export function MarketPicks({
                 on ? "border-green bg-green/15 shadow-glow" : "border-border bg-surface-2"
               }`}
             >
-              <div className="text-[11px] text-muted">{codeLabel[s.code] ?? s.label}</div>
+              <div className="text-[11px] md:text-xs text-muted">{codeLabel[s.code] ?? s.label}</div>
               <div className={`font-head text-2xl font-bold ${on ? "text-green" : "text-text"}`}>
                 {s.multiplier.toFixed(2)}
               </div>
@@ -153,7 +153,7 @@ export function MarketPicks({
           <span className="font-head text-xl text-green">+{payout}</span>
         </div>
         {balance != null && (
-          <div className="mt-2 flex items-center justify-between text-[11px] text-muted">
+          <div className="mt-2 flex items-center justify-between text-[11px] md:text-xs text-muted">
             🪙 {t.me.balanceLabel}
             <span className="font-head text-sm text-text">{balance}</span>
           </div>
@@ -169,7 +169,7 @@ export function MarketPicks({
         {busy ? t.match.submitting : t.match.submit}
       </button>
 
-      <p className="mt-3 text-center text-[10px] text-muted">{t.disclaimer}</p>
+      <p className="mt-3 text-center text-[10px] md:text-xs text-muted">{t.disclaimer}</p>
     </div>
   );
 }

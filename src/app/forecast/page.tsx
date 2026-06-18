@@ -227,8 +227,8 @@ export default async function ForecastPage() {
   if (!data) {
     return (
       <PageContainer tier="wide">
-        <h1 className="font-head text-2xl font-bold">📊 {c.h1}</h1>
-        <p className="mt-4 text-sm text-muted">数据暂不可用，请稍后再试 / Data temporarily unavailable.</p>
+        <h1 className="font-head text-2xl md:text-3xl font-bold">📊 {c.h1}</h1>
+        <p className="mt-4 text-sm md:text-base text-muted">数据暂不可用，请稍后再试 / Data temporarily unavailable.</p>
       </PageContainer>
     );
   }
@@ -281,8 +281,8 @@ export default async function ForecastPage() {
   return (
     <PageContainer tier="wide">
       <JsonLd data={datasetJsonLd} />
-      <h1 className="font-head text-2xl font-bold">📊 {c.h1}</h1>
-      <p className="mt-1 text-[11px] text-muted">
+      <h1 className="font-head text-2xl md:text-3xl font-bold">📊 {c.h1}</h1>
+      <p className="mt-1 text-[11px] md:text-xs text-muted">
         {c.updated} {new Date(data.updatedAt).toLocaleString(BCP47_LOCALE[locale] ?? "en-US")}
       </p>
       <Link
@@ -309,20 +309,20 @@ export default async function ForecastPage() {
           fr: `Phase de groupes du Mondial 2026 : une simulation de Monte-Carlo de 10 000 tirages place ${topName} en tête avec ${tp} de probabilité de remporter le titre ; ${nAdv} équipes ont actuellement plus de 50% de chances d'atteindre les seizièmes.`,
         };
         return (
-          <p className="mt-3 text-sm leading-relaxed">{GEO[locale] ?? GEO.en}</p>
+          <p className="mt-3 text-sm md:text-base leading-relaxed">{GEO[locale] ?? GEO.en}</p>
         );
       })()}
 
       {note && (
         <div className="fade-up mt-3 rounded-lg border border-border bg-surface p-3">
-          <div className="mb-1 text-[10px] text-muted">{c.aiTag}</div>
-          <p className="text-sm leading-relaxed">{note}</p>
+          <div className="mb-1 text-[10px] md:text-xs text-muted">{c.aiTag}</div>
+          <p className="text-sm md:text-base leading-relaxed">{note}</p>
         </div>
       )}
 
       {data.simOk && (
         <section className="mt-6">
-          <h2 className="font-head mb-2 text-sm font-semibold">{c.champions}</h2>
+          <h2 className="font-head mb-2 text-sm md:text-base font-semibold">{c.champions}</h2>
           <div className="space-y-1.5">
             {data.champions.map((t) => (
               <div key={t.id} className="flex items-center gap-2 text-sm">
@@ -343,8 +343,8 @@ export default async function ForecastPage() {
       )}
 
       <section className="mt-7">
-        <h2 className="font-head mb-1 text-sm font-semibold">{c.swing}</h2>
-        <p className="mb-2 text-[10px] text-muted">{c.swingSub}</p>
+        <h2 className="font-head mb-1 text-sm md:text-base font-semibold">{c.swing}</h2>
+        <p className="mb-2 text-[10px] md:text-xs text-muted">{c.swingSub}</p>
         {swings.length === 0 ? (
           <p className="rounded-lg border border-dashed border-border bg-surface p-3 text-xs text-muted">
             {c.swingEmpty}
@@ -369,7 +369,7 @@ export default async function ForecastPage() {
                     <span className="font-head block text-sm text-green">
                       {pct(series[series.length - 1])}
                     </span>
-                    <span className="text-[10px]" style={{ color }}>
+                    <span className="text-[10px] md:text-xs" style={{ color }}>
                       {up ? "▲" : "▼"} {Math.abs(delta * 100).toFixed(1)}pp
                     </span>
                   </span>
@@ -381,7 +381,7 @@ export default async function ForecastPage() {
       </section>
 
       <section className="mt-7">
-        <h2 className="font-head mb-2 text-sm font-semibold">{c.matches}</h2>
+        <h2 className="font-head mb-2 text-sm md:text-base font-semibold">{c.matches}</h2>
         <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
           {upcoming.map((m) => (
             <TrackedLink
@@ -393,7 +393,7 @@ export default async function ForecastPage() {
             >
               <div className="mb-1.5 flex items-center justify-between text-xs">
                 <TeamName t={m.home} locale={locale} />
-                <span className="text-[10px] text-muted">
+                <span className="text-[10px] md:text-xs text-muted">
                   {new Date(m.kickoff).toLocaleString(BCP47_LOCALE[locale] ?? "en-US", {
                     month: "2-digit",
                     day: "2-digit",
@@ -404,7 +404,7 @@ export default async function ForecastPage() {
                 <TeamName t={m.away} locale={locale} />
               </div>
               <Bar p={m.p} />
-              <div className="mt-1 flex justify-between text-[10px] text-muted">
+              <div className="mt-1 flex justify-between text-[10px] md:text-xs text-muted">
                 <span className="text-green">{pct(m.p.home)}</span>
                 <span>
                   {c.draw} {pct(m.p.draw)}
@@ -412,7 +412,7 @@ export default async function ForecastPage() {
                 <span className="text-[#f97316]">{pct(m.p.away)}</span>
               </div>
               {m.topScores.length > 0 && (
-                <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-muted">
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] md:text-xs text-muted">
                   <span className="opacity-70">{c.likely}</span>
                   {m.topScores.slice(0, 3).map((s) => (
                     <span key={`${s.h}-${s.a}`} className="tabular-nums">
@@ -424,7 +424,7 @@ export default async function ForecastPage() {
                   ))}
                 </div>
               )}
-              <div className="mt-1.5 text-right text-[11px] font-semibold text-green">
+              <div className="mt-1.5 text-right text-[11px] md:text-xs font-semibold text-green">
                 {c.predict}
               </div>
             </TrackedLink>
@@ -433,8 +433,8 @@ export default async function ForecastPage() {
       </section>
 
       <section className="mt-7">
-        <h2 className="font-head mb-2 text-sm font-semibold">{c.thirds}</h2>
-        <p className="mb-2 text-[10px] text-muted">{c.thirdsNote}</p>
+        <h2 className="font-head mb-2 text-sm md:text-base font-semibold">{c.thirds}</h2>
+        <p className="mb-2 text-[10px] md:text-xs text-muted">{c.thirdsNote}</p>
         <div className="rounded-lg border border-border bg-surface p-3">
           {data.thirds.map((t) => (
             <Link
@@ -447,9 +447,9 @@ export default async function ForecastPage() {
               <span className="inline-flex items-center gap-2">
                 <span className="font-head w-5 text-right text-xs text-muted">{t.rank}</span>
                 <TeamName t={t} locale={locale} />
-                <span className="text-[10px] text-muted">{t.letter}</span>
+                <span className="text-[10px] md:text-xs text-muted">{t.letter}</span>
               </span>
-              <span className="text-[11px] text-muted">
+              <span className="text-[11px] md:text-xs text-muted">
                 {t.pts}pts · GD{t.gd >= 0 ? "+" : ""}
                 {t.gd}
               </span>
@@ -464,7 +464,7 @@ export default async function ForecastPage() {
         </Link>
         <Link
           href={localeHref(locale, "/forecast/best-thirds")}
-          className="mt-2 block text-xs text-muted transition hover:text-green"
+          className="mt-2 block text-xs md:text-sm text-muted transition hover:text-green"
         >
           {c.thirdsMore}
         </Link>
@@ -472,7 +472,7 @@ export default async function ForecastPage() {
 
       {data.simOk && (
         <section className="mt-7">
-          <h2 className="font-head mb-2 text-sm font-semibold">{c.groups}</h2>
+          <h2 className="font-head mb-2 text-sm md:text-base font-semibold">{c.groups}</h2>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {data.groups.map((g) => (
               <div key={g.letter} className="rounded-lg border border-border bg-surface p-3">
@@ -484,7 +484,7 @@ export default async function ForecastPage() {
                     <span className="truncate">
                       <TeamName t={t} locale={locale} />
                     </span>
-                    <span className="shrink-0 text-[11px]">
+                    <span className="shrink-0 text-[11px] md:text-xs">
                       <span className="text-muted">{t.pts}pts · </span>
                       <span className="font-head text-green">{pct(t.pAdvance)}</span>
                     </span>
@@ -496,7 +496,7 @@ export default async function ForecastPage() {
         </section>
       )}
 
-      <footer className="mt-8 space-y-2 text-center text-[10px] leading-relaxed text-muted">
+      <footer className="mt-8 space-y-2 text-center text-[10px] md:text-xs leading-relaxed text-muted">
         <p>{c.method}</p>
         <p>{c.fun}</p>
       </footer>

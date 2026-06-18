@@ -116,20 +116,20 @@ export default async function ScorersPage() {
 
   return (
     <PageContainer tier="prose">
-      <Link href={localeHref(locale, "/")} className="text-xs text-muted">
+      <Link href={localeHref(locale, "/")} className="text-xs md:text-sm text-muted">
         {c.back}
       </Link>
-      <h1 className="font-head mt-2 text-2xl font-bold">⚽ {c.h1}</h1>
-      <p className="mt-1 text-[11px] text-muted">{c.source}</p>
+      <h1 className="font-head mt-2 text-2xl md:text-3xl font-bold">⚽ {c.h1}</h1>
+      <p className="mt-1 text-[11px] md:text-xs text-muted">{c.source}</p>
       <Link
         href={localeHref(locale, "/popularity")}
-        className="mt-2 inline-block text-xs text-green hover:underline"
+        className="mt-2 inline-block text-xs md:text-sm text-green hover:underline"
       >
         {getDict(locale).popularity.title} →
       </Link>
 
       {scorers.length === 0 ? (
-        <p className="mt-6 rounded-lg border border-dashed border-border bg-surface p-4 text-center text-sm text-muted">
+        <p className="mt-6 rounded-lg border border-dashed border-border bg-surface p-4 text-center text-sm md:text-base text-muted">
           {c.empty}
         </p>
       ) : (
@@ -156,19 +156,19 @@ export default async function ScorersPage() {
                 )}
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium">{s.playerName}</span>
-                  <span className="block truncate text-[11px] text-muted">
+                  <span className="block truncate text-[11px] md:text-xs text-muted">
                     {teamName(s.teamName, locale)}
                     {s.penalties ? ` · ${c.pen(s.penalties)}` : ""}
                   </span>
                 </span>
                 {s.playedMatches ? (
-                  <span className="shrink-0 text-right text-[11px] text-muted">
+                  <span className="shrink-0 text-right text-[11px] md:text-xs text-muted">
                     {s.playedMatches} {c.matches}
                   </span>
                 ) : null}
                 <span className="font-head shrink-0 text-right">
                   <span className="text-lg font-bold text-green">{s.goals}</span>
-                  <span className="ml-0.5 text-[11px] text-muted">{c.goals}</span>
+                  <span className="ml-0.5 text-[11px] md:text-xs text-muted">{c.goals}</span>
                 </span>
               </li>
             );

@@ -109,7 +109,7 @@ export default async function LeagueBoardPage({
   return (
     <PageContainer tier="standard">
       <div className="flex items-center justify-between">
-        <h1 className="font-head text-2xl font-bold">🛡 {board.name}</h1>
+        <h1 className="font-head text-2xl font-bold md:text-3xl">🛡 {board.name}</h1>
         <Link href="/league" className="text-xs text-muted">
           {t.mine}
         </Link>
@@ -117,11 +117,11 @@ export default async function LeagueBoardPage({
 
       <div className="mt-4 flex items-center justify-between rounded-lg border border-green/40 bg-surface p-4">
         <div>
-          <div className="text-[11px] text-muted">{t.codeLabel}</div>
+          <div className="text-[11px] text-muted md:text-xs">{t.codeLabel}</div>
           <div className="font-head text-2xl font-bold tracking-widest text-green">
             {board.code}
           </div>
-          <div className="mt-0.5 text-[11px] text-muted">{t.members(board.members.length)}</div>
+          <div className="mt-0.5 text-[11px] text-muted md:text-xs">{t.members(board.members.length)}</div>
         </div>
         <InviteCopy code={board.code} locale={locale} />
       </div>
@@ -147,7 +147,7 @@ export default async function LeagueBoardPage({
                     </span>
                   )}
                 </div>
-                <div className="text-[11px] text-muted">
+                <div className="text-[11px] text-muted md:text-xs">
                   {t.record(m.won, m.total)} · {t.hitRate} {m.hitRate}%
                 </div>
               </div>

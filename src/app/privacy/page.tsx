@@ -264,8 +264,8 @@ export async function generateMetadata(): Promise<Metadata> {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="rounded-lg border border-border bg-surface p-4">
-      <h2 className="font-head mb-2 text-sm font-semibold text-green">{title}</h2>
-      <div className="space-y-2 text-sm leading-relaxed text-text/90">{children}</div>
+      <h2 className="font-head mb-2 text-sm font-semibold text-green md:text-base">{title}</h2>
+      <div className="space-y-2 text-sm leading-relaxed text-text/90 md:text-base">{children}</div>
     </section>
   );
 }
@@ -278,7 +278,7 @@ export default async function PrivacyPage() {
       <Link href={localeHref(locale, "/")} className="text-xs text-muted">
         {c.back}
       </Link>
-      <h1 className="font-head mt-3 text-2xl font-bold">{c.h1}</h1>
+      <h1 className="font-head mt-3 text-2xl font-bold md:text-3xl">{c.h1}</h1>
       <p className="mt-1 text-xs text-muted">{c.updated}</p>
 
       <div className="mt-5 space-y-4">

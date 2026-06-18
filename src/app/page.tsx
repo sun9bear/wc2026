@@ -45,7 +45,7 @@ export default async function Home({
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8">
       <header className="mb-5">
-        <h1 className="font-head text-2xl font-bold tracking-wide">
+        <h1 className="font-head text-2xl md:text-3xl font-bold tracking-wide">
           {locale === "zh" ? (
             <>
               环球足球<span className="text-green">预测</span> · 2026
@@ -72,7 +72,7 @@ export default async function Home({
             </>
           )}
         </h1>
-        <p className="mt-1 text-sm text-muted">{t.hero.valueProp}</p>
+        <p className="mt-1 text-sm md:text-base text-muted">{t.hero.valueProp}</p>
       </header>
 
       {/* 主入口：第三名出线计算器（独家资产，纯链接，与概率侧分屏隔离不冲突) */}
@@ -84,9 +84,9 @@ export default async function Home({
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="font-head text-lg font-bold">🧮 {t.hero.calcHook}</div>
-            <div className="mt-0.5 text-xs text-muted">{t.hero.calcSub}</div>
+            <div className="mt-0.5 text-xs md:text-sm text-muted">{t.hero.calcSub}</div>
           </div>
-          <span className="shrink-0 rounded-pill bg-green px-3 py-1.5 text-xs font-bold text-[#06231a]">
+          <span className="shrink-0 rounded-pill bg-green px-3 py-1.5 text-xs md:text-sm font-bold text-[#06231a]">
             {t.hero.calcCta}
           </span>
         </div>
@@ -101,9 +101,9 @@ export default async function Home({
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="font-head text-lg font-bold">{t.popularity.title}</div>
-            <div className="mt-0.5 text-xs text-muted">{t.popularity.subtitle}</div>
+            <div className="mt-0.5 text-xs md:text-sm text-muted">{t.popularity.subtitle}</div>
           </div>
-          <span className="shrink-0 rounded-pill border border-green/50 px-3 py-1.5 text-xs font-bold text-green">
+          <span className="shrink-0 rounded-pill border border-green/50 px-3 py-1.5 text-xs md:text-sm font-bold text-green">
             {t.popularity.cta}
           </span>
         </div>
@@ -112,7 +112,7 @@ export default async function Home({
       {/* 次入口：今晚焦点战，直达预测 */}
       {focus && (
         <section className="mb-4">
-          <div className="mb-1 flex items-center justify-between text-[11px] text-muted">
+          <div className="mb-1 flex items-center justify-between text-[11px] md:text-xs text-muted">
             <span>⚡ {t.hero.focusTitle}</span>
             <span className="text-green">{t.hero.focusCta}</span>
           </div>
@@ -121,7 +121,7 @@ export default async function Home({
       )}
 
       {/* 新人积分可见化 + 次级链接 */}
-      <p className="mb-2 rounded-md border border-border bg-surface-2 px-3 py-2 text-center text-[11px] text-muted">
+      <p className="mb-2 rounded-md border border-border bg-surface-2 px-3 py-2 text-center text-[11px] md:text-xs text-muted">
         {t.hero.pointsBanner}
       </p>
       <div className="mb-6 flex justify-center gap-4 text-xs">

@@ -353,24 +353,24 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
       if (!body) return null;
       return (
         <div className="fade-up mt-4 rounded-lg border border-border bg-surface p-4">
-          <div className="mb-1 text-[11px] text-muted">{tag}</div>
-          <p className="text-sm leading-relaxed">{body}</p>
+          <div className="mb-1 text-[11px] text-muted md:text-xs">{tag}</div>
+          <p className="text-sm leading-relaxed md:text-base">{body}</p>
         </div>
       );
     }
     if (bodyEn) {
       return (
         <div className="fade-up mt-4 rounded-lg border border-border bg-surface p-4">
-          <div className="mb-1 text-[11px] text-muted">{tag}</div>
-          <p className="text-sm leading-relaxed">{bodyEn}</p>
+          <div className="mb-1 text-[11px] text-muted md:text-xs">{tag}</div>
+          <p className="text-sm leading-relaxed md:text-base">{bodyEn}</p>
         </div>
       );
     }
     if (!body) return null;
     return (
       <details className="fade-up mt-4 rounded-lg border border-border bg-surface p-4">
-        <summary className="cursor-pointer text-[11px] text-muted">{foldTag}</summary>
-        <p className="mt-2 text-sm leading-relaxed">{body}</p>
+        <summary className="cursor-pointer text-[11px] text-muted md:text-xs">{foldTag}</summary>
+        <p className="mt-2 text-sm leading-relaxed md:text-base">{body}</p>
       </details>
     );
   };
@@ -406,7 +406,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
       </div>
 
       <div className="mt-3 rounded-lg border border-border bg-surface p-5">
-        <div className="mb-4 text-[11px] text-muted">
+        <div className="mb-4 text-[11px] text-muted md:text-xs">
           {stageName(m.stage ?? "", locale)} ·{" "}
           <LocalTime iso={m.kickoffAt} locale={locale} mode="datetime" tz />
           {extra.referee && (
@@ -428,7 +428,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
                   {m.homeScore} : {m.awayScore}
                 </div>
                 {durationBadge && (
-                  <div className="mt-0.5 text-[10px] font-medium text-muted">{durationBadge}</div>
+                  <div className="mt-0.5 text-[10px] font-medium text-muted md:text-xs">{durationBadge}</div>
                 )}
               </div>
             ) : (
@@ -462,11 +462,11 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
           </div>
         ) : open && m.market ? (
           <>
-            <p className="mb-3 rounded-md border border-border bg-surface-2 px-3 py-2 text-center text-[11px] text-muted">
+            <p className="mb-3 rounded-md border border-border bg-surface-2 px-3 py-2 text-center text-[11px] text-muted md:text-xs">
               {t.hero.pointsBanner}
             </p>
             <SentimentBar selections={m.market.selections} locale={locale} />
-            <h2 className="font-head mb-2 mt-5 flex items-center gap-2 text-sm font-semibold">
+            <h2 className="font-head mb-2 mt-5 flex items-center gap-2 text-sm font-semibold md:text-base">
               <span className="live-dot" /> {t.match.livePicks}
             </h2>
             <MarketPicks marketId={m.market.id} selections={m.market.selections} locale={locale} />
@@ -497,7 +497,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
             fallback={scoreline}
           />
         ) : (
-          <p className="rounded-md border border-border bg-surface-2 p-4 text-center text-sm text-muted">
+          <p className="rounded-md border border-border bg-surface-2 p-4 text-center text-sm text-muted md:text-base">
             {t.match.locked}
           </p>
         )}

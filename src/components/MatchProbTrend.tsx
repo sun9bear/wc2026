@@ -40,8 +40,8 @@ export async function MatchProbTrend({
   return (
     <section className="fade-up mt-4 rounded-lg border border-border bg-surface p-4">
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-[11px] text-muted">{c.title}</span>
-        <span className="text-[10px] text-muted">{c.note}</span>
+        <span className="text-[11px] md:text-xs text-muted">{c.title}</span>
+        <span className="text-[10px] md:text-xs text-muted">{c.note}</span>
       </div>
       <Sparkline
         fluid
@@ -53,7 +53,7 @@ export async function MatchProbTrend({
         width={280}
         height={56}
       />
-      <div className="mt-2 flex justify-between font-head text-[11px]">
+      <div className="mt-2 flex justify-between font-head text-[11px] md:text-xs">
         <span style={{ color: HOME }}>
           {c.home} {pct(last(trend.home))}
         </span>

@@ -210,25 +210,25 @@ export default async function GroupPage({
           {c.back}
         </Link>
       </div>
-      <h1 className="font-head mb-1 mt-3 text-2xl font-bold">🧮 {c.h1(X)}</h1>
+      <h1 className="font-head mb-1 mt-3 text-2xl md:text-3xl font-bold">🧮 {c.h1(X)}</h1>
       {/* 前置可提取答案（GEO：答案前置 + 统计数字 + 年份；EN-first）。 */}
       {group.table[0] && (
-        <p className="mt-1 text-sm leading-relaxed">
+        <p className="mt-1 text-sm md:text-base leading-relaxed">
           {c.lead(X, name(group.table[0]), pct(group.table[0].pAdvance))}
         </p>
       )}
       {lastResult && (
-        <p className="mt-1 text-[11px] text-muted">
+        <p className="mt-1 text-[11px] md:text-xs text-muted">
           {c.latest} · {new Date(lastResult).toLocaleDateString(BCP47_LOCALE[locale] ?? "en-US")}
         </p>
       )}
-      <p className="mb-4 mt-2 text-xs text-muted">{c.note}</p>
+      <p className="mb-4 mt-2 text-xs md:text-sm text-muted">{c.note}</p>
 
-      <h2 className="font-head mb-2 text-sm font-semibold">{c.table}</h2>
+      <h2 className="font-head mb-2 text-sm md:text-base font-semibold">{c.table}</h2>
       <div className="overflow-hidden rounded-lg border border-border bg-surface">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border text-[11px] text-muted">
+            <tr className="border-b border-border text-[11px] md:text-xs text-muted">
               {c.cols.map((col) => (
                 <th key={col} className="px-2 py-2 text-left font-normal">
                   {col}
@@ -264,7 +264,7 @@ export default async function GroupPage({
 
       {fixtures.length > 0 && (
         <>
-          <h2 className="font-head mb-2 mt-6 text-sm font-semibold">{c.fixtures}</h2>
+          <h2 className="font-head mb-2 mt-6 text-sm md:text-base font-semibold">{c.fixtures}</h2>
           <ul className="grid grid-cols-1 gap-2 md:grid-cols-2 text-sm">
             {fixtures.map((m) => (
               <li key={m.id}>
@@ -289,12 +289,12 @@ export default async function GroupPage({
         {group.table[2] && (
           <Link
             href={localeHref(locale, `/calculator?team=${teamSlug(group.table[2].name)}`)}
-            className="block rounded-lg border border-green/40 bg-surface p-3 text-green"
+            className="block rounded-lg border border-green/40 bg-surface p-3 text-green transition-colors hover:border-green/50"
           >
             {c.cta(name(group.table[2]))}
           </Link>
         )}
-        <Link href={localeHref(locale, "/calculator")} className="block rounded-lg border border-border bg-surface p-3">
+        <Link href={localeHref(locale, "/calculator")} className="block rounded-lg border border-border bg-surface p-3 transition-colors hover:border-green/50">
           {c.tool}
         </Link>
         <Link href={localeHref(locale, "/rules")} className="block rounded-lg border border-border bg-surface-2 p-3 text-muted">

@@ -83,7 +83,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
 
   return (
     <PageContainer tier="prose">
-      <Link href={localeHref(locale, "/popularity")} className="text-xs text-muted">
+      <Link href={localeHref(locale, "/popularity")} className="text-xs md:text-sm text-muted">
         {t.common.back}
       </Link>
 
@@ -98,7 +98,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
           <span className="text-5xl">⚽</span>
         )}
         <div className="min-w-0">
-          <h1 className="font-head text-2xl font-bold">{name}</h1>
+          <h1 className="font-head text-2xl md:text-3xl font-bold">{name}</h1>
           <div className="mt-0.5 flex items-center gap-1.5 text-sm text-muted">
             {flag && (
               // eslint-disable-next-line @next/next/no-img-element
@@ -122,17 +122,17 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
         <span>🔥 {p.buzzScore}</span>
       </div>
 
-      {blurb && <p className="mt-3 text-sm italic text-muted">{blurb}</p>}
+      {blurb && <p className="mt-3 text-sm md:text-base italic text-muted">{blurb}</p>}
 
       {/* 维基百科简介（CC BY-SA，需署名 + 链接源页；当前语言词条，无则不显示） */}
       {intro && (
         <section className="mt-4">
-          <p className="text-sm leading-relaxed">{intro.text}</p>
+          <p className="text-sm md:text-base leading-relaxed">{intro.text}</p>
           <a
             href={intro.sourceUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-1.5 inline-block text-[11px] text-muted hover:text-green"
+            className="mt-1.5 inline-block text-[11px] md:text-xs text-muted hover:text-green"
           >
             📖 {ui.bioSource} · {ui.more} →
           </a>
@@ -144,7 +144,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
       {/* Commons 相册（自由许可，逐图链 Commons 源页 + 署名；不足 2 张则不显示） */}
       {gallery.length >= 2 && (
         <section className="mt-6">
-          <h2 className="font-head mb-2 text-sm font-semibold">{ui.photos}</h2>
+          <h2 className="font-head mb-2 text-sm md:text-base font-semibold">{ui.photos}</h2>
           <div className="grid grid-cols-3 gap-2 md:grid-cols-4">
             {gallery.map((g) => (
               <a
@@ -164,7 +164,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
               </a>
             ))}
           </div>
-          <p className="mt-1.5 text-[10px] text-muted">
+          <p className="mt-1.5 text-[10px] md:text-xs text-muted">
             📷 {Array.from(new Set(gallery.map((g) => `${g.author} (${g.license})`))).join(" · ")} ·
             Wikimedia Commons
           </p>
@@ -184,7 +184,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
       )}
 
       {photo && (
-        <p className="mt-4 text-[10px] text-muted">
+        <p className="mt-4 text-[10px] md:text-xs text-muted">
           📷 {photo.author || "Wikimedia Commons"} · {photo.license} · Wikimedia Commons
         </p>
       )}

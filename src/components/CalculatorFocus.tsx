@@ -183,7 +183,7 @@ export function CalculatorFocus({
             )}
             <span className="font-medium">{t.conclusion(label(focus), focus, adv)}</span>
           </div>
-          <div className="mt-2 flex flex-wrap gap-2 text-xs">
+          <div className="mt-2 flex flex-wrap gap-2 text-xs md:text-sm">
             <button
               type="button"
               onClick={() => doCopy("text")}

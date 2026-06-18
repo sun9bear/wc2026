@@ -277,22 +277,22 @@ export default async function RulesPage() {
       <Link href={localeHref(locale, "/")} className="text-xs text-muted">
         {c.back}
       </Link>
-      <h1 className="font-head mt-3 text-2xl font-bold">{c.h1}</h1>
+      <h1 className="font-head mt-3 text-2xl font-bold md:text-3xl">{c.h1}</h1>
 
       {/* 前置可提取答案 / TL;DR（GEO：答案前置 + 统计数字 + 年份）。 */}
-      <p className="mt-3 rounded-lg border border-green/30 bg-surface p-4 text-sm leading-relaxed">
+      <p className="mt-3 rounded-lg border border-green/30 bg-surface p-4 text-sm leading-relaxed md:text-base">
         {c.tldr}
       </p>
 
       <section className="mt-6">
-        <h2 className="font-head mb-2 text-sm font-semibold text-green">{c.formatH}</h2>
-        <p className="text-sm leading-relaxed text-text/90">{c.formatBody}</p>
+        <h2 className="font-head mb-2 text-sm font-semibold text-green md:text-base">{c.formatH}</h2>
+        <p className="text-sm leading-relaxed text-text/90 md:text-base">{c.formatBody}</p>
       </section>
 
       <section className="mt-6">
-        <h2 className="font-head mb-2 text-sm font-semibold text-green">{c.groupH}</h2>
-        <p className="mb-2 text-sm text-text/90">{c.groupIntro}</p>
-        <ol className="ml-5 list-decimal space-y-1.5 text-sm leading-relaxed text-text/90">
+        <h2 className="font-head mb-2 text-sm font-semibold text-green md:text-base">{c.groupH}</h2>
+        <p className="mb-2 text-sm text-text/90 md:text-base">{c.groupIntro}</p>
+        <ol className="ml-5 list-decimal space-y-1.5 text-sm leading-relaxed text-text/90 md:text-base">
           {c.groupList.map((li, i) => (
             <li key={i}>{li}</li>
           ))}
@@ -300,20 +300,20 @@ export default async function RulesPage() {
       </section>
 
       <section className="mt-6">
-        <h2 className="font-head mb-2 text-sm font-semibold text-green">{c.thirdH}</h2>
-        <p className="mb-2 text-sm text-text/90">{c.thirdIntro}</p>
-        <ol className="ml-5 list-decimal space-y-1.5 text-sm leading-relaxed text-text/90">
+        <h2 className="font-head mb-2 text-sm font-semibold text-green md:text-base">{c.thirdH}</h2>
+        <p className="mb-2 text-sm text-text/90 md:text-base">{c.thirdIntro}</p>
+        <ol className="ml-5 list-decimal space-y-1.5 text-sm leading-relaxed text-text/90 md:text-base">
           {c.thirdList.map((li, i) => (
             <li key={i}>{li}</li>
           ))}
         </ol>
-        <p className="mt-2 text-xs leading-relaxed text-muted">{c.thirdNote}</p>
-        <p className="mt-1 text-xs leading-relaxed text-muted">{c.fairNote}</p>
+        <p className="mt-2 text-xs leading-relaxed text-muted md:text-sm">{c.thirdNote}</p>
+        <p className="mt-1 text-xs leading-relaxed text-muted md:text-sm">{c.fairNote}</p>
       </section>
 
       <section className="mt-7 rounded-lg border border-border bg-surface p-4">
-        <h2 className="font-head mb-1 text-sm font-semibold">{c.ctaH}</h2>
-        <p className="text-sm leading-relaxed text-text/90">{c.ctaBody}</p>
+        <h2 className="font-head mb-1 text-sm font-semibold md:text-base">{c.ctaH}</h2>
+        <p className="text-sm leading-relaxed text-text/90 md:text-base">{c.ctaBody}</p>
         <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2">
           <Link
             href={localeHref(locale, "/calculator")}

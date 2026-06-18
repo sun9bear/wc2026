@@ -107,7 +107,7 @@ export function PopularityList({ rows, locale }: { rows: PopularityRow[]; locale
   return (
     <>
       {balance !== null && (
-        <p className="mt-3 text-right text-[11px] text-muted">
+        <p className="mt-3 text-right text-[11px] md:text-xs text-muted">
           {t.points}: <span className="font-head font-bold text-gold tabular-nums">{balance}</span>
         </p>
       )}
@@ -156,14 +156,14 @@ export function PopularityList({ rows, locale }: { rows: PopularityRow[]; locale
                   <span className="text-sm font-medium group-hover:text-green group-hover:underline">
                     {r.name}
                   </span>
-                  <span className="ml-1.5 text-[11px] text-muted">{r.teamLabel}</span>
+                  <span className="ml-1.5 text-[11px] md:text-xs text-muted">{r.teamLabel}</span>
                 </span>
                 {/* 分项拆解（透明）：🗳 总票 · ⚽ 表现0-100 · 🔥 热度0-100 · 今日x/5 */}
-                <span className="block text-[11px] text-muted tabular-nums">
+                <span className="block text-[11px] md:text-xs text-muted tabular-nums">
                   🗳 {Math.max(0, votes[r.id] ?? 0)} · ⚽ {r.perfScore} · 🔥 {r.buzzScore}
                   {cur > 0 ? ` · ${cur}/${DAILY_MAX}` : ""}
                 </span>
-                {r.blurb && <span className="mt-0.5 block text-[11px] italic text-muted">{r.blurb}</span>}
+                {r.blurb && <span className="mt-0.5 block text-[11px] md:text-xs italic text-muted">{r.blurb}</span>}
               </Link>
               {/* 右列：综合指数在上、投票按钮在下，整列垂直居中；按钮与副行贴紧 */}
               <div className="flex w-16 shrink-0 flex-col items-center gap-2.5">

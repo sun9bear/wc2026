@@ -223,8 +223,8 @@ export default async function BestThirdsPage() {
   if (!data || data.thirds.length === 0) {
     return (
       <PageContainer tier="standard">
-        <h1 className="font-head text-2xl font-bold">🥉 {c.h1}</h1>
-        <p className="mt-4 text-sm text-muted">{c.naMsg}</p>
+        <h1 className="font-head text-2xl md:text-3xl font-bold">🥉 {c.h1}</h1>
+        <p className="mt-4 text-sm md:text-base text-muted">{c.naMsg}</p>
       </PageContainer>
     );
   }
@@ -305,16 +305,16 @@ export default async function BestThirdsPage() {
       <Link href={localeHref(locale, "/forecast")} className="text-xs text-muted">
         {c.back}
       </Link>
-      <h1 className="font-head mt-3 text-2xl font-bold">🥉 {c.h1}</h1>
+      <h1 className="font-head mt-3 text-2xl md:text-3xl font-bold">🥉 {c.h1}</h1>
       {idx?.all && (
-        <p className="mt-1 text-[11px] text-muted">
+        <p className="mt-1 text-[11px] md:text-xs text-muted">
           {c.updated} {new Date(idx.all).toLocaleString(BCP47_LOCALE[locale] ?? "en-US")}
         </p>
       )}
 
       {/* 前置可提取答案（GEO：答案前置 + 统计数字 + 年份信号；EN-first，爬虫见英文）。 */}
       {cut && (
-        <p className="mt-3 rounded-lg border border-green/30 bg-surface p-4 text-sm leading-relaxed">
+        <p className="mt-3 rounded-lg border border-green/30 bg-surface p-4 text-sm md:text-base leading-relaxed">
           {(
             {
               zh: `2026 世界杯最佳第三名排名：${leaderName} 目前以 ${leader.pts} 分领跑 12 个小组第三名；成绩最好的 8 支晋级 32 强，当前出线分数线为 ${cut.pts} 分（${cutName}）。`,
@@ -328,12 +328,12 @@ export default async function BestThirdsPage() {
         </p>
       )}
 
-      <p className="mt-3 text-sm leading-relaxed text-text/90">{c.intro}</p>
+      <p className="mt-3 text-sm md:text-base leading-relaxed text-text/90">{c.intro}</p>
 
       <div className="md:grid md:grid-cols-2 md:gap-6">
       <section className="mt-6">
-        <h2 className="font-head mb-2 text-sm font-semibold text-green">{c.rankH}</h2>
-        <p className="mb-2 text-[10px] text-muted">{c.rankNote}</p>
+        <h2 className="font-head mb-2 text-sm md:text-base font-semibold text-green">{c.rankH}</h2>
+        <p className="mb-2 text-[10px] md:text-xs text-muted">{c.rankNote}</p>
         <div className="rounded-lg border border-border bg-surface p-3">
           {thirds.map((t) => {
             const pa = pAdvanceById.get(t.id);
@@ -348,9 +348,9 @@ export default async function BestThirdsPage() {
                 <span className="inline-flex items-center gap-2">
                   <span className="font-head w-5 text-right text-xs text-muted">{t.rank}</span>
                   <TeamName t={t} locale={locale} />
-                  <span className="text-[10px] text-muted">{t.letter}</span>
+                  <span className="text-[10px] md:text-xs text-muted">{t.letter}</span>
                 </span>
-                <span className="text-[11px] text-muted">
+                <span className="text-[11px] md:text-xs text-muted">
                   {t.pts}pts · GD{t.gd >= 0 ? "+" : ""}
                   {t.gd}
                   {data.simOk && typeof pa === "number" && (
@@ -365,8 +365,8 @@ export default async function BestThirdsPage() {
 
       {thirdFixtures.length > 0 && (
         <section className="mt-7">
-          <h2 className="font-head mb-2 text-sm font-semibold text-green">{c.mapH}</h2>
-          <p className="mb-2 text-[10px] text-muted">{c.mapNote}</p>
+          <h2 className="font-head mb-2 text-sm md:text-base font-semibold text-green">{c.mapH}</h2>
+          <p className="mb-2 text-[10px] md:text-xs text-muted">{c.mapNote}</p>
           <div className="space-y-1 rounded-lg border border-border bg-surface p-3 text-sm">
             {thirdFixtures.map((f) => (
               <div key={f.match} className="flex items-center justify-between py-0.5">
@@ -379,7 +379,7 @@ export default async function BestThirdsPage() {
                     {thrdLabel(f.source)}
                   </Link>
                 </span>
-                <span className="font-head text-[10px] text-muted">M{f.match}</span>
+                <span className="font-head text-[10px] md:text-xs text-muted">M{f.match}</span>
               </div>
             ))}
           </div>
@@ -388,8 +388,8 @@ export default async function BestThirdsPage() {
       </div>
 
       <section className="mt-7 rounded-lg border border-border bg-surface p-4">
-        <h2 className="font-head mb-1 text-sm font-semibold">{c.ctaH}</h2>
-        <p className="text-sm leading-relaxed text-text/90">{c.ctaBody}</p>
+        <h2 className="font-head mb-1 text-sm md:text-base font-semibold">{c.ctaH}</h2>
+        <p className="text-sm md:text-base leading-relaxed text-text/90">{c.ctaBody}</p>
         <div className="mt-3 space-y-2">
           <Link
             href={localeHref(locale, "/calculator")}
@@ -412,7 +412,7 @@ export default async function BestThirdsPage() {
         </div>
       </section>
 
-      <footer className="mt-8 space-y-2 text-center text-[10px] leading-relaxed text-muted">
+      <footer className="mt-8 space-y-2 text-center text-[10px] md:text-xs leading-relaxed text-muted">
         <p>{c.method}</p>
         <p>{c.fun}</p>
         <Disclaimer />

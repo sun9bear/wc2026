@@ -83,12 +83,12 @@ export function ScoreProbs({
   return (
     <section className="fade-up mt-5 rounded-lg border border-border bg-surface p-4">
       <div className="mb-0.5 flex items-baseline justify-between">
-        <h2 className="font-head text-sm font-semibold">📊 {c.title}</h2>
-        <span className="text-[10px] text-muted">{c.sub}</span>
+        <h2 className="font-head text-sm md:text-base font-semibold">📊 {c.title}</h2>
+        <span className="text-[10px] md:text-xs text-muted">{c.sub}</span>
       </div>
 
       {/* 朝向锚点：左=主队，右=客队（比分 H-A 以此为准） */}
-      <div className="mb-3 flex items-center justify-between text-[11px] text-muted">
+      <div className="mb-3 flex items-center justify-between text-[11px] md:text-xs text-muted">
         <Side name={home.name} flag={home.flag} locale={locale} />
         <Side name={away.name} flag={away.flag} locale={locale} />
       </div>
@@ -112,14 +112,14 @@ export function ScoreProbs({
         ))}
 
         {data.otherP > 0.005 && (
-          <div className="flex items-center justify-between border-t border-border/50 pt-1.5 text-[11px] text-muted">
+          <div className="flex items-center justify-between border-t border-border/50 pt-1.5 text-[11px] md:text-xs text-muted">
             <span>{c.other}</span>
             <span className="tabular-nums">{pct(data.otherP)}</span>
           </div>
         )}
       </div>
 
-      <p className="mt-3 text-[10px] leading-relaxed text-muted">{c.note}</p>
+      <p className="mt-3 text-[10px] md:text-xs leading-relaxed text-muted">{c.note}</p>
     </section>
   );
 }

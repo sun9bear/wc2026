@@ -77,7 +77,7 @@ export function MatchList({
     return (
       <div className="mt-16 text-center">
         <div className="text-5xl">📭</div>
-        <p className="mt-3 text-sm text-muted">{t.filter.empty}</p>
+        <p className="mt-3 text-sm md:text-base text-muted">{t.filter.empty}</p>
       </div>
     );
   }
@@ -86,7 +86,7 @@ export function MatchList({
     <>
       {groupByLocalDate(filtered, locale).map((g) => (
         <section key={g.ts} className="mb-6">
-          <h2 className="font-head sticky top-0 z-10 -mx-4 mb-2 bg-bg/90 px-4 py-2 text-sm font-semibold text-muted backdrop-blur">
+          <h2 className="font-head sticky top-0 z-10 -mx-4 mb-2 bg-bg/90 px-4 py-2 text-sm md:text-base font-semibold text-muted backdrop-blur">
             {g.date}
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

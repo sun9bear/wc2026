@@ -328,16 +328,16 @@ export default async function WatchPage() {
       <Link href={localeHref(locale, "/")} className="text-xs text-muted">
         {c.back}
       </Link>
-      <h1 className="font-head mt-3 text-2xl font-bold">📺 {c.h1}</h1>
+      <h1 className="font-head mt-3 text-2xl font-bold md:text-3xl">📺 {c.h1}</h1>
       <p className="mt-1 mb-5 text-xs text-muted">{c.intro}</p>
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
         {c.sections.map((s) => (
           <section key={s.title} className="rounded-lg border border-border bg-surface p-4">
-            <h2 className="font-head text-sm font-semibold">
+            <h2 className="font-head text-sm font-semibold md:text-base">
               {s.flag} {s.title}
             </h2>
-            <p className="mt-1 text-sm leading-relaxed text-muted">{s.body}</p>
+            <p className="mt-1 text-sm leading-relaxed text-muted md:text-base">{s.body}</p>
             <a
               href={s.href}
               target="_blank"
@@ -350,7 +350,7 @@ export default async function WatchPage() {
         ))}
       </div>
 
-      <p className="mt-6 text-center text-[10px] leading-relaxed text-muted">{c.note}</p>
+      <p className="mt-6 text-center text-[10px] leading-relaxed text-muted md:text-xs">{c.note}</p>
     </PageContainer>
   );
 }

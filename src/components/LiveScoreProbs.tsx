@@ -127,13 +127,13 @@ export function LiveScoreProbs({
     if (fallback) {
       return (
         <div className="fade-up mt-5">
-          <p className="mb-2 text-[11px] text-muted">⏱ {c.pre}</p>
+          <p className="mb-2 text-[11px] md:text-xs text-muted">⏱ {c.pre}</p>
           <ScoreProbs data={fallback} locale={locale} home={home} away={away} />
         </div>
       );
     }
     return (
-      <p className="fade-up mt-5 rounded-lg border border-border bg-surface p-4 text-center text-sm text-muted">
+      <p className="fade-up mt-5 rounded-lg border border-border bg-surface p-4 text-center text-sm md:text-base text-muted">
         {c.nodata}
       </p>
     );
@@ -150,19 +150,19 @@ export function LiveScoreProbs({
   return (
     <section className="fade-up mt-5 rounded-lg border border-[#ff5436]/40 bg-surface p-4">
       <div className="mb-0.5 flex items-baseline justify-between">
-        <h2 className="font-head flex items-center gap-2 text-sm font-semibold">
+        <h2 className="font-head flex items-center gap-2 text-sm md:text-base font-semibold">
           <span className="live-dot" /> {c.title}
         </h2>
-        <span className="text-[10px] text-muted">{c.sub}</span>
+        <span className="text-[10px] md:text-xs text-muted">{c.sub}</span>
       </div>
 
-      <div className="mb-3 flex items-center justify-between text-[11px]">
+      <div className="mb-3 flex items-center justify-between text-[11px] md:text-xs">
         <Side name={home.name} flag={home.flag} locale={locale} />
         <span className="font-head text-sm">
           <span className="text-green">{sc.h}</span>
           <span className="mx-1 text-muted">-</span>
           <span className="text-green">{sc.a}</span>
-          <span className="ml-2 text-[10px] text-[#ff5436]">{`${minute}'`}</span>
+          <span className="ml-2 text-[10px] md:text-xs text-[#ff5436]">{`${minute}'`}</span>
         </span>
         <Side name={away.name} flag={away.flag} locale={locale} />
       </div>
@@ -185,14 +185,14 @@ export function LiveScoreProbs({
           </div>
         ))}
         {otherP > 0.005 && (
-          <div className="flex items-center justify-between border-t border-border/50 pt-1.5 text-[11px] text-muted">
+          <div className="flex items-center justify-between border-t border-border/50 pt-1.5 text-[11px] md:text-xs text-muted">
             <span>{c.other}</span>
             <span className="tabular-nums">{pct(otherP)}</span>
           </div>
         )}
       </div>
 
-      <p className="mt-3 text-[10px] leading-relaxed text-muted">{c.note}</p>
+      <p className="mt-3 text-[10px] md:text-xs leading-relaxed text-muted">{c.note}</p>
     </section>
   );
 }

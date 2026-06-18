@@ -268,7 +268,7 @@ export default async function CalculatorPage({
           />
         </div>
       </div>
-      <h1 className="font-head mb-4 mt-3 text-2xl font-bold">🧮 {c.h1}</h1>
+      <h1 className="font-head mb-4 mt-3 text-2xl md:text-3xl font-bold">🧮 {c.h1}</h1>
       <CalculatorFocus
         locale={locale}
         hot={hotTeams}

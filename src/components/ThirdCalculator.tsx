@@ -261,16 +261,16 @@ export function ThirdCalculator({
           {focusStatus.in && focusStatus.via && (
             <span className="ml-1 text-sm text-muted">· {focusStatus.via}</span>
           )}
-          <div className="mt-0.5 text-[10px] text-muted">{t.scenario}</div>
+          <div className="mt-0.5 text-[10px] md:text-xs text-muted">{t.scenario}</div>
         </div>
       )}
 
       <p className="mb-1 text-xs text-muted">{t.intro}</p>
-      <p className="mb-1 text-[10px] text-muted">{t.convention}</p>
-      <p className="mb-2 text-[10px] text-muted">🔒 {t.locked}</p>
+      <p className="mb-1 text-[10px] md:text-xs text-muted">{t.convention}</p>
+      <p className="mb-2 text-[10px] md:text-xs text-muted">🔒 {t.locked}</p>
 
       {/* 场景预设：一键试"我全胜/全平"，或重置回模型预测。 */}
-      <div className="mb-4 flex flex-wrap gap-2 text-xs">
+      <div className="mb-4 flex flex-wrap gap-2 text-xs md:text-sm">
         {focusTeamId && (
           <>
             <button
@@ -379,7 +379,7 @@ export function ThirdCalculator({
           })}
       </div>
 
-      <h2 className="font-head mb-2 mt-6 text-sm font-semibold">{t.thirds}</h2>
+      <h2 className="font-head mb-2 mt-6 text-sm md:text-base font-semibold">{t.thirds}</h2>
       <div className="rounded-lg border border-border bg-surface p-3">
         {thirdsRanked.map((id, i) => {
           const tm = teamById.get(id);
@@ -397,7 +397,7 @@ export function ThirdCalculator({
                   )}
                   <span className={inTop8 ? "font-medium" : ""}>{label(tm)}</span>
                 </span>
-                <span className={`font-head text-[11px] ${inTop8 ? "text-green" : "text-muted"}`}>
+                <span className={`font-head text-[11px] md:text-xs ${inTop8 ? "text-green" : "text-muted"}`}>
                   {inTop8 ? `✅ ${t.qualified}` : `❌ ${t.out}`}
                 </span>
               </div>
@@ -405,7 +405,7 @@ export function ThirdCalculator({
               {i === 7 && (
                 <div className="my-1 flex items-center gap-2">
                   <div className="h-px flex-1 bg-green/60" />
-                  <span className="font-head text-[10px] font-semibold text-green">{t.cutoff}</span>
+                  <span className="font-head text-[10px] md:text-xs font-semibold text-green">{t.cutoff}</span>
                   <div className="h-px flex-1 bg-green/60" />
                 </div>
               )}

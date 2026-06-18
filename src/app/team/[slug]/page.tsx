@@ -226,7 +226,7 @@ function ResultChip({
     >
       <span className="flex items-center gap-2">
         <span className={`font-head w-4 shrink-0 font-bold ${color}`}>{c[r.outcome]}</span>
-        <span className="text-[10px] text-muted">{r.home ? c.home : c.away}</span>
+        <span className="text-[10px] text-muted md:text-xs">{r.home ? c.home : c.away}</span>
         {r.oppFlag && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={r.oppFlag} alt="" className="h-3 w-4 rounded-[2px] object-cover" />
@@ -326,15 +326,15 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
           <span className="text-5xl">⚽</span>
         )}
         <div>
-          <h1 className="font-head text-2xl font-bold">{nm}</h1>
+          <h1 className="font-head text-2xl font-bold md:text-3xl">{nm}</h1>
           <div className="text-xs text-muted">{c.group(d.letter, d.rank)}</div>
         </div>
       </div>
 
       {/* 前置可提取答案（GEO：答案前置 + 统计数字 + 年份；EN-first）+ 最新赛果（真实 settled_at）。 */}
-      <p className="mt-3 text-sm leading-relaxed">{c.lead(nm, adv, champ, d.letter)}</p>
+      <p className="mt-3 text-sm leading-relaxed md:text-base">{c.lead(nm, adv, champ, d.letter)}</p>
       {lastResult && (
-        <p className="mt-1 text-[11px] text-muted">
+        <p className="mt-1 text-[11px] text-muted md:text-xs">
           {c.latest} · {new Date(lastResult).toLocaleDateString(BCP47_LOCALE[locale] ?? "en-US")}
         </p>
       )}
@@ -343,32 +343,32 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
       <div className="mt-3 grid grid-cols-3 gap-3">
         <div className="rounded-md border border-border bg-surface-2 p-4">
           <div className={`font-head text-3xl font-bold ${advHigh ? "text-green" : "text-amber"}`}>{adv}%</div>
-          <div className="mt-1 text-[11px] text-muted">{c.advance}</div>
+          <div className="mt-1 text-[11px] text-muted md:text-xs">{c.advance}</div>
         </div>
         <div className="rounded-md border border-border bg-surface-2 p-4">
           <div className="font-head text-3xl font-bold text-gold">{champ}%</div>
-          <div className="mt-1 text-[11px] text-muted">{c.champion}</div>
+          <div className="mt-1 text-[11px] text-muted md:text-xs">{c.champion}</div>
         </div>
         <div className="rounded-md border border-border bg-surface-2 p-4">
           <div className="font-head text-3xl font-bold">{d.rating}</div>
-          <div className="mt-1 text-[11px] text-muted">{c.rating}</div>
+          <div className="mt-1 text-[11px] text-muted md:text-xs">{c.rating}</div>
         </div>
       </div>
-      <p className="mt-2 text-[10px] leading-relaxed text-muted">{c.ratingNote}</p>
+      <p className="mt-2 text-[10px] leading-relaxed text-muted md:text-xs">{c.ratingNote}</p>
 
       <div className="mt-4">
         <SetMyTeamButton slug={d.slug} locale={locale} />
       </div>
 
       {/* 下一场 */}
-      <h2 className="font-head mb-2 mt-6 text-sm font-semibold">{c.next}</h2>
+      <h2 className="font-head mb-2 mt-6 text-sm font-semibold md:text-base">{c.next}</h2>
       {d.next ? (
         <Link
           href={localeHref(locale, `/match/${d.next.matchId}`)}
           className="flex items-center justify-between rounded-lg border border-green/40 bg-surface p-3 text-sm transition hover:border-green"
         >
           <span className="flex items-center gap-2">
-            <span className="text-[10px] text-muted">{d.next.home ? c.home : c.away}</span>
+            <span className="text-[10px] text-muted md:text-xs">{d.next.home ? c.home : c.away}</span>
             {d.next.oppFlag && (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={d.next.oppFlag} alt="" className="h-3 w-4 rounded-[2px] object-cover" />
@@ -380,11 +380,11 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
           </span>
         </Link>
       ) : (
-        <p className="rounded-md border border-border bg-surface-2 p-3 text-sm text-muted">{c.noNext}</p>
+        <p className="rounded-md border border-border bg-surface-2 p-3 text-sm text-muted md:text-base">{c.noNext}</p>
       )}
 
       {/* 最近战绩 */}
-      <h2 className="font-head mb-2 mt-6 text-sm font-semibold">{c.recent}</h2>
+      <h2 className="font-head mb-2 mt-6 text-sm font-semibold md:text-base">{c.recent}</h2>
       {d.recent.length > 0 ? (
         <div className="space-y-1.5">
           {d.recent.map((r) => (
@@ -392,27 +392,27 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
           ))}
         </div>
       ) : (
-        <p className="rounded-md border border-border bg-surface-2 p-3 text-sm text-muted">{c.noRecent}</p>
+        <p className="rounded-md border border-border bg-surface-2 p-3 text-sm text-muted md:text-base">{c.noRecent}</p>
       )}
 
       {/* 交叉链接：计算器 */}
       <Link
         href={localeHref(locale, `/calculator?team=${d.slug}`)}
-        className="mt-6 block rounded-lg border border-border bg-surface p-3 text-sm text-green"
+        className="mt-6 block rounded-lg border border-border bg-surface p-3 text-sm text-green transition-colors hover:border-green/50"
       >
         {c.calc(nm)}
       </Link>
       <Link
         href={localeHref(locale, `/calculator/group/${d.letter.toLowerCase()}`)}
-        className="mt-2 block rounded-lg border border-border bg-surface p-3 text-sm text-muted"
+        className="mt-2 block rounded-lg border border-border bg-surface p-3 text-sm text-muted transition-colors hover:border-green/50"
       >
         {GROUP_LINK[locale] ?? GROUP_LINK.en}
       </Link>
-      <Link href={localeHref(locale, "/rules")} className="mt-2 block rounded-lg border border-border bg-surface p-3 text-sm text-muted">
+      <Link href={localeHref(locale, "/rules")} className="mt-2 block rounded-lg border border-border bg-surface p-3 text-sm text-muted transition-colors hover:border-green/50">
         {RULES_LINK[locale] ?? RULES_LINK.en}
       </Link>
 
-      <p className="mt-4 text-[10px] text-muted">{c.sims}</p>
+      <p className="mt-4 text-[10px] text-muted md:text-xs">{c.sims}</p>
 
       <footer className="mt-6 text-center">
         <Disclaimer />

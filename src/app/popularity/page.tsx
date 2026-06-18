@@ -56,15 +56,15 @@ export default async function PopularityPage() {
   return (
     <PageContainer tier="standard">
       <div className="flex items-center justify-between">
-        <h1 className="font-head text-2xl font-bold">{t.popularity.title}</h1>
-        <Link href={localeHref(locale, "/")} className="text-xs text-muted">
+        <h1 className="font-head text-2xl md:text-3xl font-bold">{t.popularity.title}</h1>
+        <Link href={localeHref(locale, "/")} className="text-xs md:text-sm text-muted">
           {t.common.back}
         </Link>
       </div>
-      <p className="mt-1 text-sm text-muted">{t.popularity.subtitle}</p>
+      <p className="mt-1 text-sm md:text-base text-muted">{t.popularity.subtitle}</p>
       <Link
         href={localeHref(locale, "/scorers")}
-        className="mt-1 inline-block text-xs text-green hover:underline"
+        className="mt-1 inline-block text-xs md:text-sm text-green hover:underline"
       >
         {locale === "zh" ? "⚽ 射手榜" : "⚽ Top Scorers"} →
       </Link>
@@ -72,14 +72,14 @@ export default async function PopularityPage() {
       {rows.length === 0 ? (
         <div className="mt-16 text-center">
           <div className="text-5xl">⭐</div>
-          <p className="mt-3 text-sm text-muted">{t.popularity.empty}</p>
+          <p className="mt-3 text-sm md:text-base text-muted">{t.popularity.empty}</p>
         </div>
       ) : (
         <PopularityList rows={rows} locale={locale} />
       )}
 
-      <p className="mt-6 text-center text-[11px] text-muted">{t.popularity.note}</p>
-      <p className="mt-1 text-center text-[10px] text-muted">
+      <p className="mt-6 text-center text-[11px] md:text-xs text-muted">{t.popularity.note}</p>
+      <p className="mt-1 text-center text-[10px] md:text-xs text-muted">
         {locale === "zh"
           ? "球员头像来自 Wikimedia Commons（CC 许可）"
           : "Player photos via Wikimedia Commons (CC)"}

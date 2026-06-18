@@ -213,7 +213,7 @@ function Tile({ value, label, color = "text-text" }: { value: string | number; l
   return (
     <div className="rounded-md border border-border bg-surface-2 p-4">
       <div className={`font-head text-2xl font-bold ${color}`}>{value}</div>
-      <div className="mt-1 text-[11px] text-muted">{label}</div>
+      <div className="mt-1 text-[11px] text-muted md:text-xs">{label}</div>
     </div>
   );
 }
@@ -253,7 +253,7 @@ function PredRow({
         </span>
         <span className={`ml-2 shrink-0 text-xs font-semibold ${badgeColor}`}>{badge}</span>
       </div>
-      <div className="mt-0.5 flex items-center justify-between text-[11px] text-muted">
+      <div className="mt-0.5 flex items-center justify-between text-[11px] text-muted md:text-xs">
         <span className="min-w-0 truncate">
           {px.pick} {picks}
           {b.legs > 1 ? ` (×${b.legs})` : ""}
@@ -350,7 +350,7 @@ export function MeClient({ locale }: { locale: Locale }) {
   return (
     <PageContainer tier="standard">
       <div className="flex items-center justify-between">
-        <h1 className="font-head text-2xl font-bold">{t.me.title}</h1>
+        <h1 className="font-head text-2xl font-bold md:text-3xl">{t.me.title}</h1>
         <Link href={localeHref(locale, "/")} className="text-xs text-muted">
           {t.common.back}
         </Link>
@@ -377,7 +377,7 @@ export function MeClient({ locale }: { locale: Locale }) {
       {state === "none" && (
         <div className="mt-16 text-center">
           <div className="text-5xl">🎯</div>
-          <p className="mt-3 text-sm text-muted">{t.me.empty}</p>
+          <p className="mt-3 text-sm text-muted md:text-base">{t.me.empty}</p>
           <Link href={localeHref(locale, "/")} className="mt-3 inline-block text-sm text-green">
             {t.me.emptyCta}
           </Link>
@@ -414,7 +414,7 @@ export function MeClient({ locale }: { locale: Locale }) {
                 data.ledger!.map((e, i) => (
                   <div key={i} className="flex items-center justify-between px-3 py-2 text-sm">
                     <span className="text-muted">
-                      <span className="tabular-nums text-[11px]">{e.at.slice(5, 10)}</span>{" "}
+                      <span className="tabular-nums text-[11px] md:text-xs">{e.at.slice(5, 10)}</span>{" "}
                       {px.reasons[e.reason] ?? e.reason}
                     </span>
                     <span
@@ -451,7 +451,7 @@ export function MeClient({ locale }: { locale: Locale }) {
                   type="button"
                   disabled={saving}
                   onClick={saveName}
-                  className="shrink-0 rounded-md bg-green px-3 py-1 text-xs font-bold text-[#06231a]"
+                  className="shrink-0 rounded-md bg-green px-3 py-1 text-xs font-bold text-[#06231a] md:text-sm"
                 >
                   {tx.save}
                 </button>
@@ -461,7 +461,7 @@ export function MeClient({ locale }: { locale: Locale }) {
                     setEditing(false);
                     setNameErr(null);
                   }}
-                  className="shrink-0 rounded-md border border-border px-3 py-1 text-xs text-muted"
+                  className="shrink-0 rounded-md border border-border px-3 py-1 text-xs text-muted md:text-sm"
                 >
                   {tx.cancel}
                 </button>
@@ -477,14 +477,14 @@ export function MeClient({ locale }: { locale: Locale }) {
                     setDraft(nickname ?? effectiveName ?? "");
                     setEditing(true);
                   }}
-                  className="ml-2 shrink-0 rounded-md border border-border bg-surface px-3 py-1 text-xs text-muted transition hover:border-green hover:text-green"
+                  className="ml-2 shrink-0 rounded-md border border-border bg-surface px-3 py-1 text-xs text-muted transition hover:border-green hover:text-green md:text-sm"
                 >
                   {tx.rename}
                 </button>
               </>
             )}
           </div>
-          {nameErr && <div className="mt-1 text-[11px] text-red">{nameErr}</div>}
+          {nameErr && <div className="mt-1 text-[11px] text-red md:text-xs">{nameErr}</div>}
 
           {((data.recent?.length ?? 0) > 0 || (data.bestStreak ?? 0) > 0) && (
             <div className="mt-3 flex items-center justify-between rounded-md border border-border bg-surface-2 px-4 py-2.5 text-sm">
@@ -497,7 +497,7 @@ export function MeClient({ locale }: { locale: Locale }) {
                 <button
                   type="button"
                   onClick={doCopyRecord}
-                  className="rounded-md border border-border bg-surface px-3 py-1 text-xs text-muted transition hover:border-green hover:text-green"
+                  className="rounded-md border border-border bg-surface px-3 py-1 text-xs text-muted transition hover:border-green hover:text-green md:text-sm"
                 >
                   {copied ? tx.copied : tx.copyRecord}
                 </button>
@@ -537,7 +537,7 @@ export function MeClient({ locale }: { locale: Locale }) {
               const hasMore = settled.length > recent24.length;
               return (
                 <section className="mt-6">
-                  <h2 className="font-head mb-2 text-sm font-semibold">{px.picksTitle}</h2>
+                  <h2 className="font-head mb-2 text-sm font-semibold md:text-base">{px.picksTitle}</h2>
                   <div className="space-y-1.5">
                     {(data.pendingPicks ?? []).map((b, i) => (
                       <PredRow key={`p${i}`} b={b} dict={t} px={px} locale={locale} />
@@ -550,7 +550,7 @@ export function MeClient({ locale }: { locale: Locale }) {
                     <button
                       type="button"
                       onClick={() => setShowAllPicks((v) => !v)}
-                      className="mt-2 w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-xs text-muted transition hover:border-green hover:text-green"
+                      className="mt-2 w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-xs text-muted transition hover:border-green hover:text-green md:text-sm"
                     >
                       {showAllPicks ? px.less : `${px.more} →`}
                     </button>
@@ -561,7 +561,7 @@ export function MeClient({ locale }: { locale: Locale }) {
 
           {data.achievements && (
             <>
-              <h2 className="font-head mb-2 mt-6 text-sm font-semibold">
+              <h2 className="font-head mb-2 mt-6 text-sm font-semibold md:text-base">
                 {t.me.achievements} · {data.achievements.filter((a) => a.earned).length}/{data.achievements.length}
               </h2>
               <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
@@ -573,7 +573,7 @@ export function MeClient({ locale }: { locale: Locale }) {
                     }`}
                   >
                     <div className="text-2xl">{a.icon}</div>
-                    <div className="mt-1 text-[11px] font-medium">{t.ach[a.id]?.label ?? a.label}</div>
+                    <div className="mt-1 text-[11px] font-medium md:text-xs">{t.ach[a.id]?.label ?? a.label}</div>
                     <div className="text-[9px] text-muted">{t.ach[a.id]?.desc ?? a.desc}</div>
                   </div>
                 ))}

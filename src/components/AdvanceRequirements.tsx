@@ -162,8 +162,8 @@ export function AdvanceRequirements({
   return (
     <section className="mb-4 rounded-lg border border-green/40 bg-surface p-3">
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
-        <h2 className="font-head text-sm font-semibold">{u.title}</h2>
-        <span className="text-[11px] text-muted">
+        <h2 className="font-head text-sm md:text-base font-semibold">{u.title}</h2>
+        <span className="text-[11px] md:text-xs text-muted">
           {teamLabel} · {u.curPts(data.curPts)}
           {data.remaining.length > 0 && (
             <>
@@ -178,13 +178,13 @@ export function AdvanceRequirements({
       </div>
 
       {data.clinchPts !== null ? (
-        <p className="mb-2 rounded-md bg-green/10 px-2 py-1 text-[11px] font-medium text-green">
+        <p className="mb-2 rounded-md bg-green/10 px-2 py-1 text-[11px] md:text-xs font-medium text-green">
           {need !== null && need <= 0
             ? u.already
             : `✅ ${u.clinch(data.clinchPts, signed(data.clinchGd ?? 0))} · ${u.more(need ?? 0)}`}
         </p>
       ) : (
-        <p className="mb-2 text-[11px] text-muted">{u.noClinch}</p>
+        <p className="mb-2 text-[11px] md:text-xs text-muted">{u.noClinch}</p>
       )}
 
       <div className="space-y-1">
@@ -204,13 +204,13 @@ export function AdvanceRequirements({
             >
               <span className="min-w-0">
                 <span className="font-medium">{recordLabel(r, u)}</span>
-                <span className="ml-2 text-[11px] tabular-nums text-muted">
+                <span className="ml-2 text-[11px] md:text-xs tabular-nums text-muted">
                   {r.pts}
                   {locale === "zh" ? " 分" : " pts"} · {signed(r.gd)} · {u.rank(r.rankLo, r.rankHi)}
                 </span>
               </span>
               <span className={`shrink-0 font-head font-bold tabular-nums ${color}`}>
-                {clinched && <span className="mr-1 text-[10px] font-semibold">🎆 {u.locked}</span>}
+                {clinched && <span className="mr-1 text-[10px] md:text-xs font-semibold">🎆 {u.locked}</span>}
                 {range ? `${lo}–${hi}%` : `${v}%`}
               </span>
             </div>
@@ -218,7 +218,7 @@ export function AdvanceRequirements({
         })}
       </div>
 
-      <p className="mt-2 text-[10px] leading-snug text-muted">{u.note}</p>
+      <p className="mt-2 text-[10px] md:text-xs leading-snug text-muted">{u.note}</p>
     </section>
   );
 }

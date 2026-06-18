@@ -316,12 +316,12 @@ export function LeagueClient({ locale }: { locale: Locale }) {
   return (
     <PageContainer tier="standard">
       <div className="flex items-center justify-between">
-        <h1 className="font-head text-2xl font-bold">{t.title}</h1>
+        <h1 className="font-head text-2xl font-bold md:text-3xl">{t.title}</h1>
         <Link href={localeHref(locale, "/")} className="text-xs text-muted">
           ← {backLabel[locale] ?? "Back"}
         </Link>
       </div>
-      <p className="mt-2 text-sm text-muted">{t.desc}</p>
+      <p className="mt-2 text-sm text-muted md:text-base">{t.desc}</p>
 
       {/* 昵称区：擂台社交前提 */}
       <section className="mt-5 rounded-lg border border-border bg-surface p-4">
@@ -368,7 +368,7 @@ export function LeagueClient({ locale }: { locale: Locale }) {
 
       {/* 创建 */}
       <section className="mt-4 rounded-lg border border-border bg-surface p-4">
-        <h2 className="font-head text-sm font-semibold">{t.createTitle}</h2>
+        <h2 className="font-head text-sm font-semibold md:text-base">{t.createTitle}</h2>
         <div className="mt-2 flex gap-2">
           <input
             value={nameInput}
@@ -390,7 +390,7 @@ export function LeagueClient({ locale }: { locale: Locale }) {
 
       {/* 加入 */}
       <section className="mt-4 rounded-lg border border-border bg-surface p-4">
-        <h2 className="font-head text-sm font-semibold">{t.joinTitle}</h2>
+        <h2 className="font-head text-sm font-semibold md:text-base">{t.joinTitle}</h2>
         <div className="mt-2 flex gap-2">
           <input
             value={codeInput}
@@ -414,7 +414,7 @@ export function LeagueClient({ locale }: { locale: Locale }) {
 
       {mine.length > 0 && (
         <section className="mt-6">
-          <h2 className="font-head mb-2 text-sm font-semibold">{t.mine}</h2>
+          <h2 className="font-head mb-2 text-sm font-semibold md:text-base">{t.mine}</h2>
           <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {mine.map((l) => (
               <li key={l.code}>
