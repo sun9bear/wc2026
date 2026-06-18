@@ -65,14 +65,19 @@ async function callGenerate(
   });
 }
 
-export async function chat(system: string, user: string, timeoutMs = 15000): Promise<string> {
+export async function chat(
+  system: string,
+  user: string,
+  timeoutMs = 15000,
+  modelOverride?: string
+): Promise<string> {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new Error("缺少 GEMINI_API_KEY");
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    let model = preferredModel();
+    let model = modelOverride ?? preferredModel();
     let res = await callGenerate(key, model, system, user, controller.signal);
     if (res.status === 404) {
       // 写死的模型名过期——动态解析一次并缓存（每个实例最多发生一次）。

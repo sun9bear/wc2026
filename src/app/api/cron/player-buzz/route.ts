@@ -75,7 +75,9 @@ export async function GET(req: NextRequest) {
   const ordered = [...players].sort((a, b) => (staleAt.get(a.id) ?? 0) - (staleAt.get(b.id) ?? 0));
 
   const now = new Date().toISOString();
-  const deadline = Date.now() + 45_000; // 留足 maxDuration(60s) 余量，杜绝 504 超时
+  // 24s 内返回：cron-job.org 免费档客户端硬超时 30s，必须在窗口内回 200，否则计「失败」并可能被自动停用。
+  // 本轮少处理几个无妨——buzz 是「最旧优先」轮转 + 7 日 pageviews 慢变量，跨几轮即全覆盖。
+  const deadline = Date.now() + 24_000;
   let updated = 0;
   for (const p of ordered) {
     if (Date.now() > deadline) break;

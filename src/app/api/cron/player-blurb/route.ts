@@ -53,7 +53,9 @@ export async function GET(req: NextRequest) {
     .sort((a, b) => staleAt(a.id) - staleAt(b.id));
 
   const now = new Date().toISOString();
-  const deadline = Date.now() + 50_000; // 留足 maxDuration(60s) 余量，杜绝超时
+  // 24s 内返回：cron-job.org 免费档客户端硬超时 30s。常规轮 todo 多为空（已回填）秒回；
+  // ?force=1 全量重生时本轮处理一批，最旧优先 → 跑 1-2 轮即覆盖 41 人（并发 6，单条 ~2-4s）。
+  const deadline = Date.now() + 24_000;
   let updated = 0;
   let idx = 0;
   async function worker(): Promise<void> {
