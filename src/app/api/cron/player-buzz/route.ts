@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { fetchPageviews } from "@/lib/players/buzz";
 import { getScorers } from "@/lib/football/getScorers";
@@ -21,6 +21,10 @@ function slugify(name: string): string {
 // 热度同步：每 ~12h 抓各候选维基 pageviews 近 7 日合计 → player_metrics.buzz_raw。
 // 受 CRON_SECRET 保护（与 cron/settle 同三写法）。外部 cron-job.org 调用即可。
 // 软降级：单条抓不到记 0，不影响整体；仅更新 buzz_* 列，不动 ai_blurb 列。
+//
+// 用 after() 立即回 200 + 后台抓取：cron-job.org 免费档客户端 30s 硬超时，而维基 pageviews 受限流
+//（429 退避）使整轮需 ~45s；故 auth 通过后即返回，实际抓取在响应后台跑满 maxDuration(60s)，
+// cron 端永远拿到秒级 200（不再计「失败」/被自动停用），且单轮能全量覆盖、不再被 30s 截断。
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
   if (!secret) return NextResponse.json({ error: "CRON_SECRET 未配置" }, { status: 500 });
@@ -34,67 +38,59 @@ export async function GET(req: NextRequest) {
   if (!url || !sk) return NextResponse.json({ error: "服务未配置" }, { status: 500 });
   const db = createClient(url, sk, { auth: { persistSession: false } });
 
-  // 射手自动补充：射手榜中不在候选的球员入库（source='scorers'，按归一化名去重；让名单跟着赛事走）。
-  let supplemented = 0;
-  try {
-    const scorers = await getScorers();
-    if (scorers.length) {
-      const { data: existing } = await db.from("players").select("name");
-      const have = new Set(
-        ((existing as { name: string }[] | null) ?? []).map((e) => normalizeName(e.name))
-      );
-      for (const s of scorers) {
-        const key = normalizeName(s.playerName);
-        // 仅补充进球 ≥3 的标杆射手（金靴竞争者=球迷话题人物）；避免冷门角色球员涌入稀释榜单。
-        if (!key || have.has(key) || (s.goals ?? 0) < 3) continue;
-        const { error } = await db.from("players").upsert(
-          { slug: slugify(s.playerName), name: s.playerName, team_name: s.teamName, source: "scorers", is_active: true },
-          { onConflict: "slug", ignoreDuplicates: true }
+  after(async () => {
+    // 射手自动补充：射手榜中不在候选的球员入库（source='scorers'，按归一化名去重；让名单跟着赛事走）。
+    try {
+      const scorers = await getScorers();
+      if (scorers.length) {
+        const { data: existing } = await db.from("players").select("name");
+        const have = new Set(
+          ((existing as { name: string }[] | null) ?? []).map((e) => normalizeName(e.name))
         );
-        if (!error) {
-          have.add(key);
-          supplemented++;
+        for (const s of scorers) {
+          const key = normalizeName(s.playerName);
+          // 仅补充进球 ≥3 的标杆射手（金靴竞争者=球迷话题人物）；避免冷门角色球员涌入稀释榜单。
+          if (!key || have.has(key) || (s.goals ?? 0) < 3) continue;
+          const { error } = await db.from("players").upsert(
+            { slug: slugify(s.playerName), name: s.playerName, team_name: s.teamName, source: "scorers", is_active: true },
+            { onConflict: "slug", ignoreDuplicates: true }
+          );
+          if (!error) have.add(key);
         }
       }
+    } catch {
+      /* 射手补充失败不影响热度同步 */
     }
-  } catch {
-    /* 射手补充失败不影响热度同步 */
-  }
 
-  const [{ data: pData }, { data: mData }] = await Promise.all([
-    db.from("players").select("id, wiki_title").eq("is_active", true),
-    db.from("player_metrics").select("player_id, buzz_updated_at"),
-  ]);
-  const players = (pData as { id: string; wiki_title: string | null }[] | null) ?? [];
-  // 「最久未更新优先」：从未抓到(无时间戳)排最前，保证尾部球员也能轮到（解决全量超时下的覆盖盲区）。
-  const staleAt = new Map(
-    ((mData as { player_id: string; buzz_updated_at: string | null }[] | null) ?? []).map(
-      (m) => [m.player_id, m.buzz_updated_at ? Date.parse(m.buzz_updated_at) : 0] as const
-    )
-  );
-  const ordered = [...players].sort((a, b) => (staleAt.get(a.id) ?? 0) - (staleAt.get(b.id) ?? 0));
+    const [{ data: pData }, { data: mData }] = await Promise.all([
+      db.from("players").select("id, wiki_title").eq("is_active", true),
+      db.from("player_metrics").select("player_id, buzz_updated_at"),
+    ]);
+    const players = (pData as { id: string; wiki_title: string | null }[] | null) ?? [];
+    // 「最久未更新优先」：从未抓到(无时间戳)排最前，保证尾部球员也能轮到。
+    const staleAt = new Map(
+      ((mData as { player_id: string; buzz_updated_at: string | null }[] | null) ?? []).map(
+        (m) => [m.player_id, m.buzz_updated_at ? Date.parse(m.buzz_updated_at) : 0] as const
+      )
+    );
+    const ordered = [...players].sort((a, b) => (staleAt.get(a.id) ?? 0) - (staleAt.get(b.id) ?? 0));
 
-  const now = new Date().toISOString();
-  // 24s 内返回：cron-job.org 免费档客户端硬超时 30s，必须在窗口内回 200，否则计「失败」并可能被自动停用。
-  // 本轮少处理几个无妨——buzz 是「最旧优先」轮转 + 7 日 pageviews 慢变量，跨几轮即全覆盖。
-  const deadline = Date.now() + 24_000;
-  let updated = 0;
-  for (const p of ordered) {
-    if (Date.now() > deadline) break;
-    if (!p.wiki_title) continue;
-    const views = await fetchPageviews(p.wiki_title);
-    // views=0 多为抓取失败/429 → 跳过，保留上次好值（绝不把已有热度清成 0）。
-    if (views > 0) {
-      const { error } = await db
-        .from("player_metrics")
-        .upsert(
-          { player_id: p.id, buzz_raw: views, buzz_updated_at: now },
-          { onConflict: "player_id" }
-        );
-      if (!error) updated++;
+    const now = new Date().toISOString();
+    const deadline = Date.now() + 50_000; // 后台跑，留足 maxDuration(60s) 余量
+    for (const p of ordered) {
+      if (Date.now() > deadline) break;
+      if (!p.wiki_title) continue;
+      const views = await fetchPageviews(p.wiki_title);
+      // views=0 多为抓取失败/429 → 跳过，保留上次好值（绝不把已有热度清成 0）。
+      if (views > 0) {
+        await db
+          .from("player_metrics")
+          .upsert({ player_id: p.id, buzz_raw: views, buzz_updated_at: now }, { onConflict: "player_id" });
+      }
+      await new Promise((r) => setTimeout(r, 150)); // 节流，避免 wikimedia 突发 429
     }
-    await new Promise((r) => setTimeout(r, 150)); // 节流，避免 wikimedia 突发 429
-  }
+  });
 
-  return NextResponse.json({ ok: true, supplemented, updated, total: players.length });
+  // 立即返回：抓取已在 after() 后台排队，cron-job.org 拿到秒级成功。
+  return NextResponse.json({ ok: true, queued: true });
 }
