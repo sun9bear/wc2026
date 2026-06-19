@@ -1,9 +1,11 @@
 // P3c 事件解读 blog 生成 cron：近期已结算比赛 → prob_delta 数据锚 → 材料闸 → 双语生成 + 双闸 → upsert。
 // 受 CRON_SECRET 保护（三写法，与 settle 一致）。外部 cron-job.org 定时调用即可。
 // 灰度：BLOG_AUTO_PUBLISH=1 才自动发，默认全进 needs_review（人工在管理页放行）。
-// 时间预算：DeepSeek V4 Pro 较慢 → BLOG_GEN_CAP 控制每次条数（默认 2）；不够则提频或调大 maxDuration。
+// 时间预算：cron-job.org 响应超时最高 30s、Vercel Hobby 函数 maxDuration 60s。故 after() 后台化：
+// HTTP 秒回 {started}（满足 cron-job.org），生成在后台跑（≤60s）；CAP=1 每次 1 篇；
+// 后台若超 60s 被杀，因 upsert 在最后→未落库→下次 cron 自愈重试（不丢稿/不脏库）。
 
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse, after, type NextRequest } from "next/server";
 import { supabase } from "@/lib/supabase/client";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { getMatchProbDelta, classifyProbDelta } from "@/lib/blog/getProbDelta";
@@ -25,14 +27,9 @@ function authed(req: NextRequest): boolean {
   );
 }
 
-export async function GET(req: NextRequest): Promise<NextResponse> {
-  if (!authed(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-
-  const autoPublish = process.env.BLOG_AUTO_PUBLISH === "1";
-  const cap = Number(process.env.BLOG_GEN_CAP ?? "2");
+// 实际生成（在 after() 后台跑，可吃满 maxDuration；不阻塞 HTTP 响应）。
+async function runGenBlog(autoPublish: boolean, cap: number): Promise<void> {
   const nowIso = new Date().toISOString();
-
-  // 近期已结算比赛
   const { data: ms } = await supabase
     .from("matches")
     .select("id")
@@ -46,29 +43,31 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const { data: existing } = await db.from("blog_entries").select("match_id");
   const done = new Set(((existing as { match_id: string | null }[] | null) ?? []).map((e) => e.match_id).filter(Boolean));
 
-  const entries: { slug: string; status: string; reason: string; error: string | null }[] = [];
-  const skipped = { not_material: 0, no_delta: 0, already: 0 };
-
+  let made = 0;
   for (const id of matchIds) {
-    if (entries.length >= cap) break;
-    if (done.has(id)) {
-      skipped.already++;
-      continue;
-    }
+    if (made >= cap) break;
+    if (done.has(id)) continue;
     const delta = await getMatchProbDelta(id);
-    if (!delta) {
-      skipped.no_delta++;
-      continue;
-    }
+    if (!delta) continue;
     const cand = buildSettledCandidate(delta, classifyProbDelta(delta), null);
-    if (!cand) {
-      skipped.not_material++;
-      continue;
-    }
+    if (!cand) continue;
     const draft = await generateForCandidate(cand, llm, { autoPublish });
-    const r = await upsertBlogEntry(cand, draft, nowIso);
-    entries.push({ slug: r.slug, status: draft.status, reason: draft.statusReason, error: r.error });
+    await upsertBlogEntry(cand, draft, nowIso); // upsert 最后一步：中途超时→未落库→下次自愈重试
+    made++;
   }
+}
 
-  return NextResponse.json({ ok: true, autoPublish, generated: entries.length, skipped, entries });
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  if (!authed(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const autoPublish = process.env.BLOG_AUTO_PUBLISH === "1";
+  const cap = Number(process.env.BLOG_GEN_CAP ?? "1");
+  // 秒回 {started} 满足 cron-job.org 30s 超时；生成在 after() 后台跑（Hobby maxDuration 60s 内）。
+  after(async () => {
+    try {
+      await runGenBlog(autoPublish, cap);
+    } catch (e) {
+      console.error("gen-blog after() failed:", e instanceof Error ? e.message : e);
+    }
+  });
+  return NextResponse.json({ started: true, autoPublish, cap });
 }
