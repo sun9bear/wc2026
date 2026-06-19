@@ -159,7 +159,7 @@ export async function GET(req: Request) {
                     <div style={{ display: "flex", fontSize: 34, fontWeight: 700, color: "#E8EDF2" }}>{locale === "zh" ? nameZhBySlug.get(r.slug) ?? r.name : r.name}</div>
                     <div style={{ display: "flex", fontSize: 22, color: "#5a6472" }}>{teamName(r.teamName, locale)}</div>
                   </div>
-                  <div style={{ display: "flex", width: 90, justifyContent: "flex-end", fontSize: 34, fontWeight: 700, color: "#1BE27F" }}>{r.index}</div>
+                  <div style={{ display: "flex", width: 90, justifyContent: "flex-end", fontSize: 34, fontWeight: 700, color: "#1BE27F" }}>{r.popValue}</div>
                 </div>
               );
             })}

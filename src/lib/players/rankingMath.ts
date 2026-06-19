@@ -27,10 +27,18 @@ export interface RankedPlayer extends PlayerSignals {
   voteScore: number; // 0-100
   perfScore: number; // 0-100
   buzzScore: number; // 0-100
-  index: number; // 0-100 加权综合
+  index: number; // 0-100 加权综合（质量分，保留备用）
+  popValue: number; // 人气值（榜单主数）：热度×2 + 表现×1 + 真实票数×1，无上限
 }
 
-/** 归一化 + 加权 + 排序（index 降序，平手比票数，再比名字）。 */
+// 人气值（展示主数 + 排序依据）：归一化热度×2 + 归一化表现×1 + 真实票数×1。
+// 与 index(0-100) 不同：票数原始且无上限 → 每投 1 票 +1，「越投越涨」给用户成就感；
+// 早期由热度+表现打底（避免全 0 票时榜单扁平），长期由票数主导（符合"球迷最爱"）。
+export function popularityValue(buzzScore: number, perfScore: number, votes: number): number {
+  return Math.round(buzzScore * 2 + perfScore + votes);
+}
+
+/** 归一化 + 合成 + 排序（人气值降序，平手比票数，再比名字）。 */
 export function composeRanking(raw: PlayerSignals[]): RankedPlayer[] {
   const maxVotes = raw.reduce((m, r) => Math.max(m, r.votes), 0);
   const maxBuzz = raw.reduce((m, r) => Math.max(m, r.buzz), 0);
@@ -43,9 +51,10 @@ export function composeRanking(raw: PlayerSignals[]): RankedPlayer[] {
     const index = Math.round(
       WEIGHTS.vote * voteScore + WEIGHTS.perf * perfScore + WEIGHTS.buzz * buzzScore
     );
-    return { ...r, voteScore, perfScore, buzzScore, index };
+    const popValue = popularityValue(buzzScore, perfScore, r.votes);
+    return { ...r, voteScore, perfScore, buzzScore, index, popValue };
   });
 
-  rows.sort((a, b) => b.index - a.index || b.votes - a.votes || a.name.localeCompare(b.name));
+  rows.sort((a, b) => b.popValue - a.popValue || b.votes - a.votes || a.name.localeCompare(b.name));
   return rows;
 }

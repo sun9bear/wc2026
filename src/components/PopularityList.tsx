@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { getDict, localeHref, type Locale } from "@/i18n";
+import { popularityValue } from "@/lib/players/rankingMath";
 
 export interface PopularityRow {
   id: string;
@@ -14,7 +15,8 @@ export interface PopularityRow {
   flag: string | null;
   photo: string | null;
   votes: number;
-  index: number; // 0-100 综合指数（服务端，排序依据）
+  index: number; // 0-100 综合指数（质量分，保留备用）
+  popValue: number; // 人气值（榜单主数）：热度×2+表现×1+票数
   voteScore: number;
   perfScore: number;
   buzzScore: number;
@@ -34,8 +36,19 @@ export function PopularityList({ rows, locale }: { rows: PopularityRow[]; locale
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [flash, setFlash] = useState<string | null>(null); // 刚投票的球员 id：🗳 闪绿 + 「✓ +1」即时反馈
-  // 右侧大数是「综合指数」非投票数——加小标签消除歧义。
-  const idxLabel = locale === "zh" ? "指数" : locale === "es" || locale === "pt" ? "Índice" : "Index";
+  // 右侧大数=「人气值」(热度×2+表现×1+票数,越投越涨)——加小标签讲明它不是单纯票数。
+  const popLabel =
+    locale === "zh"
+      ? "人气值"
+      : locale === "es"
+        ? "Popularidad"
+        : locale === "pt"
+          ? "Popularidade"
+          : locale === "de"
+            ? "Beliebtheit"
+            : locale === "fr"
+              ? "Popularité"
+              : "Popularity";
 
   // 挂载后查「今日已投 + 余额」（未登录则空，不主动注册）。
   useEffect(() => {
@@ -177,9 +190,11 @@ export function PopularityList({ rows, locale }: { rows: PopularityRow[]; locale
               </Link>
               {/* 右列：综合指数在上、投票按钮在下，整列垂直居中；按钮与副行贴紧 */}
               <div className="flex w-16 shrink-0 flex-col items-center gap-2.5">
-                <span className="flex flex-col items-center leading-none" aria-label={idxLabel}>
-                  <span className="text-[9px] font-normal text-muted">{idxLabel}</span>
-                  <span className="font-head text-lg font-bold tabular-nums text-green">{r.index}</span>
+                <span className="flex flex-col items-center leading-none" aria-label={popLabel}>
+                  <span className="text-[9px] font-normal text-muted">{popLabel}</span>
+                  <span className={`font-head text-lg font-bold tabular-nums transition-colors ${flash === r.id ? "scale-110 text-green" : "text-green"}`}>
+                    {popularityValue(r.buzzScore, r.perfScore, votes[r.id] ?? r.votes)}
+                  </span>
                 </span>
                 <div className="flex w-full flex-col items-center gap-0.5">
                   <button

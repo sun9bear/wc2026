@@ -108,7 +108,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
             {pos && <span>· {pos}</span>}
           </div>
           <div className="font-head mt-1 text-sm font-bold text-green tabular-nums">
-            🏆 #{p.rank} · {t.popularity.title.replace(/^⭐\s*/, "")} {p.index}
+            🏆 #{p.rank} · {t.popularity.title.replace(/^⭐\s*/, "")} {p.popValue}
           </div>
         </div>
       </header>

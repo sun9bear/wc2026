@@ -63,5 +63,5 @@ async function fetchRanking(): Promise<RankedPlayer[]> {
   );
 }
 
-// 缓存 60s（v2 综合指数）。投票实时性靠客户端乐观更新，SSR 在 60s 内收敛真值。
-export const getRanking = unstable_cache(fetchRanking, ["player-ranking-v2"], { revalidate: 60 });
+// 缓存 60s（v3 人气值：热度×2+表现×1+票数，按 popValue 排序）。投票实时性靠客户端乐观更新。
+export const getRanking = unstable_cache(fetchRanking, ["player-ranking-v3"], { revalidate: 60 });

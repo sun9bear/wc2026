@@ -46,6 +46,7 @@ export default async function PopularityPage() {
     photo: PHOTOS[r.slug]?.url ?? null,
     votes: r.votes,
     index: r.index,
+    popValue: r.popValue,
     voteScore: r.voteScore,
     perfScore: r.perfScore,
     buzzScore: r.buzzScore,
