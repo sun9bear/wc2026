@@ -58,13 +58,21 @@ async function withRetry<T>(fn: () => Promise<T>, attempts = 2): Promise<T> {
   throw last;
 }
 
-/** 生成：en→Gemini，zh→DeepSeek(V4 Pro)。两 provider 互不抢配额，可并行；临时过载自动重试 1 次。 */
+// blog 专用 Gemini 模型（与 DEEPSEEK_BLOG_MODEL 对称，不影响 gen-content/settle）。
+// 设 GEMINI_BLOG_MODEL=gemini-3.1-flash-lite 即用之；未设则回落 gemini.ts 默认（id 失效会自动解析最新 flash-lite）。
+const geminiBlogModel = (): string | undefined => process.env.GEMINI_BLOG_MODEL || undefined;
+
+/** 生成：en→Gemini(GEMINI_BLOG_MODEL)，zh→DeepSeek(V4 Pro)。两 provider 互不抢配额；临时过载自动重试 1 次。 */
 export async function generate(locale: "en" | "zh", system: string, user: string): Promise<string> {
-  return withRetry(() => (locale === "en" ? geminiChat(system, user, GEN_TIMEOUT) : deepseekBlog(system, user, GEN_TIMEOUT)));
+  return withRetry(() =>
+    locale === "en" ? geminiChat(system, user, GEN_TIMEOUT, geminiBlogModel()) : deepseekBlog(system, user, GEN_TIMEOUT)
+  );
 }
 
 /** 软闸审核（异 provider）：en 文章→DeepSeek 审、zh 文章→Gemini 审；临时过载自动重试 1 次。 */
 export async function review(locale: "en" | "zh", prompt: string): Promise<string> {
   const sys = "You are a strict reviewer. Return ONLY valid JSON.";
-  return withRetry(() => (locale === "en" ? deepseekBlog(sys, prompt, REVIEW_TIMEOUT) : geminiChat(sys, prompt, REVIEW_TIMEOUT)));
+  return withRetry(() =>
+    locale === "en" ? deepseekBlog(sys, prompt, REVIEW_TIMEOUT) : geminiChat(sys, prompt, REVIEW_TIMEOUT, geminiBlogModel())
+  );
 }
