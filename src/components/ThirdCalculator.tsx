@@ -5,9 +5,11 @@ import type { Locale } from "@/i18n";
 import { teamName, groupName } from "@/lib/football/teams";
 import { rankGroup, rankThirds, mulberry32 } from "@/lib/prob/standings";
 import type { GroupResult } from "@/lib/prob/types";
+import { buildCalcResults, outcomeOf, FLAT, type Pick } from "@/lib/prob/calcResults";
+import { ScoreSheet } from "./ScoreSheet";
 
 // 第三名出线计算器（客户端纯计算）：点选剩余小组赛结果 → 实时重排 12 组与第三名表。
-// 比分约定：主胜=1-0、平=1-1、客胜=0-1（只影响净胜球/进球的近似，页面已标注）。
+// 默认比分：主胜=1-0、平=1-1、客胜=0-1；点活动赛果格可开浮层填精确比分（影响净胜球/进球）。
 
 export interface CalcTeam {
   id: string;
@@ -20,6 +22,7 @@ export interface CalcMatch {
   homeId: string;
   awayId: string;
   likely: "h" | "d" | "a";
+  topScores: { h: number; a: number; p: number }[];
 }
 
 const TXT: Record<
@@ -36,6 +39,7 @@ const TXT: Record<
     d: string;
     a: string;
     locked: string;
+    editHint: string;
     myWin: string;
     myDraw: string;
     reset: string;
@@ -46,7 +50,7 @@ const TXT: Record<
 > = {
   zh: {
     intro: "点选每场剩余小组赛的结果，实时看 12 个小组排名和哪 8 个第三名晋级。",
-    convention: "比分按 主胜1-0 / 平1-1 / 客胜0-1 估算净胜球；判据按 2026 官方新规（不含公平竞赛分）。",
+    convention: "默认比分 主胜1-0 / 平1-1 / 客胜0-1，可点比分填精确结果；判据按 2026 官方新规（不含公平竞赛分）。",
     qualified: "出线",
     out: "出局",
     thirds: "最佳第三名排名（前 8 晋级）",
@@ -56,6 +60,7 @@ const TXT: Record<
     d: "平",
     a: "客胜",
     locked: "已完赛锁定为真实比分，仅剩余比赛可改",
+    editHint: "点比分可自定义",
     myWin: "我全胜",
     myDraw: "我全平",
     reset: "重置",
@@ -65,7 +70,7 @@ const TXT: Record<
   },
   en: {
     intro: "Pick each remaining group match and watch all 12 tables and the third-place race update live.",
-    convention: "Scores approximated as 1-0 / 1-1 / 0-1; 2026 official tiebreakers (fair play excluded).",
+    convention: "Default scores 1-0 / 1-1 / 0-1; tap a score to set an exact result. 2026 official tiebreakers (fair play excluded).",
     qualified: "IN",
     out: "OUT",
     thirds: "Best thirds ranking (top 8 advance)",
@@ -75,6 +80,7 @@ const TXT: Record<
     d: "Draw",
     a: "Away",
     locked: "Finished matches are locked at the real score; edit only remaining picks",
+    editHint: "Tap score to edit",
     myWin: "I win out",
     myDraw: "I draw all",
     reset: "Reset",
@@ -84,7 +90,7 @@ const TXT: Record<
   },
   es: {
     intro: "Elige el resultado de cada partido de grupo restante y mira en vivo las 12 tablas y la carrera por el mejor tercero.",
-    convention: "Marcadores aproximados como 1-0 / 1-1 / 0-1; desempates oficiales 2026 (sin fair play).",
+    convention: "Marcadores por defecto 1-0 / 1-1 / 0-1; toca el marcador para fijar un resultado exacto. Desempates oficiales 2026 (sin fair play).",
     qualified: "PASA",
     out: "FUERA",
     thirds: "Clasificación de los mejores terceros (los 8 primeros avanzan)",
@@ -94,6 +100,7 @@ const TXT: Record<
     d: "Empate",
     a: "Visitante",
     locked: "Los partidos jugados están fijados en el marcador real; solo puedes cambiar los restantes",
+    editHint: "Toca el marcador para editar",
     myWin: "Gano todo",
     myDraw: "Empato todo",
     reset: "Reiniciar",
@@ -103,7 +110,7 @@ const TXT: Record<
   },
   pt: {
     intro: "Escolha o resultado de cada jogo de grupo restante e veja ao vivo as 12 tabelas e a disputa do melhor terceiro.",
-    convention: "Placares aproximados como 1-0 / 1-1 / 0-1; critérios oficiais 2026 (sem fair play).",
+    convention: "Placares padrão 1-0 / 1-1 / 0-1; toque no placar para definir um resultado exato. Critérios oficiais 2026 (sem fair play).",
     qualified: "PASSA",
     out: "FORA",
     thirds: "Ranking dos melhores terceiros (os 8 primeiros avançam)",
@@ -113,6 +120,7 @@ const TXT: Record<
     d: "Empate",
     a: "Fora",
     locked: "Jogos encerrados ficam fixados no placar real; edite apenas os restantes",
+    editHint: "Toque no placar para editar",
     myWin: "Venço tudo",
     myDraw: "Empato tudo",
     reset: "Redefinir",
@@ -122,7 +130,7 @@ const TXT: Record<
   },
   de: {
     intro: "Wähle das Ergebnis jedes verbleibenden Gruppenspiels und sieh live alle 12 Tabellen und das Rennen um den besten Dritten.",
-    convention: "Ergebnisse genähert als 1-0 / 1-1 / 0-1; offizielle Kriterien 2026 (ohne Fair-Play).",
+    convention: "Standardergebnisse 1-0 / 1-1 / 0-1; tippe aufs Ergebnis für ein genaues Resultat. Offizielle Kriterien 2026 (ohne Fair-Play).",
     qualified: "DRIN",
     out: "RAUS",
     thirds: "Rangliste der besten Dritten (Top 8 weiter)",
@@ -132,6 +140,7 @@ const TXT: Record<
     d: "Remis",
     a: "Auswärts",
     locked: "Beendete Spiele sind auf das echte Ergebnis fixiert; nur verbleibende änderbar",
+    editHint: "Ergebnis tippen zum Ändern",
     myWin: "Ich gewinne alle",
     myDraw: "Alle unentschieden",
     reset: "Zurücksetzen",
@@ -141,7 +150,7 @@ const TXT: Record<
   },
   fr: {
     intro: "Choisis le résultat de chaque match de groupe restant et suis en direct les 12 classements et la course au meilleur troisième.",
-    convention: "Scores approximés en 1-0 / 1-1 / 0-1 ; départages officiels 2026 (sans fair-play).",
+    convention: "Scores par défaut 1-0 / 1-1 / 0-1 ; touche le score pour fixer un résultat exact. Départages officiels 2026 (sans fair-play).",
     qualified: "PASSE",
     out: "SORTI",
     thirds: "Classement des meilleurs troisièmes (les 8 premiers se qualifient)",
@@ -151,6 +160,7 @@ const TXT: Record<
     d: "Nul",
     a: "Extérieur",
     locked: "Les matchs joués sont figés au score réel ; modifie seulement les restants",
+    editHint: "Touche le score pour modifier",
     myWin: "Je gagne tout",
     myDraw: "Je fais nul partout",
     reset: "Réinitialiser",
@@ -159,8 +169,6 @@ const TXT: Record<
     scenario: "selon tes résultats choisis",
   },
 };
-
-const SCORE: Record<"h" | "d" | "a", [number, number]> = { h: [1, 0], d: [1, 1], a: [0, 1] };
 
 export function ThirdCalculator({
   locale,
@@ -180,9 +188,16 @@ export function ThirdCalculator({
   focusTeamId?: string | null;
 }) {
   const t = TXT[locale] ?? TXT.en;
-  const [picks, setPicks] = useState<Record<string, "h" | "d" | "a">>(() =>
-    Object.fromEntries(remaining.map((m) => [m.id, m.likely]))
+  // 每场默认比分（=该场最可能赛果的平铺值）；初始排名与平铺约定一字不差。
+  const fallback = useMemo(
+    () =>
+      Object.fromEntries(
+        remaining.map((m): [string, Pick] => [m.id, FLAT[m.likely]])
+      ) as Record<string, Pick>,
+    [remaining]
   );
+  const [picks, setPicks] = useState<Record<string, Pick>>(() => ({ ...fallback }));
+  const [editing, setEditing] = useState<string | null>(null);
 
   const teamById = useMemo(() => {
     const map = new Map<string, CalcTeam>();
@@ -192,13 +207,7 @@ export function ThirdCalculator({
 
   const { tables, thirdsRanked } = useMemo(() => {
     const ratingMap = new Map(Object.entries(rating));
-    const results: GroupResult[] = [
-      ...played,
-      ...remaining.map((m) => {
-        const [h, a] = SCORE[picks[m.id] ?? m.likely];
-        return { homeId: m.homeId, awayId: m.awayId, homeGoals: h, awayGoals: a };
-      }),
-    ];
+    const results = buildCalcResults(played, remaining, picks, fallback);
     // 单 RNG 实例跨 rankGroup(12组)→rankThirds 连续消费，对齐服务端 pipeline 的 RNG 顺序，
     // 杜绝完全打平（含 Elo 同分）时客户端/服务端给出不同晋级结论。
     const rng = mulberry32(1);
@@ -209,11 +218,11 @@ export function ThirdCalculator({
     const thirdRows = tables.map((x) => x.order[2]).filter(Boolean);
     const thirdsRanked = rankThirds(thirdRows, rng, ratingMap);
     return { tables, thirdsRanked };
-  }, [groups, played, remaining, picks, rating]);
+  }, [groups, played, remaining, picks, fallback, rating]);
 
   const label = (tm: CalcTeam | undefined) =>
     tm ? (locale === "zh" ? tm.zh : teamName(tm.name, locale)) : "?";
-  const qualified = new Set(thirdsRanked.slice(0, 8));
+  const qualified = useMemo(() => new Set(thirdsRanked.slice(0, 8)), [thirdsRanked]);
   const groupsWithMatches = new Set(
     remaining.map((m) => groups.find((g) => g.teams.some((x) => x.id === m.homeId))?.letter)
   );
@@ -231,17 +240,21 @@ export function ThirdCalculator({
     return { in: false, via: null, tm };
   }, [focusTeamId, tables, qualified, teamById, t]);
 
-  // 预设：把焦点队剩余比赛一键设为全胜/全平；重置=回到模型预测。
+  // 预设：把焦点队剩余比赛一键设为全胜/全平；重置=回到模型预测的平铺比分。
   const setFocus = (kind: "win" | "draw") =>
     setPicks((p) => {
       const next = { ...p };
       for (const m of remaining) {
-        if (m.homeId === focusTeamId) next[m.id] = kind === "win" ? "h" : "d";
-        else if (m.awayId === focusTeamId) next[m.id] = kind === "win" ? "a" : "d";
+        if (m.homeId === focusTeamId) next[m.id] = kind === "win" ? FLAT.h : FLAT.d;
+        else if (m.awayId === focusTeamId) next[m.id] = kind === "win" ? FLAT.a : FLAT.d;
       }
       return next;
     });
-  const resetPicks = () => setPicks(Object.fromEntries(remaining.map((m) => [m.id, m.likely])));
+  const resetPicks = () => setPicks({ ...fallback });
+
+  const editM = editing ? remaining.find((x) => x.id === editing) ?? null : null;
+  const editHome = editM ? teamById.get(editM.homeId) : undefined;
+  const editAway = editM ? teamById.get(editM.awayId) : undefined;
 
   return (
     <div>
@@ -350,30 +363,48 @@ export function ThirdCalculator({
                   })}
                 {remaining
                   .filter((m) => g.teams.some((x) => x.id === m.homeId))
-                  .map((m) => (
-                    <div key={m.id} className="mb-1.5 flex items-center gap-2 text-xs">
-                      <span className="w-20 shrink-0 truncate text-right">
-                        {label(teamById.get(m.homeId))}
-                      </span>
-                      <div className="flex flex-1 gap-1.5">
-                        {(["h", "d", "a"] as const).map((opt) => (
-                          <button
-                            key={opt}
-                            type="button"
-                            onClick={() => setPicks((p) => ({ ...p, [m.id]: opt }))}
-                            className={`flex-1 rounded-sm border py-2 text-[12px] transition ${
-                              (picks[m.id] ?? m.likely) === opt
-                                ? "border-green bg-green/15 text-green"
-                                : "border-border bg-surface-2 text-muted transition-colors hover:border-green/50"
-                            }`}
-                          >
-                            {t[opt]}
-                          </button>
-                        ))}
+                  .map((m) => {
+                    const pick = picks[m.id] ?? fallback[m.id] ?? FLAT.d;
+                    const active = outcomeOf(pick);
+                    return (
+                      <div key={m.id} className="mb-1.5 flex items-center gap-2 text-xs">
+                        <span className="w-20 shrink-0 truncate text-right">
+                          {label(teamById.get(m.homeId))}
+                        </span>
+                        <div className="flex flex-1 gap-1.5">
+                          {(["h", "d", "a"] as const).map((opt) => {
+                            const isActive = active === opt;
+                            return (
+                              <button
+                                key={opt}
+                                type="button"
+                                title={isActive ? t.editHint : undefined}
+                                onClick={() =>
+                                  isActive
+                                    ? setEditing(m.id)
+                                    : setPicks((p) => ({ ...p, [m.id]: FLAT[opt] }))
+                                }
+                                className={`flex-1 rounded-sm border py-2 text-[12px] transition ${
+                                  isActive
+                                    ? "border-green bg-green/15 text-green"
+                                    : "border-border bg-surface-2 text-muted transition-colors hover:border-green/50"
+                                }`}
+                              >
+                                {isActive ? (
+                                  <span className="font-head tabular-nums">
+                                    {pick[0]}-{pick[1]} <span className="opacity-70">✎</span>
+                                  </span>
+                                ) : (
+                                  t[opt]
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <span className="w-20 shrink-0 truncate">{label(teamById.get(m.awayId))}</span>
                       </div>
-                      <span className="w-20 shrink-0 truncate">{label(teamById.get(m.awayId))}</span>
-                    </div>
-                  ))}
+                    );
+                  })}
               </div>
             );
           })}
@@ -413,6 +444,20 @@ export function ThirdCalculator({
           );
         })}
       </div>
+
+      {/* 精确比分编辑浮层（点活动赛果格打开） */}
+      {editM && editHome && editAway && (
+        <ScoreSheet
+          locale={locale}
+          home={{ name: editHome.name, zh: editHome.zh, flag: editHome.flag }}
+          away={{ name: editAway.name, zh: editAway.zh, flag: editAway.flag }}
+          value={picks[editM.id] ?? fallback[editM.id] ?? FLAT.d}
+          suggestions={editM.topScores ?? []}
+          onChange={(v) => setPicks((p) => ({ ...p, [editM.id]: v }))}
+          onReset={() => setPicks((p) => ({ ...p, [editM.id]: FLAT[editM.likely] }))}
+          onClose={() => setEditing(null)}
+        />
+      )}
     </div>
   );
 }

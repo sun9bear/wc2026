@@ -206,6 +206,7 @@ export default async function CalculatorPage({
     homeId: m.homeId,
     awayId: m.awayId,
     likely: m.likely,
+    topScores: m.topScores,
   }));
 
   const hit = team ? findTeam(data, team) : null;
