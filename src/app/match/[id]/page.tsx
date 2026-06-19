@@ -13,7 +13,6 @@ import { LiveScore } from "@/components/LiveScore";
 import { MatchSwingShare } from "@/components/MatchSwingShare";
 import { MatchPreviewShare } from "@/components/MatchPreviewShare";
 import { HeaderShare } from "@/components/HeaderShare";
-import { SentimentBar } from "@/components/SentimentBar";
 import { Disclaimer } from "@/components/Disclaimer";
 import { TeamBadge } from "@/components/TeamBadge";
 import { LocalTime } from "@/components/LocalTime";
@@ -231,7 +230,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
   // 比分分布：未结算即取赛前 Top-5（open 分支直接展示；进行中作为 LiveScoreProbs 实时未命中时的兜底）。
   const scoreline = !settled ? await getMatchScoreline(id).catch(() => null) : null;
 
-  // 赛前胜平负概率（由池倍率 p≈1/m 归一化）——供 MatchPreviewShare 分享卡用。
+  // 池倍率隐含的胜平负概率（p≈1/m 归一化）：作 heroProb 在无引擎快照时的回落值。
   // 倍率全为默认 3.00（无真实预测的种子值）时退化为 33/33/34，不影响功能。
   const impliedSplit = (() => {
     const sels = m.market?.selections ?? [];
@@ -248,6 +247,23 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
     const diff = 100 - (pcts[0] + pcts[1] + pcts[2]);
     if (diff !== 0) pcts[pcts.indexOf(Math.max(...pcts))] += diff; // round 余数补给最大项，保证和=100
     return { hp: pcts[0], dp: pcts[1], ap: pcts[2] };
+  })();
+
+  // 主展示口径（heroProb）：优先用引擎快照的融合胜平负概率（与最可能比分/走势同源、走势末点对齐）；
+  // 无引擎快照时回落池倍率隐含值 impliedSplit。fresh 标记是否来自每小时刷新的引擎快照。
+  const heroProb = (() => {
+    const ep = scoreline?.p;
+    if (ep) {
+      const arr = [ep.home, ep.draw, ep.away];
+      const sum = arr[0] + arr[1] + arr[2];
+      if (sum > 0 && Number.isFinite(sum)) {
+        const pcts = arr.map((x) => Math.round((x / sum) * 100));
+        const diff = 100 - (pcts[0] + pcts[1] + pcts[2]);
+        if (diff !== 0) pcts[pcts.indexOf(Math.max(...pcts))] += diff; // 余数补给最大项，保证和=100
+        return { hp: pcts[0], dp: pcts[1], ap: pcts[2], fresh: true };
+      }
+    }
+    return impliedSplit ? { ...impliedSplit, fresh: false } : null;
   })();
   const resultLabel: Record<string, string> = {
     home: t.match.home,
@@ -293,13 +309,13 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
   // 页眉右上分享（任务 A）：未结算 → 比赛预览卡（mode=match，含 Top-3 比分[任务E] + zh 二维码[任务D]）；
   // 已结算且爆冷 → 摆动卡；其余只给链接分享。
   const headerMatch =
-    open && impliedSplit
+    open && heroProb
       ? {
           home: teamName(m.home.name, locale),
           away: teamName(m.away.name, locale),
-          hp: impliedSplit.hp,
-          dp: impliedSplit.dp,
-          ap: impliedSplit.ap,
+          hp: heroProb.hp,
+          dp: heroProb.dp,
+          ap: heroProb.ap,
           kickoffIso: m.kickoffAt,
           homeFlag,
           awayFlag,
@@ -452,31 +468,44 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
         </div>
       </div>
 
-      {/* B3/B4：答案前置概率/比分句（服务端纯文本，置于 betting 倍率网格之上，供搜索/AI 直接引用）。 */}
-      {!settled && (impliedSplit || scoreline?.top?.[0]) && (() => {
+      {/* 队名正下方主展示：模型胜平负概率（引擎每小时融合快照，与下方「最可能比分」「概率走势」同源、走势末点对齐）。 */}
+      {open && heroProb && (
+        <MatchPreviewShare
+          home={teamName(m.home.name, locale)}
+          away={teamName(m.away.name, locale)}
+          hp={heroProb.hp}
+          dp={heroProb.dp}
+          ap={heroProb.ap}
+          fresh={heroProb.fresh}
+          locale={locale}
+          kickoff={m.kickoffAt}
+        />
+      )}
+
+      {/* B3/B4：答案前置概率/比分句（服务端纯文本，供搜索/AI 直接引用）。与主展示同一口径（heroProb）。 */}
+      {!settled && (heroProb || scoreline?.top?.[0]) && (() => {
         const pc = PRED_COPY[locale] ?? PRED_COPY.en;
         const top = scoreline?.top?.[0];
         const parts: string[] = [];
-        if (impliedSplit)
+        if (heroProb)
           parts.push(
             pc.wdl(
               teamName(m.home.name, locale),
-              impliedSplit.hp,
-              impliedSplit.dp,
+              heroProb.hp,
+              heroProb.dp,
               teamName(m.away.name, locale),
-              impliedSplit.ap
+              heroProb.ap
             )
           );
         if (top) parts.push(pc.score(top.h, top.a, Math.max(1, Math.round(top.p * 100))));
         return (
-          <p className="mt-4 rounded-lg border border-green/30 bg-surface px-3 py-2.5 text-sm leading-relaxed md:text-base">
+          <p className="mt-3 rounded-lg border border-green/30 bg-surface px-3 py-2.5 text-sm leading-relaxed md:text-base">
             <span className="font-semibold text-green">{pc.label}</span> {parts.join(" ")}
           </p>
         );
       })()}
 
-      {/* 进行中：直播看板置于文字短评之上（进球文字流 + 最可能比分 + 可展开技术统计）；
-          比分/分钟已放大显示在上方页眉，看板内不重复国旗队名。 */}
+      {/* 进行中：直播看板（进球文字流 + 最可能比分 + 可展开技术统计）；比分/分钟已放大显示在上方页眉。 */}
       {inPlay && (
         <LiveScoreProbs
           matchId={id}
@@ -491,6 +520,17 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
         <AiBlock tag={t.match.recapTag} foldTag={t.match.recapTag} body={m.recap} bodyEn={m.recapEn} />
       )}
 
+      {/* 未结算：最可能比分 + 概率走势（与主展示同一引擎快照——走势末点 = 主展示，永不矛盾）。 */}
+      {open && (
+        <div className="md:grid md:grid-cols-2 md:gap-4">
+          {scoreline && (
+            <ScoreProbs data={scoreline} locale={locale} home={homeTeam} away={awayTeam} />
+          )}
+          <MatchProbTrend matchId={id} locale={locale} />
+        </div>
+      )}
+
+      {/* 2 段 AI 短评：赛前前瞻 + 冷热门看点（置于数据图表之后）。 */}
       {(m.preview || m.previewEn) && (
         <AiBlock tag={t.match.previewTag} foldTag={t.match.previewFold} body={m.preview} bodyEn={m.previewEn} />
       )}
@@ -499,6 +539,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
         <AiBlock tag={t.match.hotTakeTag} foldTag={t.match.hotTakeFold} body={m.sentiment} bodyEn={m.sentimentEn} />
       )}
 
+      {/* 下注/玩法区（页面最后）：实时倍率按钮 + 投入积分 + 提交预测。倍率为玩法赔付倍数，非胜率预测。 */}
       <section className="mt-5">
         {settled ? (
           <div className="rounded-md border border-border bg-surface-2 p-4 text-center text-sm">
@@ -513,28 +554,10 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
             <p className="mb-3 rounded-md border border-border bg-surface-2 px-3 py-2 text-center text-[11px] text-muted md:text-xs">
               {t.hero.pointsBanner}
             </p>
-            <SentimentBar selections={m.market.selections} locale={locale} />
-            <h2 className="font-head mb-2 mt-5 flex items-center gap-2 text-sm font-semibold md:text-base">
+            <h2 className="font-head mb-2 mt-4 flex items-center gap-2 text-sm font-semibold md:text-base">
               <span className="live-dot" /> {t.match.livePicks}
             </h2>
             <MarketPicks marketId={m.market.id} selections={m.market.selections} locale={locale} />
-            <div className="md:grid md:grid-cols-2 md:gap-4">
-              {scoreline && (
-                <ScoreProbs data={scoreline} locale={locale} home={homeTeam} away={awayTeam} />
-              )}
-              <MatchProbTrend matchId={id} locale={locale} />
-            </div>
-            {impliedSplit && (
-              <MatchPreviewShare
-                home={teamName(m.home.name, locale)}
-                away={teamName(m.away.name, locale)}
-                hp={impliedSplit.hp}
-                dp={impliedSplit.dp}
-                ap={impliedSplit.ap}
-                locale={locale}
-                kickoff={m.kickoffAt}
-              />
-            )}
           </>
         ) : inPlay ? null : (
           <p className="rounded-md border border-border bg-surface-2 p-4 text-center text-sm text-muted md:text-base">
