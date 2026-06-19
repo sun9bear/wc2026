@@ -216,7 +216,7 @@ function TeamName({
     <span className="inline-flex items-center gap-1.5">
       {t.flag && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={t.flag} alt="" className="h-3 w-4 rounded-[2px] object-cover" />
+        <img src={t.flag} alt="" width={16} height={12} loading="lazy" decoding="async" className="h-3 w-4 rounded-[2px] object-cover" />
       )}
       {locale === "zh" ? t.zh : teamName(t.name, locale)}
     </span>

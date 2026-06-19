@@ -6,7 +6,7 @@ import { getTeamDetail, type TeamResult } from "@/lib/prob/getTeamDetail";
 import { getForecast } from "@/lib/prob/pipeline";
 import { getAdvanceRequirements } from "@/lib/prob/requirements";
 import { getTeamSquad, type PositionGroup } from "@/lib/squad/getTeamSquad";
-import { teamSlug } from "@/lib/prob/findTeam";
+import { teamSlug, normalizeSlug } from "@/lib/prob/findTeam";
 import { getSettledIndex } from "@/lib/seo/freshness";
 import { JsonLd } from "@/lib/seo/jsonLd";
 import { PageContainer } from "@/components/PageContainer";
@@ -398,7 +398,8 @@ export async function generateMetadata({
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = normalizeSlug(rawSlug); // 解码 + NFC：Next 对非 ASCII 段在 page/metadata 间解码不一致
   const locale = await getLocale();
   const d = await getTeamDetail(slug).catch(() => null);
   if (!d) return {};
@@ -435,7 +436,7 @@ function ResultChip({
         <span className="text-[10px] text-muted md:text-xs">{r.home ? c.home : c.away}</span>
         {r.oppFlag && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={r.oppFlag} alt="" className="h-3 w-4 rounded-[2px] object-cover" />
+          <img src={r.oppFlag} alt="" width={16} height={12} loading="lazy" decoding="async" className="h-3 w-4 rounded-[2px] object-cover" />
         )}
         <span className="truncate">{oppName}</span>
       </span>
@@ -447,7 +448,8 @@ function ResultChip({
 }
 
 export default async function TeamPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = normalizeSlug(rawSlug); // 解码 + NFC：Next 对非 ASCII 段在 page/metadata 间解码不一致
   const locale = await getLocale();
   const d = await getTeamDetail(slug);
   if (!d) notFound();
@@ -539,7 +541,7 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
       <div className="mt-3 flex items-center gap-4 rounded-lg border border-border bg-surface p-5">
         {d.flag ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={d.flag.replace("/w80/", "/w160/")} alt="" className="h-12 w-16 rounded-sm object-cover ring-1 ring-border" />
+          <img src={d.flag.replace("/w80/", "/w160/")} alt="" width={64} height={48} decoding="async" className="h-12 w-16 rounded-sm object-cover ring-1 ring-border" />
         ) : (
           <span className="text-5xl">⚽</span>
         )}
@@ -647,7 +649,7 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
                         <span className="inline-flex items-center gap-1.5">
                           {t.flag && (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={t.flag} alt="" className="h-3 w-4 rounded-[2px] object-cover" />
+                            <img src={t.flag} alt="" width={16} height={12} loading="lazy" decoding="async" className="h-3 w-4 rounded-[2px] object-cover" />
                           )}
                           {isSelf ? (
                             tn
@@ -690,7 +692,7 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
             <span className="text-[10px] text-muted md:text-xs">{d.next.home ? c.home : c.away}</span>
             {d.next.oppFlag && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={d.next.oppFlag} alt="" className="h-3 w-4 rounded-[2px] object-cover" />
+              <img src={d.next.oppFlag} alt="" width={16} height={12} loading="lazy" decoding="async" className="h-3 w-4 rounded-[2px] object-cover" />
             )}
             <span>{nextOpp}</span>
           </span>

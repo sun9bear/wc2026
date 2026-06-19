@@ -5,7 +5,7 @@
 import { unstable_cache } from "next/cache";
 import { supabase } from "@/lib/supabase/client";
 import { getForecast } from "./pipeline";
-import { findTeam, teamSlug } from "./findTeam";
+import { findTeam, teamSlug, normalizeSlug } from "./findTeam";
 import { teamZh, flagUrl } from "@/lib/football/teams";
 
 export interface TeamResult {
@@ -129,7 +129,17 @@ async function computeTeamDetail(slug: string): Promise<TeamDetail | null> {
   };
 }
 
-/** 球队详情；slug 未匹配返回 null。slug 进缓存键，缓存 600s（与引擎写入节奏匹配）。 */
-export const getTeamDetail = unstable_cache(computeTeamDetail, ["team-detail-v1"], {
+// v2：findTeam 改 NFC 归一匹配后 bump 缓存键，作废 pre-fix 旧逻辑缓存的 ç 队名空结果（否则
+// 部署后仍可能 revalidate 窗口内回放旧的 null → 软 404 复发）。
+const cachedTeamDetail = unstable_cache(computeTeamDetail, ["team-detail-v2"], {
   revalidate: 600,
 });
+
+/**
+ * 球队详情；slug 未匹配返回 null。缓存 600s（与引擎写入节奏匹配）。
+ * slug 先解码 + NFC 归一再进缓存键：Next 对非 ASCII 段（Curaçao）在 page/generateMetadata 间
+ * 解码不一致（"curaçao" vs 原始 "cura%C3%A7ao"），不归一会生成错配缓存键 + 软 404。见 normalizeSlug。
+ */
+export function getTeamDetail(slug: string): Promise<TeamDetail | null> {
+  return cachedTeamDetail(normalizeSlug(slug));
+}

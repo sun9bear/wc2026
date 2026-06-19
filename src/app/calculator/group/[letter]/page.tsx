@@ -340,7 +340,7 @@ export default async function GroupPage({
                   >
                     {t.flag && (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={t.flag} alt="" className="h-3 w-4 rounded-[2px] object-cover" />
+                      <img src={t.flag} alt="" width={16} height={12} loading="lazy" decoding="async" className="h-3 w-4 rounded-[2px] object-cover" />
                     )}
                     {name(t)}
                   </Link>
@@ -373,6 +373,10 @@ export default async function GroupPage({
                 <img
                   src={t.flag}
                   alt=""
+                  width={16}
+                  height={12}
+                  loading="lazy"
+                  decoding="async"
                   className="mt-1 h-3 w-4 shrink-0 rounded-[2px] object-cover"
                 />
               )}
