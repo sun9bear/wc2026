@@ -92,6 +92,24 @@ export function teamName(name: string, locale: Locale): string {
   return NATIONS[name]?.[locale] ?? name;
 }
 
+/** 热搜匹配用：每个参赛国一行（按 iso2 去重），含全部别名（英文主名 + es/pt/de/fr 译名，已小写去音标）。
+ *  zh 不参与——Trending 热搜走 US/GB 等英文 geo（中国大陆封 Google，zh 非本站热搜渠道）。 */
+export function nationMatchList(): { iso2: string; name: string; aliases: string[] }[] {
+  const strip = (s: string) =>
+    s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+  const byIso = new Map<string, { iso2: string; name: string; aliases: Set<string> }>();
+  for (const [enName, n] of Object.entries(NATIONS)) {
+    let row = byIso.get(n.iso2);
+    if (!row) byIso.set(n.iso2, (row = { iso2: n.iso2, name: enName, aliases: new Set<string>() }));
+    if (enName.length > row.name.length) row.name = enName; // 取较长英文键作代表（"United States" 优于 "USA"）
+    for (const a of [enName, n.es, n.pt, n.de, n.fr]) {
+      const s = strip(a);
+      if (s.length >= 3) row.aliases.add(s); // ≥3 防超短词误匹配
+    }
+  }
+  return [...byIso.values()].map((r) => ({ iso2: r.iso2, name: r.name, aliases: [...r.aliases] }));
+}
+
 // DB 的 stage/grp 存中文（如 "小组赛"、"A 组"）——非 zh 视图在渲染层反查，不动库。
 // key = 去空白后的 zh 赛段名；值含全部非-zh locale。32 队淘汰赛 = Round of 32（2026 新制）。
 type NonZhLocale = Exclude<Locale, "zh">;
