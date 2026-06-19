@@ -28,6 +28,8 @@ import { getDict, localeHref, type Locale } from "@/i18n";
 import { getLocale } from "@/i18n/server";
 import { maybeAutoSettle } from "@/lib/settlement/autoSettle";
 import { localizedAlternates, selfUrl } from "@/lib/seo/canonical";
+import { RelatedCommentary } from "@/components/RelatedCommentary";
+import { getRelatedBlogByMatch, toBlogLocale } from "@/lib/blog/published";
 
 const SITE = "https://www.wc2026.cool";
 
@@ -203,6 +205,9 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
   const t = getDict(locale);
   const m = await getMatchDetail(id);
   if (!m) notFound();
+
+  // P5：本场相关的已发布事件解读（无则不渲染）。
+  const related = await getRelatedBlogByMatch(id, toBlogLocale(locale)).catch(() => []);
 
   // 裁判 + 赛果时长（加时/点球）：football-data 单场详情，按 external_id 缓存 6h，失败降级空。
   const extra = await getMatchExtra(m.externalId).catch(() => ({ referee: null, duration: null }));
@@ -574,6 +579,8 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
           ogPath={swingOgPath(swing, locale)}
         />
       )}
+
+      <RelatedCommentary items={related} locale={locale} />
 
       <footer className="mt-8 text-center">
         <Disclaimer />

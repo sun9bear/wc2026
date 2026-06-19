@@ -17,6 +17,8 @@ import { Disclaimer } from "@/components/Disclaimer";
 import { localeHref, type Locale, BCP47_LOCALE } from "@/i18n";
 import { teamName } from "@/lib/football/teams";
 import { localizedAlternates, selfUrl } from "@/lib/seo/canonical";
+import { RelatedCommentary } from "@/components/RelatedCommentary";
+import { getRelatedBlogByTeam, toBlogLocale } from "@/lib/blog/published";
 
 export const maxDuration = 60;
 
@@ -464,6 +466,8 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
   const pct = (x: number) => `${(x > 1 ? x : x * 100).toFixed(0)}%`;
   const idx = await getSettledIndex().catch(() => null);
   const lastResult = idx?.byTeam[d.id] ?? null; // 真实 settled_at，非伪新鲜
+  // P5：本队相关的已发布事件解读（无则不渲染）。
+  const related = await getRelatedBlogByTeam(d.id, toBlogLocale(locale)).catch(() => []);
   const c = COPY[locale];
   const nm = locale === "zh" ? d.zh : teamName(d.name, locale);
   const adv = fmtP(d.pAdvance);
@@ -818,6 +822,8 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
       </Link>
 
       <p className="mt-4 text-[10px] text-muted md:text-xs">{c.sims}</p>
+
+      <RelatedCommentary items={related} locale={locale} />
 
       <footer className="mt-6 text-center">
         <Disclaimer />

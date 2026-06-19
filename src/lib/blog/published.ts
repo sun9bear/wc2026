@@ -37,14 +37,9 @@ interface Row {
   event_type?: string | null;
 }
 
-/** 已发布文章列表（按发布时间倒序）。 */
-export async function listPublishedBlog(bl: BlogLocale, limit = 50): Promise<BlogListItem[]> {
-  const { data } = await supabase
-    .from("blog_entries")
-    .select("slug_en, title_en, title_zh, excerpt_en, excerpt_zh, published_at")
-    .eq("status", "published")
-    .order("published_at", { ascending: false })
-    .limit(limit);
+const LIST_COLS = "slug_en, title_en, title_zh, excerpt_en, excerpt_zh, published_at";
+
+function mapList(data: unknown, bl: BlogLocale): BlogListItem[] {
   return ((data as Row[] | null) ?? [])
     .map((r) => ({
       slug: r.slug_en,
@@ -53,6 +48,41 @@ export async function listPublishedBlog(bl: BlogLocale, limit = 50): Promise<Blo
       publishedAt: r.published_at,
     }))
     .filter((x) => x.slug && x.title);
+}
+
+/** 已发布文章列表（按发布时间倒序）。 */
+export async function listPublishedBlog(bl: BlogLocale, limit = 50): Promise<BlogListItem[]> {
+  const { data } = await supabase
+    .from("blog_entries")
+    .select(LIST_COLS)
+    .eq("status", "published")
+    .order("published_at", { ascending: false })
+    .limit(limit);
+  return mapList(data, bl);
+}
+
+/** P5：某场比赛相关的已发布解读（match 详情页入口）。 */
+export async function getRelatedBlogByMatch(matchId: string, bl: BlogLocale, limit = 3): Promise<BlogListItem[]> {
+  const { data } = await supabase
+    .from("blog_entries")
+    .select(LIST_COLS)
+    .eq("status", "published")
+    .eq("match_id", matchId)
+    .order("published_at", { ascending: false })
+    .limit(limit);
+  return mapList(data, bl);
+}
+
+/** P5：某球队相关的已发布解读（team 详情页入口；team_ids uuid[] 含该队）。 */
+export async function getRelatedBlogByTeam(teamId: string, bl: BlogLocale, limit = 3): Promise<BlogListItem[]> {
+  const { data } = await supabase
+    .from("blog_entries")
+    .select(LIST_COLS)
+    .eq("status", "published")
+    .contains("team_ids", [teamId])
+    .order("published_at", { ascending: false })
+    .limit(limit);
+  return mapList(data, bl);
 }
 
 /** 按 slug 取已发布文章；该语种无内容则返回 null。 */
