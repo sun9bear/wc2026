@@ -33,6 +33,9 @@ export function PopularityList({ rows, locale }: { rows: PopularityRow[]; locale
   const [balance, setBalance] = useState<number | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [flash, setFlash] = useState<string | null>(null); // 刚投票的球员 id：🗳 闪绿 + 「✓ +1」即时反馈
+  // 右侧大数是「综合指数」非投票数——加小标签消除歧义。
+  const idxLabel = locale === "zh" ? "指数" : locale === "es" || locale === "pt" ? "Índice" : "Index";
 
   // 挂载后查「今日已投 + 余额」（未登录则空，不主动注册）。
   useEffect(() => {
@@ -59,12 +62,15 @@ export function PopularityList({ rows, locale }: { rows: PopularityRow[]; locale
     }
     setBusy(id);
     setErr(null);
-    // 乐观 +1
+    // 乐观 +1 + 即时反馈（🗳 闪绿 / 「✓ +1」），~1.1s 后自动收
     setVotes((p) => ({ ...p, [id]: (p[id] ?? 0) + 1 }));
     setMyToday((p) => ({ ...p, [id]: (p[id] ?? 0) + 1 }));
+    setFlash(id);
+    window.setTimeout(() => setFlash((f) => (f === id ? null : f)), 1100);
     const rollback = () => {
       setVotes((p) => ({ ...p, [id]: Math.max(0, (p[id] ?? 0) - 1) }));
       setMyToday((p) => ({ ...p, [id]: Math.max(0, (p[id] ?? 0) - 1) }));
+      setFlash((f) => (f === id ? null : f));
     };
     try {
       let session = (await supabase.auth.getSession()).data.session;
@@ -160,18 +166,20 @@ export function PopularityList({ rows, locale }: { rows: PopularityRow[]; locale
                 </span>
                 {/* 分项拆解（透明）：🗳 总票 · ⚽ 表现0-100 · 🔥 热度0-100 · 今日x/5 */}
                 <span className="block text-[11px] md:text-xs text-muted tabular-nums">
-                  🗳 {Math.max(0, votes[r.id] ?? 0)} · ⚽ {r.perfScore} · 🔥 {r.buzzScore}
+                  🗳{" "}
+                  <span className={`transition-colors ${flash === r.id ? "font-bold text-green" : ""}`}>
+                    {Math.max(0, votes[r.id] ?? 0)}
+                  </span>{" "}
+                  · ⚽ {r.perfScore} · 🔥 {r.buzzScore}
                   {cur > 0 ? ` · ${cur}/${DAILY_MAX}` : ""}
                 </span>
                 {r.blurb && <span className="mt-0.5 block text-[11px] md:text-xs italic text-muted">{r.blurb}</span>}
               </Link>
               {/* 右列：综合指数在上、投票按钮在下，整列垂直居中；按钮与副行贴紧 */}
               <div className="flex w-16 shrink-0 flex-col items-center gap-2.5">
-                <span
-                  className="font-head text-lg font-bold leading-none tabular-nums text-green"
-                  aria-label={t.title}
-                >
-                  {r.index}
+                <span className="flex flex-col items-center leading-none" aria-label={idxLabel}>
+                  <span className="text-[9px] font-normal text-muted">{idxLabel}</span>
+                  <span className="font-head text-lg font-bold tabular-nums text-green">{r.index}</span>
                 </span>
                 <div className="flex w-full flex-col items-center gap-0.5">
                   <button
@@ -184,7 +192,9 @@ export function PopularityList({ rows, locale }: { rows: PopularityRow[]; locale
                   >
                     {busy === r.id ? "…" : t.vote}
                   </button>
-                  {maxed ? (
+                  {flash === r.id ? (
+                    <span className="text-center text-[10px] font-bold leading-tight text-green">✓ +1</span>
+                  ) : maxed ? (
                     <span className="text-center text-[10px] leading-tight text-muted">{t.dailyMax}</span>
                   ) : cur > 0 ? (
                     <span className="text-center text-[10px] leading-tight text-gold">{t.voteRepeat}</span>
