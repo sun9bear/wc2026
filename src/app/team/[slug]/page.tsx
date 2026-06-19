@@ -3,6 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLocale } from "@/i18n/server";
 import { getTeamDetail, type TeamResult } from "@/lib/prob/getTeamDetail";
+import { getForecast } from "@/lib/prob/pipeline";
+import { getTeamSquad, type PositionGroup } from "@/lib/squad/getTeamSquad";
+import { teamSlug } from "@/lib/prob/findTeam";
 import { getSettledIndex } from "@/lib/seo/freshness";
 import { JsonLd } from "@/lib/seo/jsonLd";
 import { PageContainer } from "@/components/PageContainer";
@@ -187,6 +190,71 @@ const COPY = {
   },
 } as const;
 
+// 小组积分榜（复用 getForecast 的 group.table，高亮本队）。
+const STANDINGS_COPY: Record<
+  Locale,
+  { h: (x: string) => string; cols: [string, string, string, string, string, string]; note: string }
+> = {
+  zh: { h: (x) => `${x} 组积分榜`, cols: ["#", "球队", "赛", "积分", "净胜", "出线"], note: "前两名直接出线；第三名进入「最佳第三名」榜竞争 8 个名额。出线概率来自万次蒙特卡洛模拟。" },
+  en: { h: (x) => `Group ${x} table`, cols: ["#", "Team", "P", "Pts", "GD", "Adv"], note: "Top two advance directly; third place enters the best-thirds race for 8 spots. Advance chance from 10,000 Monte Carlo sims." },
+  es: { h: (x) => `Clasificación del Grupo ${x}`, cols: ["#", "Equipo", "PJ", "Pts", "DG", "Avan"], note: "Los dos primeros avanzan directo; el tercero entra en la carrera por los 8 mejores terceros. Probabilidad de 10.000 simulaciones de Montecarlo." },
+  pt: { h: (x) => `Classificação do Grupo ${x}`, cols: ["#", "Seleção", "J", "Pts", "SG", "Avan"], note: "Os dois primeiros avançam direto; o terceiro entra na disputa pelos 8 melhores terceiros. Probabilidade de 10.000 simulações de Monte Carlo." },
+  de: { h: (x) => `Tabelle Gruppe ${x}`, cols: ["#", "Team", "Sp", "Pkt", "TD", "Chance"], note: "Die zwei Ersten kommen direkt weiter; der Dritte kämpft um die 8 besten Gruppendritten. Chance aus 10.000 Monte-Carlo-Simulationen." },
+  fr: { h: (x) => `Classement du Groupe ${x}`, cols: ["#", "Équipe", "J", "Pts", "Diff", "Qual"], note: "Les deux premiers se qualifient directement ; le troisième entre dans la course aux 8 meilleurs troisièmes. Probabilité issue de 10 000 simulations de Monte-Carlo." },
+};
+
+// 官方阵容（读 squad_* 表）。
+const SQUAD_COPY: Record<
+  Locale,
+  {
+    h: string;
+    coach: string;
+    avgAge: string;
+    avgHt: string;
+    caps: string;
+    pos: Record<PositionGroup, string>;
+    cols: { player: string; club: string; age: string; caps: string; goals: string };
+    note: string;
+  }
+> = {
+  zh: {
+    h: "官方阵容", coach: "主教练", avgAge: "平均年龄", avgHt: "平均身高", caps: "总出场",
+    pos: { GK: "门将", DF: "后卫", MF: "中场", FW: "前锋" },
+    cols: { player: "球员", club: "俱乐部", age: "年龄", caps: "出场", goals: "进球" },
+    note: "各队官方公布的 2026 世界杯 26 人名单；出场与进球为国家队生涯累计。",
+  },
+  en: {
+    h: "Official squad", coach: "Head coach", avgAge: "Avg age", avgHt: "Avg height", caps: "Total caps",
+    pos: { GK: "Goalkeepers", DF: "Defenders", MF: "Midfielders", FW: "Forwards" },
+    cols: { player: "Player", club: "Club", age: "Age", caps: "Caps", goals: "Goals" },
+    note: "Official 26-player World Cup 2026 squad; caps and goals are career totals for the national team.",
+  },
+  es: {
+    h: "Plantilla oficial", coach: "Seleccionador", avgAge: "Edad media", avgHt: "Altura media", caps: "Internac.",
+    pos: { GK: "Porteros", DF: "Defensas", MF: "Centrocampistas", FW: "Delanteros" },
+    cols: { player: "Jugador", club: "Club", age: "Edad", caps: "Part.", goals: "Goles" },
+    note: "Lista oficial de 26 jugadores para el Mundial 2026; partidos y goles son totales con la selección.",
+  },
+  pt: {
+    h: "Elenco oficial", coach: "Técnico", avgAge: "Idade média", avgHt: "Altura média", caps: "Jogos",
+    pos: { GK: "Goleiros", DF: "Defensores", MF: "Meio-campistas", FW: "Atacantes" },
+    cols: { player: "Jogador", club: "Clube", age: "Idade", caps: "Jogos", goals: "Gols" },
+    note: "Lista oficial de 26 jogadores para a Copa 2026; jogos e gols são totais pela seleção.",
+  },
+  de: {
+    h: "Offizieller Kader", coach: "Cheftrainer", avgAge: "Ø Alter", avgHt: "Ø Größe", caps: "Länderspiele",
+    pos: { GK: "Torhüter", DF: "Abwehr", MF: "Mittelfeld", FW: "Sturm" },
+    cols: { player: "Spieler", club: "Verein", age: "Alter", caps: "Sp.", goals: "Tore" },
+    note: "Offizieller 26-Mann-Kader für die WM 2026; Länderspiele und Tore sind Karrierewerte für die Nationalmannschaft.",
+  },
+  fr: {
+    h: "Effectif officiel", coach: "Sélectionneur", avgAge: "Âge moyen", avgHt: "Taille moy.", caps: "Sélections",
+    pos: { GK: "Gardiens", DF: "Défenseurs", MF: "Milieux", FW: "Attaquants" },
+    cols: { player: "Joueur", club: "Club", age: "Âge", caps: "Sél.", goals: "Buts" },
+    note: "Liste officielle de 26 joueurs pour le Mondial 2026 ; sélections et buts sont les totaux en équipe nationale.",
+  },
+};
+
 export async function generateMetadata({
   params,
 }: {
@@ -245,6 +313,14 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
   const locale = await getLocale();
   const d = await getTeamDetail(slug);
   if (!d) notFound();
+  const [fc, squad] = await Promise.all([
+    getForecast().catch(() => null),
+    getTeamSquad(d.name).catch(() => null),
+  ]);
+  const group = fc?.groups.find((g) => g.letter === d.letter) ?? null;
+  const sc = STANDINGS_COPY[locale] ?? STANDINGS_COPY.en;
+  const qc = SQUAD_COPY[locale] ?? SQUAD_COPY.en;
+  const pct = (x: number) => `${(x > 1 ? x : x * 100).toFixed(0)}%`;
   const idx = await getSettledIndex().catch(() => null);
   const lastResult = idx?.byTeam[d.id] ?? null; // 真实 settled_at，非伪新鲜
   const c = COPY[locale];
@@ -289,6 +365,7 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
         "@id": `${selfUrl(`/team/${d.slug}`, locale)}#team`,
         name: d.name,
         sport: "Soccer",
+        ...(squad?.coach ? { coach: { "@type": "Person", name: squad.coach } } : {}),
         url: selfUrl(`/team/${d.slug}`, locale),
       },
       {
@@ -360,6 +437,73 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
         <SetMyTeamButton slug={d.slug} locale={locale} />
       </div>
 
+      {/* 小组积分榜（高亮本队，可点击同组其他队） */}
+      {group && (
+        <>
+          <h2 className="font-head mb-2 mt-6 text-sm font-semibold md:text-base">{sc.h(d.letter)}</h2>
+          <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-[11px] text-muted md:text-xs">
+                  {sc.cols.map((col, i) => (
+                    <th key={i} className={`px-2 py-2 font-normal ${i >= 2 ? "text-right" : "text-left"}`}>
+                      {col}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {group.table.map((t, i) => {
+                  const isSelf = t.id === d.id;
+                  const tn = locale === "zh" ? t.zh : teamName(t.name, locale);
+                  return (
+                    <tr
+                      key={t.id}
+                      className={
+                        isSelf
+                          ? "bg-surface-2 font-semibold text-text"
+                          : i < 2
+                            ? "text-text"
+                            : "text-muted"
+                      }
+                    >
+                      <td className="px-2 py-2 font-head">{i + 1}</td>
+                      <td className="px-2 py-2">
+                        <span className="inline-flex items-center gap-1.5">
+                          {t.flag && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={t.flag} alt="" className="h-3 w-4 rounded-[2px] object-cover" />
+                          )}
+                          {isSelf ? (
+                            tn
+                          ) : (
+                            <Link
+                              href={localeHref(locale, `/team/${teamSlug(t.name)}`)}
+                              className="hover:text-green"
+                            >
+                              {tn}
+                            </Link>
+                          )}
+                        </span>
+                      </td>
+                      <td className="px-2 py-2 text-right font-head tabular-nums">{t.played}</td>
+                      <td className="px-2 py-2 text-right font-head tabular-nums">{t.pts}</td>
+                      <td className="px-2 py-2 text-right font-head tabular-nums">
+                        {t.gd > 0 ? `+${t.gd}` : t.gd}
+                      </td>
+                      <td className="px-2 py-2 text-right font-head tabular-nums text-green">
+                        {pct(t.pAdvance)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-1.5 text-[10px] leading-relaxed text-muted md:text-xs">{sc.note}</p>
+        </>
+      )}
+
       {/* 下一场 */}
       <h2 className="font-head mb-2 mt-6 text-sm font-semibold md:text-base">{c.next}</h2>
       {d.next ? (
@@ -393,6 +537,77 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
         </div>
       ) : (
         <p className="rounded-md border border-border bg-surface-2 p-3 text-sm text-muted md:text-base">{c.noRecent}</p>
+      )}
+
+      {/* 官方阵容（squad_* 表；只展示公开事实，无队徽/照片/游戏属性） */}
+      {squad && (
+        <>
+          <h2 className="font-head mb-2 mt-6 text-sm font-semibold md:text-base">{qc.h}</h2>
+          <div className="rounded-lg border border-border bg-surface p-3 text-sm">
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-text/90">
+              {squad.coach && (
+                <span>
+                  {qc.coach}:{" "}
+                  <strong className="text-text">{squad.coach}</strong>
+                  {squad.coachNationality ? ` (${squad.coachNationality})` : ""}
+                </span>
+              )}
+              {squad.avgAge != null && (
+                <span>
+                  {qc.avgAge}: <strong className="text-text">{squad.avgAge.toFixed(1)}</strong>
+                </span>
+              )}
+              {squad.avgHeightCm != null && (
+                <span>
+                  {qc.avgHt}: <strong className="text-text">{Math.round(squad.avgHeightCm)} cm</strong>
+                </span>
+              )}
+              {squad.totalCaps != null && (
+                <span>
+                  {qc.caps}: <strong className="text-text">{squad.totalCaps}</strong>
+                </span>
+              )}
+            </div>
+          </div>
+          {(["GK", "DF", "MF", "FW"] as PositionGroup[]).map((pg) => {
+            const list = squad.players.filter((p) => p.pos === pg);
+            if (list.length === 0) return null;
+            return (
+              <div key={pg} className="mt-3">
+                <h3 className="font-head mb-1 text-xs font-semibold text-green md:text-sm">
+                  {qc.pos[pg]} <span className="text-muted">({list.length})</span>
+                </h3>
+                <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border text-[11px] text-muted md:text-xs">
+                        <th className="w-8 px-2 py-1.5 text-left font-normal">#</th>
+                        <th className="px-2 py-1.5 text-left font-normal">{qc.cols.player}</th>
+                        <th className="px-2 py-1.5 text-left font-normal">{qc.cols.club}</th>
+                        <th className="px-2 py-1.5 text-right font-normal">{qc.cols.age}</th>
+                        <th className="px-2 py-1.5 text-right font-normal">{qc.cols.caps}</th>
+                        <th className="px-2 py-1.5 text-right font-normal">{qc.cols.goals}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {list.map((p) => (
+                        <tr key={`${pg}-${p.no}-${p.name}`} className="border-b border-border/50 last:border-0">
+                          <td className="px-2 py-1.5 font-head tabular-nums text-muted">{p.no ?? "–"}</td>
+                          <td className="px-2 py-1.5">{locale === "zh" ? p.nameZh ?? p.name : p.name}</td>
+                          <td className="px-2 py-1.5 text-xs text-muted">{p.club ?? "–"}</td>
+                          <td className="px-2 py-1.5 text-right font-head tabular-nums">{p.age ?? "–"}</td>
+                          <td className="px-2 py-1.5 text-right font-head tabular-nums">{p.caps ?? "–"}</td>
+                          <td className="px-2 py-1.5 text-right font-head tabular-nums">{p.goals ?? "–"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })}
+          <p className="mt-1.5 text-[10px] leading-relaxed text-muted md:text-xs">{qc.note}</p>
+        </>
       )}
 
       {/* 交叉链接：计算器 */}
