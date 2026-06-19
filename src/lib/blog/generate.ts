@@ -20,6 +20,7 @@ export interface LocaleDraft {
   parseError: string | null;
   hard: HardGateResult | null;
   soft: SoftVerdict | null;
+  repaired: boolean; // 是否经过 1-shot 定向修复
 }
 
 export interface BlogDraft {
@@ -82,17 +83,62 @@ function parseSoft(raw: string): SoftVerdict | null {
   }
 }
 
+// 机械型硬闸失败（可定向修复）：仅数字/博彩词/外链；format/parse 不修（那是重生成范畴）。
+const MECHANICAL = new Set(["numbers", "banned", "external_link"]);
+function isMechanical(reasons: string[]): boolean {
+  return reasons.length > 0 && reasons.every((r) => MECHANICAL.has(r));
+}
+
+/** 定向修复 prompt：列出确切违规，只修这些、不引入新数字/事实。 */
+function repairPrompt(payload: unknown, article: GenArticle, hard: HardGateResult): string {
+  const issues: string[] = [];
+  if (hard.offendingNumbers.length)
+    issues.push(
+      `- These numbers are NOT allowed; remove them or restate using ONLY the formats in INPUT (whole-percent strings / "<1%" / words), introducing NO new numbers: ${hard.offendingNumbers.join(", ")}`
+    );
+  if (hard.bannedTerms.length) issues.push(`- Remove these betting terms from BOTH body and keywords: ${hard.bannedTerms.join(", ")}`);
+  if (hard.reasons.includes("external_link")) issues.push(`- The body may use internal relative links only; remove any http(s):// link.`);
+  return `Your previous draft broke hard rules. Fix ONLY the issues below, keep everything else unchanged, introduce NO new numbers or facts, and return the corrected full JSON (same five keys title/excerpt/body/keywords/topic_flag):
+${issues.join("\n")}
+
+INPUT (the only source of numbers and facts — do not exceed it):
+\`\`\`json
+${JSON.stringify(payload)}
+\`\`\`
+Your previous draft:
+\`\`\`json
+${JSON.stringify(article)}
+\`\`\``;
+}
+
 async function buildLocaleDraft(cand: BlogCandidate, locale: "en" | "zh", deps: GenDeps): Promise<LocaleDraft> {
   const payload = buildInputPayload(cand, locale);
   let raw: string;
   try {
     raw = await deps.generate(locale, systemPrompt(locale), userPrompt(payload));
   } catch (e) {
-    return { locale, payload, article: null, parseError: "generate failed: " + (e as Error).message, hard: null, soft: null };
+    return { locale, payload, article: null, parseError: "generate failed: " + (e as Error).message, hard: null, soft: null, repaired: false };
   }
-  const { article, error } = parseArticle(raw);
-  if (!article) return { locale, payload, article: null, parseError: error, hard: null, soft: null };
-  const hard = hardGate(article, payload as unknown as GatePayload);
+  const parsed = parseArticle(raw);
+  let article = parsed.article;
+  if (!article) return { locale, payload, article: null, parseError: parsed.error, hard: null, soft: null, repaired: false };
+  let hard = hardGate(article, payload as unknown as GatePayload);
+
+  // 1-shot 定向修复：仅机械型失败，re-gate 校验，封顶 1 次（修坏了也只是回 needs_review）。
+  let repaired = false;
+  if (!hard.pass && isMechanical(hard.reasons)) {
+    try {
+      const fixedParsed = parseArticle(await deps.generate(locale, systemPrompt(locale), repairPrompt(payload, article, hard)));
+      if (fixedParsed.article) {
+        repaired = true;
+        article = fixedParsed.article;
+        hard = hardGate(article, payload as unknown as GatePayload);
+      }
+    } catch {
+      /* 修复调用失败 → 保留原稿与原 hard，落 needs_review */
+    }
+  }
+
   let soft: SoftVerdict | null = null;
   if (hard.pass) {
     try {
@@ -101,7 +147,7 @@ async function buildLocaleDraft(cand: BlogCandidate, locale: "en" | "zh", deps: 
       soft = null; // 审核调用失败 → 视为不可自动发（下面 softBad 命中）
     }
   }
-  return { locale, payload, article, parseError: null, hard, soft };
+  return { locale, payload, article, parseError: null, hard, soft, repaired };
 }
 
 /** 候选 → BlogDraft（含两语稿 + 闸结果 + 路由 status）。autoPublish 默认 false（灰度：全清也先 needs_review）。 */

@@ -48,8 +48,8 @@ export function buildBlogRow(cand: BlogCandidate, draft: BlogDraft, nowIso: stri
     demand_signal: draft.en.payload.demand,
     review: {
       reason: draft.statusReason,
-      en: { hard: draft.en.hard?.reasons ?? null, soft: draft.en.soft, parseError: draft.en.parseError },
-      zh: { hard: draft.zh.hard?.reasons ?? null, soft: draft.zh.soft, parseError: draft.zh.parseError },
+      en: { hard: draft.en.hard?.reasons ?? null, soft: draft.en.soft, parseError: draft.en.parseError, repaired: draft.en.repaired },
+      zh: { hard: draft.zh.hard?.reasons ?? null, soft: draft.zh.soft, parseError: draft.zh.parseError, repaired: draft.zh.repaired },
     },
     status: draft.status,
     topic_flag: draft.topicSensitive ? "sensitive" : null,

@@ -39,13 +39,32 @@ async function deepseekBlog(system: string, user: string, timeoutMs: number): Pr
   }
 }
 
-/** 生成：en→Gemini，zh→DeepSeek(V4 Pro)。两 provider 互不抢配额，可并行。 */
-export async function generate(locale: "en" | "zh", system: string, user: string): Promise<string> {
-  return locale === "en" ? geminiChat(system, user, GEN_TIMEOUT) : deepseekBlog(system, user, GEN_TIMEOUT);
+// 仅对"临时性"错误重试（503/429/过载/限流/连接重置）；超时/aborted 不重试（避免把慢调用翻倍、撑爆 maxDuration）。
+function isTransient(e: unknown): boolean {
+  const m = (e instanceof Error ? e.message : String(e)).toLowerCase();
+  return /\b(429|500|502|503|504)\b/.test(m) || m.includes("unavailable") || m.includes("high demand") || m.includes("overload") || m.includes("rate limit") || m.includes("econnreset");
+}
+async function withRetry<T>(fn: () => Promise<T>, attempts = 2): Promise<T> {
+  let last: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (e) {
+      last = e;
+      if (!isTransient(e) || i === attempts - 1) throw e;
+      await new Promise((r) => setTimeout(r, 1500 * (i + 1))); // 退避后重试 1 次
+    }
+  }
+  throw last;
 }
 
-/** 软闸审核（异 provider）：en 文章→DeepSeek 审、zh 文章→Gemini 审。 */
+/** 生成：en→Gemini，zh→DeepSeek(V4 Pro)。两 provider 互不抢配额，可并行；临时过载自动重试 1 次。 */
+export async function generate(locale: "en" | "zh", system: string, user: string): Promise<string> {
+  return withRetry(() => (locale === "en" ? geminiChat(system, user, GEN_TIMEOUT) : deepseekBlog(system, user, GEN_TIMEOUT)));
+}
+
+/** 软闸审核（异 provider）：en 文章→DeepSeek 审、zh 文章→Gemini 审；临时过载自动重试 1 次。 */
 export async function review(locale: "en" | "zh", prompt: string): Promise<string> {
   const sys = "You are a strict reviewer. Return ONLY valid JSON.";
-  return locale === "en" ? deepseekBlog(sys, prompt, REVIEW_TIMEOUT) : geminiChat(sys, prompt, REVIEW_TIMEOUT);
+  return withRetry(() => (locale === "en" ? deepseekBlog(sys, prompt, REVIEW_TIMEOUT) : geminiChat(sys, prompt, REVIEW_TIMEOUT)));
 }

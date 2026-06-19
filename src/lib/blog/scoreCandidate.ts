@@ -40,6 +40,18 @@ export function buildSettledCandidate(
   };
 }
 
+// 概率预格式化：模型只看到 "25%"/"<1%"，物理上写不出 "0.37%" 小数（治 sub-1% 滑坡）；整数百分比同时是硬闸允许值。
+function fmtPct(v: number | null | undefined): string | null {
+  if (v == null || !Number.isFinite(v)) return null;
+  const r = Math.round(v * 100);
+  return r >= 1 ? `${r}%` : "<1%";
+}
+function fmtTriple(
+  t: { home: number; draw: number; away: number } | null
+): { home: string | null; draw: string | null; away: string | null } | null {
+  return t ? { home: fmtPct(t.home), draw: fmtPct(t.draw), away: fmtPct(t.away) } : null;
+}
+
 /** 候选 → 某 locale 的 INPUT payload（BLOG-PROMPTS §1）。news 为来自 Trending/GDELT 的上下文（可空）。 */
 export function buildInputPayload(
   cand: BlogCandidate,
@@ -57,11 +69,16 @@ export function buildInputPayload(
       score: d.match.score,
       stage: d.match.stage ? stageName(d.match.stage, locale) : null,
       group: d.match.group,
-      kickoffAtISO: d.kickoffAt,
+      // 不传 kickoffAtISO：模型不需要日历日期，传了会诱发"6月18日"这类越界数字。
     },
     prob_delta: {
-      match_1x2: d.match1x2.before ? { before: d.match1x2.before, actual: d.match1x2.actual } : null,
-      teams: d.teams.map((t) => ({ team: teamName(t.team, locale), side: t.side, pAdvance: t.pAdvance, pChampion: t.pChampion })),
+      match_1x2: d.match1x2.before ? { before: fmtTriple(d.match1x2.before), actual: d.match1x2.actual } : null,
+      teams: d.teams.map((t) => ({
+        team: teamName(t.team, locale),
+        side: t.side,
+        pAdvance: { before: fmtPct(t.pAdvance.before), after: fmtPct(t.pAdvance.after) },
+        pChampion: { before: fmtPct(t.pChampion.before), after: fmtPct(t.pChampion.after) },
+      })),
     },
     event_type: cand.eventType,
     demand: { source: demand.source, query: demand.query, keywords: demand.keywords, heat: demand.heat },

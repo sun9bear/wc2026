@@ -12,13 +12,15 @@ export interface GenArticle {
   topic_flag: string | null;
 }
 
+// 概率值兼容两种形态：原始 0-1 浮点（旧/测试夹具）或已格式化字符串 "25%"/"<1%"（buildInputPayload 现产出）。
+type PctVal = number | string | null;
 export interface GatePayload {
   match: { score: string | null; stage: string | null };
   prob_delta: {
-    match_1x2: { before: { home: number; draw: number; away: number } | null } | null;
+    match_1x2: { before: { home: PctVal; draw: PctVal; away: PctVal } | null } | null;
     teams: {
-      pAdvance: { before: number | null; after: number | null };
-      pChampion: { before: number | null; after: number | null };
+      pAdvance: { before: PctVal; after: PctVal };
+      pChampion: { before: PctVal; after: PctVal };
     }[];
   } | null;
 }
@@ -37,12 +39,26 @@ interface Allowed {
   scorelines: Set<string>; // "2-1" / "1-2"
 }
 
-function addNeighborhood(v: number | null | undefined, set: Set<number>): void {
-  if (v == null || !Number.isFinite(v)) return;
-  const x = v * 100;
-  set.add(Math.round(x));
-  set.add(Math.floor(x));
-  set.add(Math.ceil(x));
+// 一个概率值 → 允许的整数百分比集合。数字：round/floor/ceil 邻域；字符串 "25%"→{25}、"<1%"→{0,1}。
+function pctTokens(v: PctVal): number[] {
+  if (v == null) return [];
+  if (typeof v === "number") {
+    if (!Number.isFinite(v)) return [];
+    const x = v * 100;
+    return [Math.round(x), Math.floor(x), Math.ceil(x)];
+  }
+  const m = String(v).match(/(\d+)/);
+  if (!m) return [];
+  const n = Number(m[1]);
+  return String(v).includes("<") ? [0, n] : [n];
+}
+// 单一代表整数（算差值用）。
+function pctInt(v: PctVal): number | null {
+  if (v == null) return null;
+  if (typeof v === "number") return Number.isFinite(v) ? Math.round(v * 100) : null;
+  const m = String(v).match(/(\d+)/);
+  if (!m) return null;
+  return String(v).includes("<") ? 0 : Number(m[1]);
 }
 
 function deriveAllowed(p: GatePayload): Allowed {
@@ -51,20 +67,17 @@ function deriveAllowed(p: GatePayload): Allowed {
   const scorelines = new Set<string>();
   const pd = p.prob_delta;
   if (pd?.match_1x2?.before) {
-    addNeighborhood(pd.match_1x2.before.home, percents);
-    addNeighborhood(pd.match_1x2.before.draw, percents);
-    addNeighborhood(pd.match_1x2.before.away, percents);
+    for (const v of [pd.match_1x2.before.home, pd.match_1x2.before.draw, pd.match_1x2.before.away]) {
+      for (const n of pctTokens(v)) percents.add(n);
+    }
   }
   for (const t of pd?.teams ?? []) {
     for (const pair of [t.pAdvance, t.pChampion]) {
-      addNeighborhood(pair.before, percents);
-      addNeighborhood(pair.after, percents);
-      if (pair.before != null && pair.after != null) {
-        const d = Math.abs(pair.after - pair.before) * 100;
-        diffs.add(Math.round(d));
-        diffs.add(Math.floor(d));
-        diffs.add(Math.ceil(d));
-      }
+      for (const n of pctTokens(pair.before)) percents.add(n);
+      for (const n of pctTokens(pair.after)) percents.add(n);
+      const bi = pctInt(pair.before);
+      const ai = pctInt(pair.after);
+      if (bi != null && ai != null) diffs.add(Math.abs(ai - bi));
     }
   }
   for (const v of [...percents]) percents.add(100 - v); // 补数

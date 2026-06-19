@@ -43,16 +43,28 @@ function mockDeps(article: object): GenDeps {
   };
 }
 
+// 初次返回 bad，修复调用（user 含 "broke hard rules"）返回 good —— 测 1-shot 定向修复。
+function mockBadThenGood(bad: object, good: object): GenDeps {
+  return {
+    generate: async (_l, _s, user) => "```json\n" + JSON.stringify(user.includes("broke hard rules") ? good : bad) + "\n```",
+    review: async () => JSON.stringify({ verdict: "usable", confidence: 0.9, notes: "clean" }),
+  };
+}
+
+async function runDeps(label: string, deps: GenDeps, opts: { autoPublish?: boolean }, expect: string): Promise<void> {
+  const d = await generateForCandidate(cand, deps, opts);
+  const tag = (x: typeof d.en) => `${x.hard?.pass ? "✓" : "✗"}${x.repaired ? "(repaired)" : ""}`;
+  console.log(`${label}\n   期望: ${expect}\n   实得: ${d.status} (${d.statusReason}) [en ${tag(d.en)} / zh ${tag(d.zh)}]\n`);
+}
+
 async function run(label: string, article: object, opts: { autoPublish?: boolean }, expect: string): Promise<void> {
-  const d = await generateForCandidate(cand, mockDeps(article), opts);
-  console.log(
-    `${label}\n   期望: ${expect}\n   实得: ${d.status}  (${d.statusReason})  [en hard ${d.en.hard?.pass ? "✓" : "✗"} / zh hard ${d.zh.hard?.pass ? "✓" : "✗"}]\n`
-  );
+  return runDeps(label, mockDeps(article), opts, expect);
 }
 
 (async () => {
   await run("干净 + autoPublish=true", CLEAN, { autoPublish: true }, "published");
   await run("干净 + 灰度(默认)", CLEAN, {}, "needs_review (gray_rollout)");
-  await run("幻觉数字 120%", HALLUC, { autoPublish: true }, "needs_review (hard_gate)");
+  await run("幻觉数字 120%（不可修复:mock 不改）", HALLUC, { autoPublish: true }, "needs_review (hard_gate)");
   await run("题材 sensitive", SENSITIVE, { autoPublish: true }, "needs_review (sensitive_topic)");
+  await runDeps("机械错→1-shot 定向修复→过", mockBadThenGood(HALLUC, CLEAN), { autoPublish: true }, "published (en/zh repaired)");
 })();
