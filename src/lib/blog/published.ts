@@ -15,6 +15,7 @@ export interface BlogListItem {
   title: string;
   excerpt: string;
   publishedAt: string | null;
+  eventType: string | null;
 }
 export interface BlogPost extends BlogListItem {
   body: string;
@@ -37,7 +38,7 @@ interface Row {
   event_type?: string | null;
 }
 
-const LIST_COLS = "slug_en, title_en, title_zh, excerpt_en, excerpt_zh, published_at";
+const LIST_COLS = "slug_en, title_en, title_zh, excerpt_en, excerpt_zh, published_at, event_type";
 
 function mapList(data: unknown, bl: BlogLocale): BlogListItem[] {
   return ((data as Row[] | null) ?? [])
@@ -46,6 +47,7 @@ function mapList(data: unknown, bl: BlogLocale): BlogListItem[] {
       title: (bl === "zh" ? r.title_zh : r.title_en) ?? "",
       excerpt: (bl === "zh" ? r.excerpt_zh : r.excerpt_en) ?? "",
       publishedAt: r.published_at,
+      eventType: r.event_type ?? null,
     }))
     .filter((x) => x.slug && x.title);
 }

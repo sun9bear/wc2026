@@ -7,6 +7,7 @@ import { selfUrl, SITE_ORIGIN } from "@/lib/seo/canonical";
 import { JsonLd } from "@/lib/seo/jsonLd";
 import { PageContainer } from "@/components/PageContainer";
 import { BlogBody } from "@/components/BlogBody";
+import { EventBadge } from "@/components/EventBadge";
 import { getPublishedBlogBySlug, blogAlternates, toBlogLocale } from "@/lib/blog/published";
 
 export const dynamic = "force-dynamic";
@@ -59,12 +60,15 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
       <Link href={localeHref(bl, "/blog")} className="text-xs text-muted">
         {bl === "zh" ? "← 事件解读" : "← Blog"}
       </Link>
-      <h1 className="font-head mb-2 mt-3 text-2xl font-bold md:text-3xl">{post.title}</h1>
-      {post.publishedAt && (
-        <time className="mb-4 block text-xs text-muted" dateTime={post.publishedAt}>
-          {post.publishedAt.slice(0, 10)}
-        </time>
-      )}
+      <div className="mb-2 mt-3 flex items-center gap-2">
+        <EventBadge type={post.eventType} locale={bl} />
+        {post.publishedAt && (
+          <time className="text-xs text-muted" dateTime={post.publishedAt}>
+            {post.publishedAt.slice(0, 10)}
+          </time>
+        )}
+      </div>
+      <h1 className="font-head mb-4 text-2xl font-bold md:text-3xl">{post.title}</h1>
       <article>
         <BlogBody md={post.body} />
       </article>

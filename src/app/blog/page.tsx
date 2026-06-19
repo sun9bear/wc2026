@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getLocale } from "@/i18n/server";
 import { localeHref } from "@/i18n";
 import { PageContainer } from "@/components/PageContainer";
+import { EventBadge } from "@/components/EventBadge";
 import { listPublishedBlog, blogAlternates, toBlogLocale, type BlogLocale } from "@/lib/blog/published";
 
 export const dynamic = "force-dynamic"; // 读 published，随发布即时更新
@@ -54,13 +55,16 @@ export default async function BlogIndex() {
                 href={localeHref(bl, `/blog/${it.slug}`)}
                 className="block rounded-lg border border-border bg-surface p-4 transition-colors hover:border-green/50"
               >
+                <div className="mb-1.5 flex items-center gap-2">
+                  <EventBadge type={it.eventType} locale={bl} />
+                  {it.publishedAt && (
+                    <time className="text-xs text-muted" dateTime={it.publishedAt}>
+                      {it.publishedAt.slice(0, 10)}
+                    </time>
+                  )}
+                </div>
                 <h2 className="font-head text-base font-semibold md:text-lg">{it.title}</h2>
                 {it.excerpt && <p className="mt-1 text-sm text-text/80">{it.excerpt}</p>}
-                {it.publishedAt && (
-                  <time className="mt-2 block text-xs text-muted" dateTime={it.publishedAt}>
-                    {it.publishedAt.slice(0, 10)}
-                  </time>
-                )}
               </Link>
             </li>
           ))}
