@@ -198,7 +198,7 @@ export function BlogAdminClient({ entries }: { entries: AdminEntry[] }) {
           </AdminBtn>
         </div>
       </div>
-      {msg && <p className="mt-2 text-xs text-muted">{msg}</p>}
+      {(busy || msg) && <p className="mt-2 text-xs text-muted">{busy ? "处理中…（重生约 30 秒）" : msg}</p>}
 
       {/* 列表 */}
       <ul className="mt-3 space-y-2">
@@ -246,6 +246,9 @@ export function BlogAdminClient({ entries }: { entries: AdminEntry[] }) {
                   {e.status !== "rejected" && (
                     <AdminBtn busy={busy} onClick={() => run({ action: "setStatus", status: "rejected", slugs: [e.slug] })}>拒绝</AdminBtn>
                   )}
+                  <AdminBtn busy={busy} onClick={() => run({ action: "regenerate", slugs: [e.slug] }, `重新生成「${e.slug}」？会重跑模型（约 30 秒，重过双闸+内链强制）`)}>
+                    重生
+                  </AdminBtn>
                   <AdminBtn busy={busy} danger onClick={() => run({ action: "delete", slugs: [e.slug] }, `删除「${e.slug}」？不可恢复`)}>
                     删除
                   </AdminBtn>

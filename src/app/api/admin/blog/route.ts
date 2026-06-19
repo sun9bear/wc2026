@@ -7,6 +7,7 @@ import {
   ADMIN_STATUSES,
   setStatus,
   deleteEntries,
+  regenerateBySlug,
   type AdminStatus,
 } from "@/lib/blog/admin";
 import { rateLimit } from "@/lib/rateLimit";
@@ -77,6 +78,13 @@ export async function POST(req: NextRequest) {
       const affected = await setStatus(slugs, status as AdminStatus);
       if (status === "published") after(() => pingBlogUrls(slugs)); // 人工发布→通知 Bing/Yandex 抓取
       return NextResponse.json({ ok: true, affected });
+    }
+    if (action === "regenerate") {
+      // 重生单篇（返回发给模型重写，~30s 同步）；落定 published 才 ping IndexNow。
+      const r = await regenerateBySlug(slugs[0]);
+      if (!r.ok) return NextResponse.json({ error: r.error || "重生失败" }, { status: 500 });
+      if (r.status === "published") after(() => pingBlogUrls([slugs[0]]));
+      return NextResponse.json({ ok: true, status: r.status, affected: 1 });
     }
     return NextResponse.json({ error: "unknown action" }, { status: 400 });
   } catch (e) {

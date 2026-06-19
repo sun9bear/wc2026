@@ -5,6 +5,11 @@ import "server-only";
 import { cookies } from "next/headers";
 import { createHash, timingSafeEqual } from "crypto";
 import { getServerSupabase } from "@/lib/supabase/server";
+import { getMatchProbDelta, classifyProbDelta } from "@/lib/blog/getProbDelta";
+import { buildSettledCandidate } from "@/lib/blog/scoreCandidate";
+import { generateForCandidate } from "@/lib/blog/generate";
+import * as llm from "@/lib/blog/llm";
+import { upsertBlogEntry } from "@/lib/blog/store";
 
 export const ADMIN_COOKIE = "wc_admin";
 export const ADMIN_STATUSES = ["draft", "needs_review", "published", "hidden", "rejected"] as const;
@@ -103,4 +108,25 @@ export async function deleteEntries(slugs: string[]): Promise<number> {
   const { data, error } = await db.from("blog_entries").delete().in("slug_en", slugs).select("slug_en");
   if (error) throw new Error(error.message);
   return (data as unknown[] | null)?.length ?? 0;
+}
+
+/**
+ * 重新生成单篇（"返回发给模型修改"）：按 slug 取 match_id → 复用生成管线（双语+双闸+内链强制）→ upsert 覆盖。
+ * status 按 BLOG_AUTO_PUBLISH：干净→published、有问题→needs_review。慢操作（LLM，~30s），同步等待。
+ * 注：已结算场次分类稳定（比分/快照已冻结）→ slug 不变、原样覆盖。
+ */
+export async function regenerateBySlug(slug: string): Promise<{ ok: boolean; status?: string; error?: string }> {
+  const db = getServerSupabase();
+  const { data } = await db.from("blog_entries").select("match_id").eq("slug_en", slug).maybeSingle();
+  const matchId = (data as { match_id: string | null } | null)?.match_id;
+  if (!matchId) return { ok: false, error: "该文章无 match_id，无法重生" };
+  const delta = await getMatchProbDelta(matchId);
+  if (!delta) return { ok: false, error: "拿不到 prob_delta" };
+  const cand = buildSettledCandidate(delta, classifyProbDelta(delta), null);
+  if (!cand) return { ok: false, error: "无法构建候选（事件已不满足材料闸）" };
+  const autoPublish = process.env.BLOG_AUTO_PUBLISH?.trim() === "1";
+  const draft = await generateForCandidate(cand, llm, { autoPublish });
+  const { error } = await upsertBlogEntry(cand, draft, new Date().toISOString());
+  if (error) return { ok: false, error };
+  return { ok: true, status: draft.status };
 }
