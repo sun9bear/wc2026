@@ -5,7 +5,6 @@
 // 合规：标题「实时最终比分预测 / Live final-score forecast」，概率条，零博彩词。
 
 import { useEffect, useRef, useState } from "react";
-import { teamName } from "@/lib/football/teams";
 import { ScoreProbs } from "@/components/ScoreProbs";
 import type { Locale } from "@/i18n";
 import type { MatchScoreline } from "@/lib/prob/getMatchScoreline";
@@ -75,18 +74,6 @@ const COPY: Record<
     nodata: "Match en cours — connexion des données en direct…",
   },
 };
-
-function Side({ name, flag, locale }: { name: string; flag: string | null; locale: Locale }) {
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      {flag && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={flag} alt="" className="h-3 w-4 rounded-[2px] object-cover" />
-      )}
-      <span className="truncate">{teamName(name, locale)}</span>
-    </span>
-  );
-}
 
 // 直播看板文案（进球文字流 + 可展开技术统计）。与上方 COPY 分开，避免改动既有块。
 type BoardCopy = {
@@ -273,8 +260,6 @@ export function LiveScoreProbs({
   }
 
   const top = data.top;
-  const sc = data.score;
-  const minute = data.minute ?? 0;
   const sum = top.reduce((s, x) => s + x.p, 0);
   const otherP = Math.min(1, Math.max(0, 1 - sum));
   const max = top[0]?.p ?? 1;
@@ -289,25 +274,14 @@ export function LiveScoreProbs({
         <span className="text-[10px] md:text-xs text-muted">{c.sub}</span>
       </div>
 
-      <div className="mb-3 flex items-center justify-between text-[11px] md:text-xs">
-        <Side name={home.name} flag={home.flag} locale={locale} />
-        <span className="font-head text-sm">
-          <span className="text-green">{sc.h}</span>
-          <span className="mx-1 text-muted">-</span>
-          <span className="text-green">{sc.a}</span>
-          <span className="ml-2 text-[10px] md:text-xs text-[#ff5436]">{`${minute}'`}</span>
-        </span>
-        <Side name={away.name} flag={away.flag} locale={locale} />
-      </div>
-
-      {/* 进球文字流（进球/红黄牌/换人，最近在上，主左客右镜像）。无事件则不渲染。 */}
+      {/* 进球文字流（进球/红黄牌/换人，全部列出，最近在上，主左客右镜像）。无事件则不渲染。
+          比分+分钟已放大显示在页眉，看板内不再重复国旗/队名/比分。 */}
       {data.events && data.events.length > 0 && (
-        <div className="mb-3 space-y-1 rounded-md bg-surface-2/40 p-2">
+        <div className="mb-3 mt-3 space-y-1 rounded-md bg-surface-2/40 p-2">
           <div className="mb-1 text-[10px] md:text-xs text-muted">{bc.feed}</div>
           {data.events
             .slice()
             .reverse()
-            .slice(0, 12)
             .map((e, i) => (
               <EventRow key={`${e.type}-${e.minute}-${e.primary}-${i}`} e={e} bc={bc} />
             ))}

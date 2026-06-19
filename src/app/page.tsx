@@ -87,6 +87,9 @@ export default async function Home({
         <p className="mt-1 text-sm md:text-base text-muted">{t.hero.valueProp}</p>
       </header>
 
+      {/* 正在直播看板：有真直播时置顶（实时比分+进球+最可能比分），点击直达比赛页 */}
+      <LiveNowBar matches={liveCandidates} locale={locale} />
+
       {/* 主入口：第三名出线计算器（独家资产，纯链接，与概率侧分屏隔离不冲突) */}
       <TrackedLink
         href={localeHref(locale, "/calculator")}
@@ -120,9 +123,6 @@ export default async function Home({
           </span>
         </div>
       </TrackedLink>
-
-      {/* 正在直播入口条：有真直播时顶在焦点战上方，点击直达比赛页(看板) */}
-      <LiveNowBar matches={liveCandidates} locale={locale} />
 
       {/* 次入口：今晚焦点战，直达预测 */}
       {focus && (

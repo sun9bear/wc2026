@@ -16,10 +16,12 @@ export function LiveScore({
   matchId,
   kickoffAt,
   locale,
+  size = "sm",
 }: {
   matchId: string;
   kickoffAt: string;
   locale: Locale;
+  size?: "sm" | "lg";
 }) {
   const [d, setD] = useState<LiveResp | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -47,7 +49,9 @@ export function LiveScore({
   if (d?.live && d.score) {
     return (
       <div>
-        <div className="font-head text-xl font-bold tabular-nums text-green">
+        <div
+          className={`font-head font-bold tabular-nums text-green ${size === "lg" ? "text-3xl" : "text-xl"}`}
+        >
           {d.score.h} : {d.score.a}
         </div>
         <div className="mt-0.5 flex items-center justify-center gap-1 text-[10px] md:text-xs text-[#ff5436]">

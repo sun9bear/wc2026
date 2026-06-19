@@ -9,6 +9,7 @@ import { MarketPicks } from "@/components/MarketPicks";
 import { MatchProbTrend } from "@/components/MatchProbTrend";
 import { ScoreProbs } from "@/components/ScoreProbs";
 import { LiveScoreProbs } from "@/components/LiveScoreProbs";
+import { LiveScore } from "@/components/LiveScore";
 import { MatchSwingShare } from "@/components/MatchSwingShare";
 import { MatchPreviewShare } from "@/components/MatchPreviewShare";
 import { HeaderShare } from "@/components/HeaderShare";
@@ -449,6 +450,9 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
                   <div className="mt-0.5 text-[10px] font-medium text-muted md:text-xs">{durationBadge}</div>
                 )}
               </div>
+            ) : inPlay ? (
+              // 进行中：页眉显示放大的实时比分+分钟（实时更新）。
+              <LiveScore matchId={id} kickoffAt={m.kickoffAt} locale={locale} size="lg" />
             ) : (
               <span className="font-head text-sm text-muted">VS</span>
             )}
@@ -456,6 +460,18 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
           <TeamBadge name={m.away.name} locale={locale} size="lg" linkToTeam />
         </div>
       </div>
+
+      {/* 进行中：直播看板置于文字短评之上（进球文字流 + 最可能比分 + 可展开技术统计）；
+          比分/分钟已放大显示在上方页眉，看板内不重复国旗队名。 */}
+      {inPlay && (
+        <LiveScoreProbs
+          matchId={id}
+          home={homeTeam}
+          away={awayTeam}
+          locale={locale}
+          fallback={scoreline}
+        />
+      )}
 
       {settled && (m.recap || m.recapEn) && (
         <AiBlock tag={t.match.recapTag} foldTag={t.match.recapTag} body={m.recap} bodyEn={m.recapEn} />
@@ -506,15 +522,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
               />
             )}
           </>
-        ) : inPlay ? (
-          <LiveScoreProbs
-            matchId={id}
-            home={homeTeam}
-            away={awayTeam}
-            locale={locale}
-            fallback={scoreline}
-          />
-        ) : (
+        ) : inPlay ? null : (
           <p className="rounded-md border border-border bg-surface-2 p-4 text-center text-sm text-muted md:text-base">
             {t.match.locked}
           </p>
