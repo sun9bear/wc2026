@@ -9,6 +9,7 @@ import { normalizeTeamName } from "./names";
 const WC_LEAGUE_ID = 1; // API-Football 联赛 id：World Cup
 
 export interface LiveFixture {
+  id: number; // API-Football fixture id（供技术统计 /fixtures/statistics?fixture= 用）
   homeName: string;
   awayName: string;
   homeNorm: string;
@@ -20,7 +21,7 @@ export interface LiveFixture {
 }
 
 interface ApiFixture {
-  fixture?: { status?: { elapsed?: number | null; short?: string } };
+  fixture?: { id?: number; status?: { elapsed?: number | null; short?: string } };
   league?: { id?: number };
   teams?: { home?: { name?: string }; away?: { name?: string } };
   goals?: { home?: number | null; away?: number | null };
@@ -42,6 +43,7 @@ async function fetchLiveWc(): Promise<LiveFixture[]> {
       const awayName = f.teams?.away?.name;
       if (!homeName || !awayName) continue;
       out.push({
+        id: f.fixture?.id ?? 0,
         homeName,
         awayName,
         homeNorm: normalizeTeamName(homeName),

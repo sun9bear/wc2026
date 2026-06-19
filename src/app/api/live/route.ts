@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase/client";
 import { lambdasFrom1x2, liveScoreline } from "@/lib/prob/poisson";
 import { getLiveWcFixtures, matchLive } from "@/lib/prob/liveFeed";
 import { getLiveWcFdFixtures, matchLiveFd } from "@/lib/prob/liveFeedFd";
+import { getLiveEvents } from "@/lib/prob/getLiveEvents";
 
 export const dynamic = "force-dynamic";
 
@@ -85,8 +86,11 @@ export async function GET(req: NextRequest) {
   const lam = lambdasFrom1x2(target);
   const live = liveScoreline(lam.home, lam.away, hNow, aNow, minute);
 
+  // 进球文字流（football-data 事件，70s 共享缓存；无权益/失败 → 空数组，看板自动不渲染）。
+  const { events } = await getLiveEvents(m.external_id);
+
   return NextResponse.json(
-    { live: true, score: { h: hNow, a: aNow }, minute, short, top: live.top, p: live.p },
+    { live: true, score: { h: hNow, a: aNow }, minute, short, top: live.top, p: live.p, events },
     { headers: { "Cache-Control": "no-store" } }
   );
 }
