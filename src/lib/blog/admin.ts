@@ -1,5 +1,5 @@
 // P6 blog 管理后台数据/鉴权层：service_role 读写（绕 RLS）+ token 鉴权。
-// 仅服务端使用（/me/blog 页 + /api/admin/blog 路由）。口令 = ADMIN_TOKEN，回落 CRON_SECRET（已配，开箱即用）。
+// 仅服务端使用（/admin/blog 页 + /api/admin/blog 路由）。口令 = ADMIN_TOKEN，回落 CRON_SECRET（已配，开箱即用）。
 
 import "server-only";
 import { cookies } from "next/headers";
