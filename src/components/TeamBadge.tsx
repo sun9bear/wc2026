@@ -37,7 +37,10 @@ export function TeamBadge({
   );
   const cls = "flex w-24 flex-col items-center gap-2";
   return linkToTeam ? (
-    <Link href={localeHref(locale, `/team/${teamSlug(name)}`)} className={`${cls} transition hover:opacity-80`}>
+    <Link
+      href={localeHref(locale, `/team/${teamSlug(name)}`)}
+      className={`${cls} rounded-lg transition hover:opacity-80 active:scale-95 active:opacity-70`}
+    >
       {inner}
     </Link>
   ) : (

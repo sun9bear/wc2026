@@ -211,6 +211,10 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
   const fdata = await getForecast().catch(() => null);
   const homeFlag = fdata ? findTeam(fdata, teamSlug(m.home.name))?.team.flag ?? null : null;
   const awayFlag = fdata ? findTeam(fdata, teamSlug(m.away.name))?.team.flag ?? null : null;
+  // 比分预测卡（ScoreProbs/LiveScoreProbs）用修正后的 flagcdn 旗。
+  // m.home.flag 是 matches 表缺失/非 flagcdn 的值，直接传会渲染成裂图（用户反馈：实时比分卡小旗不显示）。
+  const homeTeam = { name: m.home.name, flag: homeFlag };
+  const awayTeam = { name: m.away.name, flag: awayFlag };
 
   // 流量自驱动结算（响应后执行；详情页是赛后回访的高频落点）
   after(() => maybeAutoSettle());
@@ -486,7 +490,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
             <MarketPicks marketId={m.market.id} selections={m.market.selections} locale={locale} />
             <div className="md:grid md:grid-cols-2 md:gap-4">
               {scoreline && (
-                <ScoreProbs data={scoreline} locale={locale} home={m.home} away={m.away} />
+                <ScoreProbs data={scoreline} locale={locale} home={homeTeam} away={awayTeam} />
               )}
               <MatchProbTrend matchId={id} locale={locale} />
             </div>
@@ -505,8 +509,8 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
         ) : inPlay ? (
           <LiveScoreProbs
             matchId={id}
-            home={m.home}
-            away={m.away}
+            home={homeTeam}
+            away={awayTeam}
             locale={locale}
             fallback={scoreline}
           />

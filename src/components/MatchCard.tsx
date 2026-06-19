@@ -14,7 +14,7 @@ export function MatchCard({ match, locale }: { match: FixtureMatch; locale: Loca
   return (
     <Link
       href={localeHref(locale, `/match/${match.id}`)}
-      className="fade-up block rounded-lg border border-border bg-surface p-4 transition duration-150 hover:-translate-y-0.5 hover:border-green/50"
+      className="fade-up block rounded-lg border border-border bg-surface p-4 transition duration-150 hover:-translate-y-0.5 hover:border-green/50 active:scale-[0.99] active:border-green/70"
     >
       <div className="mb-3 flex items-center justify-between text-[11px] md:text-xs text-muted">
         <span>
