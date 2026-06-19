@@ -333,8 +333,9 @@ export default async function GroupPage({
               <tr key={t.id} className={i < 2 ? "text-text" : "text-muted"}>
                 <td className="px-2 py-2 font-head">{i + 1}</td>
                 <td className="px-2 py-2">
+                  {/* D3：积分榜队名链到球队着陆页（已索引、进 sitemap），把 48 个 /team 页提到分组枢纽下的深度 2。 */}
                   <Link
-                    href={localeHref(locale, `/calculator?team=${teamSlug(t.name)}`)}
+                    href={localeHref(locale, `/team/${teamSlug(t.name)}`)}
                     className="inline-flex items-center gap-1.5 hover:text-green"
                   >
                     {t.flag && (

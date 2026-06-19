@@ -12,6 +12,7 @@ import { getDict, localeHref } from "@/i18n";
 import { getLocale } from "@/i18n/server";
 import { localizedAlternates } from "@/lib/seo/canonical";
 import { maybeAutoSettle } from "@/lib/settlement/autoSettle";
+import { teamName } from "@/lib/football/teams";
 
 export const dynamic = "force-dynamic";
 
@@ -173,6 +174,20 @@ export default async function Home({
       </div>
 
       <MatchList matches={all} locale={locale} filter={filter} />
+
+      {/* D2：服务端可抓取的全量赛程链接（sr-only，渐进增强）——从首页(站内最高权重)直达每场比赛页，
+          补「已结算场次会从分组页掉链」的发现缺口；视觉不变，MatchList 客户端 UX 照旧。 */}
+      <nav aria-label={locale === "zh" ? "全部比赛" : "All fixtures"} className="sr-only">
+        <ul>
+          {all.map((m) => (
+            <li key={m.id}>
+              <Link href={localeHref(locale, `/match/${m.id}`)}>
+                {teamName(m.home.name, locale)} vs {teamName(m.away.name, locale)}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
 
       <footer className="mt-8 text-center">
         <Disclaimer />
