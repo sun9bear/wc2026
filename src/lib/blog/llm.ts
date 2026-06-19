@@ -12,7 +12,7 @@ const REVIEW_TIMEOUT = 30_000;
 async function deepseekBlog(system: string, user: string, timeoutMs: number): Promise<string> {
   const key = process.env.DEEPSEEK_API_KEY;
   if (!key) throw new Error("缺少 DEEPSEEK_API_KEY");
-  const model = process.env.DEEPSEEK_BLOG_MODEL ?? "deepseek-chat"; // 用户的 V4 Pro：部署时设 DEEPSEEK_BLOG_MODEL
+  const model = process.env.DEEPSEEK_BLOG_MODEL?.trim() || "deepseek-chat"; // V4 Pro：设 DEEPSEEK_BLOG_MODEL=deepseek-v4-pro；trim 防 env 尾随空白
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
