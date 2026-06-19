@@ -60,7 +60,7 @@ async function withRetry<T>(fn: () => Promise<T>, attempts = 2): Promise<T> {
 
 // blog 专用 Gemini 模型（与 DEEPSEEK_BLOG_MODEL 对称，不影响 gen-content/settle）。
 // 设 GEMINI_BLOG_MODEL=gemini-3.1-flash-lite 即用之；未设则回落 gemini.ts 默认（id 失效会自动解析最新 flash-lite）。
-const geminiBlogModel = (): string | undefined => process.env.GEMINI_BLOG_MODEL || undefined;
+const geminiBlogModel = (): string | undefined => process.env.GEMINI_BLOG_MODEL?.trim() || undefined; // trim：防 env 值带尾随换行/空白致 400
 
 /** 生成：en→Gemini(GEMINI_BLOG_MODEL)，zh→DeepSeek(V4 Pro)。两 provider 互不抢配额；临时过载自动重试 1 次。 */
 export async function generate(locale: "en" | "zh", system: string, user: string): Promise<string> {
