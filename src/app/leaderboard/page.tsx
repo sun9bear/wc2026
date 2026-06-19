@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getLeaderboard } from "@/lib/leaderboard/getLeaderboard";
 import { PageContainer } from "@/components/PageContainer";
-import { Disclaimer } from "@/components/Disclaimer";
 import { fmtPoints } from "@/lib/format";
 import { getDict, localeHref, type Locale } from "@/i18n";
 import { getLocale } from "@/i18n/server";
@@ -81,9 +80,6 @@ export default async function LeaderboardPage() {
         </ul>
       )}
 
-      <footer className="mt-8 text-center">
-        <Disclaimer />
-      </footer>
     </PageContainer>
   );
 }

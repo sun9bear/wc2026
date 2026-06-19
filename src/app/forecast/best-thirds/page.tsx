@@ -6,7 +6,6 @@ import { getForecast, type ForecastData } from "@/lib/prob/pipeline";
 import { JsonLd } from "@/lib/seo/jsonLd";
 import { getSettledIndex } from "@/lib/seo/freshness";
 import { R32, allocateThirds } from "@/lib/prob/bracket";
-import { Disclaimer } from "@/components/Disclaimer";
 import { localeHref, type Locale } from "@/i18n";
 import { LocalTime } from "@/components/LocalTime";
 import { teamName } from "@/lib/football/teams";
@@ -416,7 +415,6 @@ export default async function BestThirdsPage() {
       <footer className="mt-8 space-y-2 text-center text-[10px] md:text-xs leading-relaxed text-muted">
         <p>{c.method}</p>
         <p>{c.fun}</p>
-        <Disclaimer />
       </footer>
     </PageContainer>
   );

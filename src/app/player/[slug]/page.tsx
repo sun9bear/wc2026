@@ -6,7 +6,6 @@ import { getTeamSquad } from "@/lib/squad/getTeamSquad";
 import { normalizeNameSorted } from "@/lib/players/perfScore";
 import { PageContainer } from "@/components/PageContainer";
 import { PlayerVoteButton } from "@/components/PlayerVoteButton";
-import { Disclaimer } from "@/components/Disclaimer";
 import { getDict, localeHref, type Locale } from "@/i18n";
 import { getLocale } from "@/i18n/server";
 import { teamName, flagUrl } from "@/lib/football/teams";
@@ -239,9 +238,6 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
         </p>
       )}
 
-      <footer className="mt-6 text-center">
-        <Disclaimer />
-      </footer>
     </PageContainer>
   );
 }

@@ -4,7 +4,6 @@ import { getLocale } from "@/i18n/server";
 import { localeHref, type Locale } from "@/i18n";
 import { localizedAlternates } from "@/lib/seo/canonical";
 import { JsonLd } from "@/lib/seo/jsonLd";
-import { Disclaimer } from "@/components/Disclaimer";
 import { PageContainer } from "@/components/PageContainer";
 
 // 常青解释页：2026 新赛制 + 出线/第三名判据（最高需求×最低竞争长尾，最佳 AI 引用候选）。
@@ -392,9 +391,6 @@ export default async function RulesPage() {
         </div>
       </section>
 
-      <footer className="mt-8 text-center">
-        <Disclaimer />
-      </footer>
     </PageContainer>
   );
 }

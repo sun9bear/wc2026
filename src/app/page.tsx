@@ -5,7 +5,6 @@ import { getMatches } from "@/lib/matches/getMatches";
 import { MatchList } from "@/components/MatchList";
 import { MatchCard } from "@/components/MatchCard";
 import { LiveNowBar } from "@/components/LiveNowBar";
-import { Disclaimer } from "@/components/Disclaimer";
 import { SettleDrawer } from "@/components/SettleDrawer";
 import { TrackedLink } from "@/components/TrackedLink";
 import { getDict, localeHref } from "@/i18n";
@@ -188,10 +187,6 @@ export default async function Home({
           ))}
         </ul>
       </nav>
-
-      <footer className="mt-8 text-center">
-        <Disclaimer />
-      </footer>
 
       {/* 结算揭晓抽屉：检测到新结算结果时从底部弹出（任务 3） */}
       <SettleDrawer locale={locale} />

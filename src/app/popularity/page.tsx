@@ -5,7 +5,6 @@ import { nameZhBySlug } from "@/data/players.seed";
 import { PHOTOS } from "@/data/players.photos";
 import { PopularityList } from "@/components/PopularityList";
 import { PageContainer } from "@/components/PageContainer";
-import { Disclaimer } from "@/components/Disclaimer";
 import { getDict, localeHref } from "@/i18n";
 import { getLocale } from "@/i18n/server";
 import { teamName, flagUrl } from "@/lib/football/teams";
@@ -85,9 +84,6 @@ export default async function PopularityPage() {
           ? "球员头像来自 Wikimedia Commons（CC 许可）"
           : "Player photos via Wikimedia Commons (CC)"}
       </p>
-      <footer className="mt-4 text-center">
-        <Disclaimer />
-      </footer>
     </PageContainer>
   );
 }

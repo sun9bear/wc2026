@@ -6,7 +6,6 @@ import { localeHref, BCP47_LOCALE } from "@/i18n";
 import { selfUrl, SITE_ORIGIN } from "@/lib/seo/canonical";
 import { JsonLd } from "@/lib/seo/jsonLd";
 import { PageContainer } from "@/components/PageContainer";
-import { Disclaimer } from "@/components/Disclaimer";
 import { BlogBody } from "@/components/BlogBody";
 import { getPublishedBlogBySlug, blogAlternates, toBlogLocale } from "@/lib/blog/published";
 
@@ -69,9 +68,6 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
       <article>
         <BlogBody md={post.body} />
       </article>
-      <footer className="mt-8 text-center">
-        <Disclaimer />
-      </footer>
     </PageContainer>
   );
 }

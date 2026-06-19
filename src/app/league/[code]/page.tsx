@@ -5,7 +5,6 @@ import { getLeagueBoard } from "@/lib/league/getLeagueBoard";
 import { normalizeLeagueCode } from "@/lib/league/code";
 import { InviteCopy } from "@/components/InviteCopy";
 import { PageContainer } from "@/components/PageContainer";
-import { Disclaimer } from "@/components/Disclaimer";
 import { fmtPoints } from "@/lib/format";
 import { getLocale } from "@/i18n/server";
 
@@ -163,9 +162,6 @@ export default async function LeagueBoardPage({
         </Link>
       </div>
 
-      <footer className="mt-8 text-center">
-        <Disclaimer />
-      </footer>
     </PageContainer>
   );
 }

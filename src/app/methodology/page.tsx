@@ -6,7 +6,6 @@ import { localizedAlternates, selfUrl, SITE_ORIGIN } from "@/lib/seo/canonical";
 import { getSettledIndex } from "@/lib/seo/freshness";
 import { JsonLd } from "@/lib/seo/jsonLd";
 import { PageContainer } from "@/components/PageContainer";
-import { Disclaimer } from "@/components/Disclaimer";
 
 export const maxDuration = 60;
 
@@ -284,9 +283,6 @@ export default async function MethodologyPage() {
         </Link>
       </div>
 
-      <footer className="mt-8 text-center">
-        <Disclaimer />
-      </footer>
     </PageContainer>
   );
 }

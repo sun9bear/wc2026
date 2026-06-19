@@ -13,7 +13,6 @@ import { LiveScore } from "@/components/LiveScore";
 import { MatchSwingShare } from "@/components/MatchSwingShare";
 import { MatchPreviewShare } from "@/components/MatchPreviewShare";
 import { HeaderShare } from "@/components/HeaderShare";
-import { Disclaimer } from "@/components/Disclaimer";
 import { TeamBadge } from "@/components/TeamBadge";
 import { LocalTime } from "@/components/LocalTime";
 import { result1x2 } from "@/lib/settlement/result";
@@ -582,9 +581,6 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
 
       <RelatedCommentary items={related} locale={locale} />
 
-      <footer className="mt-8 text-center">
-        <Disclaimer />
-      </footer>
     </PageContainer>
   );
 }

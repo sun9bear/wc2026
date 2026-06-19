@@ -10,7 +10,6 @@ import { getSettledIndex } from "@/lib/seo/freshness";
 import { JsonLd } from "@/lib/seo/jsonLd";
 import { teamSlug } from "@/lib/prob/findTeam";
 import { LocalTime } from "@/components/LocalTime";
-import { Disclaimer } from "@/components/Disclaimer";
 import { PageContainer } from "@/components/PageContainer";
 
 export const maxDuration = 60;
@@ -426,9 +425,6 @@ export default async function GroupPage({
         </Link>
       </div>
 
-      <footer className="mt-8 text-center">
-        <Disclaimer />
-      </footer>
     </PageContainer>
   );
 }

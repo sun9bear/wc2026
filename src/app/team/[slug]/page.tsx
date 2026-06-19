@@ -13,7 +13,6 @@ import { PageContainer } from "@/components/PageContainer";
 import { HeaderShare } from "@/components/HeaderShare";
 import { SetMyTeamButton } from "@/components/SetMyTeamButton";
 import { LocalTime } from "@/components/LocalTime";
-import { Disclaimer } from "@/components/Disclaimer";
 import { localeHref, type Locale, BCP47_LOCALE } from "@/i18n";
 import { teamName } from "@/lib/football/teams";
 import { localizedAlternates, selfUrl } from "@/lib/seo/canonical";
@@ -825,9 +824,6 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
 
       <RelatedCommentary items={related} locale={locale} />
 
-      <footer className="mt-6 text-center">
-        <Disclaimer />
-      </footer>
     </PageContainer>
   );
 }

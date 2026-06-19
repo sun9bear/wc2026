@@ -3,7 +3,6 @@ import Link from "next/link";
 import { getLocale } from "@/i18n/server";
 import { localeHref } from "@/i18n";
 import { PageContainer } from "@/components/PageContainer";
-import { Disclaimer } from "@/components/Disclaimer";
 import { listPublishedBlog, blogAlternates, toBlogLocale, type BlogLocale } from "@/lib/blog/published";
 
 export const dynamic = "force-dynamic"; // 读 published，随发布即时更新
@@ -67,9 +66,6 @@ export default async function BlogIndex() {
           ))}
         </ul>
       )}
-      <footer className="mt-8 text-center">
-        <Disclaimer />
-      </footer>
     </PageContainer>
   );
 }
