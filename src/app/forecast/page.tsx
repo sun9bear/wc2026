@@ -17,7 +17,7 @@ export const maxDuration = 60; // 首次计算含外部抓取+万次模拟
 
 const COPY = {
   zh: {
-    title: "2026 世界杯出线概率 · 夺冠概率（实时模型）",
+    title: "2026 世界杯预测：出线概率、夺冠概率与每场比分（实时模型）",
     description:
       "基于实力评分与公开预测数据的万次模拟：每队出线概率、夺冠概率、最佳第三名形势与每场胜平负概率，赛后自动更新。",
     h1: "出线 & 夺冠概率",
@@ -41,7 +41,7 @@ const COPY = {
     thirdsMore: "查看最佳第三名完整排名与 32 强对阵 →",
   },
   en: {
-    title: "World Cup 2026 Advancement & Title Probabilities (Live Model)",
+    title: "World Cup 2026 Predictions: Standings, Who Advances & Score Forecasts (Live Model)",
     description:
       "10,000-run simulation from team strength ratings and public forecasting data: every team's chance to advance, win the title, third-place picture and per-match win probabilities.",
     h1: "Advancement & Title Probabilities",
@@ -67,7 +67,7 @@ const COPY = {
   // P2-2 staged：es/pt/de/fr 暂不被渲染（locale 仍 zh|en），激活加宽 Locale 后 COPY[locale] 自动启用。
   // 注：本页 GEO 答案段 / variableMeasured / note 仍有 locale 三元（A4 清剿项），激活前 es/pt/de/fr 先回退英文分支。
   es: {
-    title: "Probabilidades de clasificación y título · Mundial 2026 (modelo en vivo)",
+    title: "Predicciones Mundial 2026: clasificación, quién avanza y marcadores (modelo en vivo)",
     description:
       "Simulación de 10.000 corridas basada en valoraciones de fuerza de los equipos y datos públicos de predicción: la probabilidad de cada selección de avanzar, ganar el título, el panorama de los mejores terceros y las probabilidades de victoria por partido.",
     h1: "Probabilidades de clasificación y título",
@@ -91,7 +91,7 @@ const COPY = {
     thirdsMore: "Clasificación completa de mejores terceros y cruces de dieciseisavos →",
   },
   pt: {
-    title: "Probabilidades de classificação e título · Copa 2026 (modelo ao vivo)",
+    title: "Previsões Copa 2026: classificação, quem avança e placares (modelo ao vivo)",
     description:
       "Simulação de 10.000 rodadas a partir das avaliações de força das seleções e dados públicos de previsão: a chance de cada seleção avançar, ganhar o título, o panorama dos melhores terceiros e as probabilidades de vitória por jogo.",
     h1: "Probabilidades de classificação e título",
@@ -115,7 +115,7 @@ const COPY = {
     thirdsMore: "Classificação completa dos melhores terceiros e confrontos dos 16-avos →",
   },
   de: {
-    title: "Weiterkommen- & Titel-Wahrscheinlichkeiten · WM 2026 (Live-Modell)",
+    title: "WM 2026 Prognosen: Tabelle, wer weiterkommt & Ergebnisse (Live-Modell)",
     description:
       "Simulation mit 10.000 Läufen auf Basis von Team-Stärkewerten und öffentlichen Prognosedaten: die Chance jeder Mannschaft auf das Weiterkommen, den Titelgewinn, das Bild der Gruppendritten und die Siegwahrscheinlichkeiten pro Spiel.",
     h1: "Weiterkommen- & Titel-Wahrscheinlichkeiten",
@@ -139,7 +139,7 @@ const COPY = {
     thirdsMore: "Vollständige Rangliste der besten Gruppendritten & Sechzehntelfinal-Duelle →",
   },
   fr: {
-    title: "Probabilités de qualification et de titre · Mondial 2026 (modèle en direct)",
+    title: "Pronostics Mondial 2026 : classement, qui se qualifie et scores (modèle en direct)",
     description:
       "Simulation de 10 000 tirages à partir des notes de force des équipes et de données publiques de prévision : la probabilité de chaque sélection de se qualifier, de remporter le titre, le tableau des meilleurs troisièmes et les probabilités de victoire par match.",
     h1: "Probabilités de qualification et de titre",
@@ -324,22 +324,30 @@ export default async function ForecastPage() {
       {data.simOk && (
         <section className="mt-6">
           <h2 className="font-head mb-2 text-sm md:text-base font-semibold">{c.champions}</h2>
-          <div className="space-y-1.5">
-            {data.champions.map((t) => (
-              <div key={t.id} className="flex items-center gap-2 text-sm">
-                <span className="w-32 shrink-0 truncate">
-                  <TeamName t={t} locale={locale} />
-                </span>
-                <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-surface-2">
-                  <div
-                    className="h-full bg-green"
-                    style={{ width: `${Math.min(100, t.p * 400)}%` }}
-                  />
-                </div>
-                <span className="font-head w-12 shrink-0 text-right text-green">{pct(t.p, 1)}</span>
-              </div>
-            ))}
-          </div>
+          {/* B6：真 <table>（队名 | 夺冠概率），数字以纯文本落在独立单元格，便于 AI/搜索抽取。 */}
+          <table className="w-full text-sm">
+            <caption className="sr-only">{c.champions} — World Cup 2026</caption>
+            <tbody>
+              {data.champions.map((t) => (
+                <tr key={t.id}>
+                  <td className="w-32 max-w-[8rem] truncate py-1 pr-2 align-middle">
+                    <TeamName t={t} locale={locale} />
+                  </td>
+                  <td className="py-1 align-middle">
+                    <div className="h-2.5 overflow-hidden rounded-full bg-surface-2">
+                      <div
+                        className="h-full bg-green"
+                        style={{ width: `${Math.min(100, t.p * 400)}%` }}
+                      />
+                    </div>
+                  </td>
+                  <td className="font-head w-12 py-1 pl-2 text-right align-middle text-green">
+                    {pct(t.p, 1)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </section>
       )}
 
@@ -475,17 +483,25 @@ export default async function ForecastPage() {
                 <div className="font-head mb-1.5 text-xs font-semibold text-muted">
                   {groupName(g.letter, locale)}
                 </div>
-                {g.table.map((t) => (
-                  <div key={t.id} className="flex items-center justify-between py-0.5 text-sm">
-                    <span className="truncate">
-                      <TeamName t={t} locale={locale} />
-                    </span>
-                    <span className="shrink-0 text-[11px] md:text-xs">
-                      <span className="text-muted">{t.pts}pts · </span>
-                      <span className="font-head text-green">{pct(t.pAdvance)}</span>
-                    </span>
-                  </div>
-                ))}
+                {/* B6：每组用真 <table>（队名 | 积分 | 出线概率），数字独立单元格便于抽取。 */}
+                <table className="w-full text-sm">
+                  <caption className="sr-only">{groupName(g.letter, locale)}</caption>
+                  <tbody>
+                    {g.table.map((t) => (
+                      <tr key={t.id}>
+                        <td className="truncate py-0.5 align-middle">
+                          <TeamName t={t} locale={locale} />
+                        </td>
+                        <td className="whitespace-nowrap py-0.5 pl-2 text-right align-middle text-[11px] text-muted md:text-xs">
+                          {t.pts}pts
+                        </td>
+                        <td className="font-head whitespace-nowrap py-0.5 pl-2 text-right align-middle text-[11px] text-green md:text-xs">
+                          {pct(t.pAdvance)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             ))}
           </div>

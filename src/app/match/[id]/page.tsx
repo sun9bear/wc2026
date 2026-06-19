@@ -299,7 +299,11 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
         : null
     : null;
 
-  // SportsEvent + 面包屑实体（实体/GEO 理解，非 Event 富结果；不编造 offers/location）。
+  // A3：比赛页只保留 BreadcrumbList。原 SportsEvent 节点缺 Google Event 富结果必填的
+  // location（比赛 venue 不在数据管线里——getMatchExtra 返回 venue=null），导致 GSC
+  // 「Events」报告 8 条全部无效（新域名 trust drag、且永远拿不到富结果）。在拿到官方
+  // 「赛程→球场」映射前先移除该节点；比赛实体语义已由正文 + sr-only h1 + 面包屑承载，
+  // GEO/AI 理解不依赖此 JSON-LD。后续 venue 数据到位可重新加回合法 SportsEvent（含 Place）。
   const evHome = teamName(m.home.name, locale);
   const evAway = teamName(m.away.name, locale);
   const HOME_LABEL: Record<Locale, string> = {
@@ -310,39 +314,9 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
     de: "Startseite",
     fr: "Accueil",
   };
-  // 事实型描述（无 offers/赔率措辞，含队名+赛事+年份，喂搜索/AI 理解）。
-  const EV_DESC: Record<Locale, string> = {
-    zh: `${evHome} vs ${evAway}，2026 世界杯。出线概率、近期战绩与赛前前瞻。`,
-    en: `${evHome} vs ${evAway} at the World Cup 2026. Win probabilities, recent form and a match preview.`,
-    es: `${evHome} vs ${evAway} en el Mundial 2026. Probabilidades de avance, forma reciente y previa del partido.`,
-    pt: `${evHome} vs ${evAway} na Copa 2026. Probabilidades de avanço, forma recente e prévia do jogo.`,
-    de: `${evHome} vs ${evAway} bei der WM 2026. Weiterkommen-Chancen, aktuelle Form und Spielvorschau.`,
-    fr: `${evHome} vs ${evAway} au Mondial 2026. Probabilités de qualification, forme récente et aperçu du match.`,
-  };
   const matchJsonLd = {
     "@context": "https://schema.org",
     "@graph": [
-      {
-        "@type": "SportsEvent",
-        "@id": `${selfUrl(`/match/${id}`, locale)}#event`,
-        name: `${evHome} vs ${evAway}`,
-        description: EV_DESC[locale] ?? EV_DESC.en,
-        sport: "Soccer",
-        startDate: m.kickoffAt,
-        eventStatus: settled
-          ? "https://schema.org/EventCompleted"
-          : "https://schema.org/EventScheduled",
-        competitor: [
-          { "@type": "SportsTeam", name: evHome },
-          { "@type": "SportsTeam", name: evAway },
-        ],
-        performer: [
-          { "@type": "SportsTeam", name: evHome },
-          { "@type": "SportsTeam", name: evAway },
-        ],
-        superEvent: { "@type": "SportsEvent", name: "FIFA World Cup 2026" },
-        url: selfUrl(`/match/${id}`, locale),
-      },
       {
         "@type": "BreadcrumbList",
         itemListElement: [

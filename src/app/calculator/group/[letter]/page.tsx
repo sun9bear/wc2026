@@ -22,10 +22,13 @@ const LETTERS = "abcdefghijkl".split("");
 
 const COPY = {
   zh: {
-    title: (x: string) => `${x} 组谁能出线？2026 世界杯 ${x} 组积分榜 + 晋级概率`,
-    desc: (x: string) =>
-      `${x} 组实时积分榜、各队出线概率（万次蒙特卡洛模拟）与剩余赛程。用出线计算器改任意赛果，立即看 ${x} 组与最佳第三名榜变化。`,
-    h1: (x: string) => `${x} 组出线形势`,
+    title: (x: string, teams: string) =>
+      teams
+        ? `2026 世界杯 ${x} 组积分榜：${teams} — 出线形势`
+        : `${x} 组谁能出线？2026 世界杯 ${x} 组积分榜 + 晋级概率`,
+    desc: (x: string, teams: string, updated: string) =>
+      `2026 世界杯 ${x} 组实时积分榜与出线场景${updated ? `（${updated}更新）` : ""}：${teams || "各队"}谁已出线、谁已出局、还差什么。万次蒙特卡洛模拟，每小时更新。`,
+    h1: (x: string) => `${x} 组积分榜与出线形势`,
     table: "实时积分榜",
     cols: ["排名", "球队", "赛", "积分", "净胜", "出线概率"],
     fixtures: "剩余赛程",
@@ -36,12 +39,19 @@ const COPY = {
     lead: (x: string, leader: string, p: string) =>
       `2026 世界杯 ${x} 组：${leader} 以 ${p} 出线概率领跑；改动下方任意未赛赛果，即可看 ${x} 组与最佳第三名形势如何变化。`,
     back: "← 返回",
+    scenarios: "出线场景",
+    vQualified: (n: string) => `${n} 已基本锁定 32 强席位。`,
+    vEliminated: (n: string) => `${n} 已基本无缘出线。`,
+    vAlive: (n: string, p: string) => `${n} 仍有出线机会——目前出线概率 ${p}。`,
   },
   en: {
-    title: (x: string) => `Group ${x}: who advances? — World Cup 2026 standings`,
-    desc: (x: string) =>
-      `Live Group ${x} table, every team's chance to advance (10,000 Monte Carlo simulations) and remaining fixtures. Flip any result in the scenario calculator and watch the best-thirds race update.`,
-    h1: (x: string) => `Group ${x} — who advances?`,
+    title: (x: string, teams: string) =>
+      teams
+        ? `World Cup 2026 Group ${x} Standings — ${teams} & Who Advances`
+        : `Group ${x}: who advances? — World Cup 2026 standings`,
+    desc: (x: string, teams: string, updated: string) =>
+      `Live Group ${x} standings and qualification scenarios${updated ? ` (updated ${updated})` : ""} for ${teams || "every team"} at the 2026 World Cup. Who advances, who's eliminated and what each team needs — 10,000 Monte Carlo simulations, refreshed hourly.`,
+    h1: (x: string) => `Group ${x} Standings — Who Advances?`,
     table: "Live standings",
     cols: ["#", "Team", "P", "Pts", "GD", "Advance"],
     fixtures: "Remaining fixtures",
@@ -52,14 +62,21 @@ const COPY = {
     lead: (x: string, leader: string, p: string) =>
       `As of the 2026 World Cup, ${leader} leads Group ${x} with a ${p} chance to advance to the Round of 32; flip any remaining result below to see how the group and best-third race change.`,
     back: "← Back",
+    scenarios: "Qualification scenarios",
+    vQualified: (n: string) => `${n} has effectively qualified for the Round of 32.`,
+    vEliminated: (n: string) => `${n} can no longer realistically advance.`,
+    vAlive: (n: string, p: string) => `${n} can still advance — currently a ${p} chance.`,
   },
   // P2-2 staged：es/pt/de/fr 暂不被渲染（locale 仍 zh|en），激活加宽 Locale 后 COPY[locale] 自动启用。
   // 注：本页 name() 队名助手 / ItemList JsonLd / "出线规则详解"链接仍是 locale 三元（A4 清剿项），激活前 es/pt/de/fr 先回退英文分支（队名显英文名）。
   es: {
-    title: (x: string) => `Grupo ${x}: ¿quién se clasifica? — Clasificación Mundial 2026`,
-    desc: (x: string) =>
-      `Tabla en vivo del Grupo ${x}, la probabilidad de cada selección de avanzar (10.000 simulaciones de Montecarlo) y los partidos restantes. Cambia cualquier resultado en la calculadora de escenarios y observa cómo cambia la carrera por los mejores terceros.`,
-    h1: (x: string) => `Grupo ${x} — ¿quién se clasifica?`,
+    title: (x: string, teams: string) =>
+      teams
+        ? `Mundial 2026 Grupo ${x}: clasificación — ${teams} y quién avanza`
+        : `Grupo ${x}: ¿quién se clasifica? — Clasificación Mundial 2026`,
+    desc: (x: string, teams: string, updated: string) =>
+      `Clasificación en vivo y escenarios del Grupo ${x}${updated ? ` (actualizado ${updated})` : ""} para ${teams || "cada selección"} en el Mundial 2026. Quién avanza, quién queda eliminado y qué necesita cada equipo — 10.000 simulaciones de Montecarlo, cada hora.`,
+    h1: (x: string) => `Grupo ${x}: clasificación y quién avanza`,
     table: "Clasificación en vivo",
     cols: ["#", "Equipo", "PJ", "Pts", "DG", "Avance"],
     fixtures: "Partidos restantes",
@@ -70,12 +87,19 @@ const COPY = {
     lead: (x: string, leader: string, p: string) =>
       `Mundial 2026, Grupo ${x}: ${leader} encabeza con un ${p} de probabilidad de avanzar a los dieciseisavos; cambia cualquier resultado pendiente abajo para ver cómo cambia el grupo y la carrera por los mejores terceros.`,
     back: "← Atrás",
+    scenarios: "Escenarios de clasificación",
+    vQualified: (n: string) => `${n} tiene prácticamente asegurada su plaza en los dieciseisavos.`,
+    vEliminated: (n: string) => `${n} ya no tiene opciones realistas de clasificar.`,
+    vAlive: (n: string, p: string) => `${n} aún puede clasificar — actualmente un ${p} de probabilidad.`,
   },
   pt: {
-    title: (x: string) => `Grupo ${x}: quem se classifica? — Classificação Copa 2026`,
-    desc: (x: string) =>
-      `Tabela ao vivo do Grupo ${x}, a chance de cada seleção avançar (10.000 simulações de Monte Carlo) e os jogos restantes. Mude qualquer resultado na calculadora de cenários e veja como muda a disputa pelos melhores terceiros.`,
-    h1: (x: string) => `Grupo ${x} — quem se classifica?`,
+    title: (x: string, teams: string) =>
+      teams
+        ? `Copa 2026 Grupo ${x}: classificação — ${teams} e quem avança`
+        : `Grupo ${x}: quem se classifica? — Classificação Copa 2026`,
+    desc: (x: string, teams: string, updated: string) =>
+      `Classificação ao vivo e cenários do Grupo ${x}${updated ? ` (atualizado ${updated})` : ""} para ${teams || "cada seleção"} na Copa 2026. Quem avança, quem está eliminado e o que cada seleção precisa — 10.000 simulações de Monte Carlo, a cada hora.`,
+    h1: (x: string) => `Grupo ${x}: classificação e quem avança`,
     table: "Classificação ao vivo",
     cols: ["#", "Seleção", "J", "Pts", "SG", "Avanço"],
     fixtures: "Jogos restantes",
@@ -86,12 +110,19 @@ const COPY = {
     lead: (x: string, leader: string, p: string) =>
       `Copa 2026, Grupo ${x}: ${leader} lidera com ${p} de chance de avançar aos 16-avos; mude qualquer resultado pendente abaixo para ver como muda o grupo e a disputa pelos melhores terceiros.`,
     back: "← Voltar",
+    scenarios: "Cenários de classificação",
+    vQualified: (n: string) => `${n} está praticamente garantida nos 16-avos.`,
+    vEliminated: (n: string) => `${n} não tem mais chances realistas de avançar.`,
+    vAlive: (n: string, p: string) => `${n} ainda pode avançar — atualmente ${p} de chance.`,
   },
   de: {
-    title: (x: string) => `Gruppe ${x}: Wer kommt weiter? — WM-2026-Tabelle`,
-    desc: (x: string) =>
-      `Live-Tabelle der Gruppe ${x}, die Chance jeder Mannschaft auf das Weiterkommen (10.000 Monte-Carlo-Simulationen) und die ausstehenden Spiele. Ändere ein beliebiges Ergebnis im Szenario-Rechner und beobachte, wie sich das Rennen um die besten Gruppendritten verändert.`,
-    h1: (x: string) => `Gruppe ${x} — wer kommt weiter?`,
+    title: (x: string, teams: string) =>
+      teams
+        ? `WM 2026 Gruppe ${x}: Tabelle — ${teams} & wer weiterkommt`
+        : `Gruppe ${x}: Wer kommt weiter? — WM-2026-Tabelle`,
+    desc: (x: string, teams: string, updated: string) =>
+      `Live-Tabelle und Qualifikationsszenarien der Gruppe ${x}${updated ? ` (aktualisiert ${updated})` : ""} für ${teams || "jedes Team"} bei der WM 2026. Wer weiterkommt, wer ausscheidet und was jedes Team braucht — 10.000 Monte-Carlo-Simulationen, stündlich.`,
+    h1: (x: string) => `Gruppe ${x}: Tabelle & wer weiterkommt`,
     table: "Live-Tabelle",
     cols: ["#", "Team", "Sp", "Pkt", "TD", "Chance"],
     fixtures: "Ausstehende Spiele",
@@ -102,12 +133,19 @@ const COPY = {
     lead: (x: string, leader: string, p: string) =>
       `WM 2026, Gruppe ${x}: ${leader} führt mit ${p} Chance auf das Weiterkommen ins Sechzehntelfinale; ändere unten ein beliebiges offenes Ergebnis, um zu sehen, wie sich die Gruppe und das Rennen um die besten Dritten verändern.`,
     back: "← Zurück",
+    scenarios: "Qualifikationsszenarien",
+    vQualified: (n: string) => `${n} hat das Sechzehntelfinale praktisch sicher.`,
+    vEliminated: (n: string) => `${n} kann realistisch nicht mehr weiterkommen.`,
+    vAlive: (n: string, p: string) => `${n} kann noch weiterkommen — aktuell ${p} Chance.`,
   },
   fr: {
-    title: (x: string) => `Groupe ${x} : qui se qualifie ? — Classement Mondial 2026`,
-    desc: (x: string) =>
-      `Classement en direct du Groupe ${x}, la probabilité de chaque sélection de se qualifier (10 000 simulations de Monte-Carlo) et les matchs restants. Modifie n'importe quel résultat dans le calculateur de scénarios et observe l'évolution de la course aux meilleurs troisièmes.`,
-    h1: (x: string) => `Groupe ${x} — qui se qualifie ?`,
+    title: (x: string, teams: string) =>
+      teams
+        ? `Mondial 2026 Groupe ${x} : classement — ${teams} et qui se qualifie`
+        : `Groupe ${x} : qui se qualifie ? — Classement Mondial 2026`,
+    desc: (x: string, teams: string, updated: string) =>
+      `Classement en direct et scénarios du Groupe ${x}${updated ? ` (mis à jour ${updated})` : ""} pour ${teams || "chaque sélection"} au Mondial 2026. Qui se qualifie, qui est éliminé et ce qu'il faut à chaque équipe — 10 000 simulations de Monte-Carlo, chaque heure.`,
+    h1: (x: string) => `Groupe ${x} : classement et qui se qualifie`,
     table: "Classement en direct",
     cols: ["#", "Équipe", "J", "Pts", "Diff", "Qualif."],
     fixtures: "Matchs restants",
@@ -118,6 +156,10 @@ const COPY = {
     lead: (x: string, leader: string, p: string) =>
       `Mondial 2026, Groupe ${x} : ${leader} est en tête avec ${p} de probabilité de se qualifier pour les seizièmes ; modifie n'importe quel résultat à venir ci-dessous pour voir comment évoluent le groupe et la course aux meilleurs troisièmes.`,
     back: "← Retour",
+    scenarios: "Scénarios de qualification",
+    vQualified: (n: string) => `${n} a quasiment validé sa place en seizièmes.`,
+    vEliminated: (n: string) => `${n} n'a plus de chance réaliste de se qualifier.`,
+    vAlive: (n: string, p: string) => `${n} peut encore se qualifier — actuellement ${p} de probabilité.`,
   },
 } as const;
 
@@ -135,11 +177,35 @@ export async function generateMetadata({
   if (!LETTERS.includes(letter)) return {};
   const locale = await getLocale();
   const c = COPY[locale];
-  return {
-    title: c.title(X),
-    description: c.desc(X),
-    alternates: localizedAlternates(`/calculator/group/${letter}`, locale),
-  };
+  const alternates = localizedAlternates(`/calculator/group/${letter}`, locale);
+  // A1：把真实队名 + 真实新鲜度（该组最近结算月份）注入标题/描述，精确匹配
+  // "<队名> world cup 2026 group X standings…" 长尾查询。getForecast/getSettledIndex
+  // 均已缓存（revalidate 900）；任一失败安全回退到无队名分支。
+  try {
+    const data = await getForecast();
+    const group = data.groups.find((g) => g.letter === X);
+    if (!group) return { title: c.title(X, ""), description: c.desc(X, "", ""), alternates };
+    const nm = (t: { name: string; zh: string }) =>
+      locale === "zh" ? t.zh : teamName(t.name, locale);
+    const names = group.table.map(nm);
+    const top2 = names.slice(0, 2).join(", ");
+    const allTeams = names.join(", ");
+    const last = await getSettledIndex()
+      .then((idx) => idx.byGroup[X] ?? null)
+      .catch(() => null);
+    const updated = last
+      ? (() => {
+          const s = new Date(last).toLocaleDateString(BCP47_LOCALE[locale] ?? "en-US", {
+            year: "numeric",
+            month: "short",
+          });
+          return s.charAt(0).toUpperCase() + s.slice(1);
+        })()
+      : "";
+    return { title: c.title(X, top2), description: c.desc(X, allTeams, updated), alternates };
+  } catch {
+    return { title: c.title(X, ""), description: c.desc(X, "", ""), alternates };
+  }
 }
 
 export default async function GroupPage({
@@ -287,6 +353,33 @@ export default async function GroupPage({
           </tbody>
         </table>
       </div>
+
+      {/* A2：服务端可抓取的逐队出线判定 —— 精确命中"can X advance / X 组出线场景"查询，也是 AI 直接引用的答案。 */}
+      <h2 className="font-head mb-2 mt-6 text-sm md:text-base font-semibold">{c.scenarios}</h2>
+      <ul className="space-y-1.5 text-sm md:text-base leading-relaxed">
+        {group.table.map((t) => {
+          const adv = t.pAdvance > 1 ? t.pAdvance / 100 : t.pAdvance;
+          const line =
+            adv >= 0.9995
+              ? c.vQualified(name(t))
+              : adv <= 0.0005
+                ? c.vEliminated(name(t))
+                : c.vAlive(name(t), pct(t.pAdvance));
+          return (
+            <li key={t.id} className="flex items-start gap-2">
+              {t.flag && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={t.flag}
+                  alt=""
+                  className="mt-1 h-3 w-4 shrink-0 rounded-[2px] object-cover"
+                />
+              )}
+              <span>{line}</span>
+            </li>
+          );
+        })}
+      </ul>
 
       {fixtures.length > 0 && (
         <>

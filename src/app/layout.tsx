@@ -43,55 +43,56 @@ interface MetaCopy {
 }
 const META: Record<Locale, MetaCopy> = {
   zh: {
-    title: "环球足球预测 · 2026",
-    description: "趣味足球预测游戏：用虚拟积分预测比赛、冲排行榜、解锁段位。仅供娱乐。",
+    title: "2026 世界杯：积分榜、出线形势与比分预测",
+    description:
+      "2026 世界杯实时小组积分榜、出线场景、最佳第三名形势与模型比分预测；另有免费预测游戏。免费 · 无需注册 · 仅供娱乐。",
     ogDescription:
-      "用虚拟积分预测世界杯每场胜平负，冲排行榜、解锁段位，看 AI 趣味前瞻。免费 · 仅供娱乐。",
+      "2026 世界杯实时积分榜、出线概率、最佳第三名与每场比分预测，另附免费预测游戏。免费 · 仅供娱乐。",
     siteName: "环球足球预测 · 2026",
     appName: "环球足球预测",
   },
   en: {
-    title: "World Cup 2026 Prediction Game — Free, No Sign-up",
+    title: "World Cup 2026: Standings, Who Advances & Score Predictions",
     description:
-      "Predict every 2026 World Cup match with virtual points, climb the leaderboard and read AI previews. Free, for fun only.",
+      "Live World Cup 2026 group standings, qualification scenarios, the best third-placed race and model score predictions — plus a free prediction game. No sign-up, for fun only.",
     ogDescription:
-      "Predict every 2026 World Cup match with virtual points, climb the leaderboard and read AI previews. Free, for fun only.",
+      "Live World Cup 2026 standings, who advances, the best-thirds race and model score predictions — plus a free, no-sign-up prediction game. For fun only.",
     siteName: "WC2026.cool — World Cup 2026 Prediction Game",
     appName: "WC2026 Predictor",
   },
   es: {
-    title: "Juego de predicciones del Mundial 2026 — gratis, sin registro",
+    title: "Mundial 2026: clasificación, quién avanza y predicciones de marcador",
     description:
-      "Predice cada partido del Mundial 2026 con puntos virtuales, sube en la clasificación y lee avances con IA. Gratis, solo por diversión.",
+      "Clasificación en vivo del Mundial 2026, escenarios de clasificación, la carrera por los mejores terceros y predicciones de marcador del modelo — además de un juego de predicciones gratis. Sin registro, solo por diversión.",
     ogDescription:
-      "Predice cada partido del Mundial 2026 con puntos virtuales, sube en la clasificación y lee avances con IA. Gratis, solo por diversión.",
+      "Clasificación en vivo, quién avanza, los mejores terceros y predicciones de marcador del Mundial 2026 — además de un juego de predicciones gratis. Solo por diversión.",
     siteName: "WC2026.cool — Juego de predicciones del Mundial 2026",
     appName: "WC2026 Predictor",
   },
   pt: {
-    title: "Jogo de previsões da Copa 2026 — grátis, sem cadastro",
+    title: "Copa 2026: classificação, quem avança e previsões de placar",
     description:
-      "Preveja cada jogo da Copa 2026 com pontos virtuais, suba no ranking e leia prévias com IA. Grátis, só diversão.",
+      "Classificação ao vivo da Copa 2026, cenários de classificação, a disputa pelos melhores terceiros e previsões de placar do modelo — além de um jogo de previsões grátis. Sem cadastro, só diversão.",
     ogDescription:
-      "Preveja cada jogo da Copa 2026 com pontos virtuais, suba no ranking e leia prévias com IA. Grátis, só diversão.",
+      "Classificação ao vivo, quem avança, os melhores terceiros e previsões de placar da Copa 2026 — além de um jogo de previsões grátis. Só diversão.",
     siteName: "WC2026.cool — Jogo de previsões da Copa 2026",
     appName: "WC2026 Predictor",
   },
   de: {
-    title: "WM-2026-Tippspiel — kostenlos, ohne Anmeldung",
+    title: "WM 2026: Tabelle, wer weiterkommt & Ergebnisprognosen",
     description:
-      "Tippe jedes Spiel der WM 2026 mit virtuellen Punkten, klettere im Ranking und lies KI-Vorschauen. Kostenlos, nur zum Spaß.",
+      "Live-Tabellen der WM 2026, Qualifikationsszenarien, das Rennen um die besten Gruppendritten und Modell-Ergebnisprognosen — plus ein kostenloses Tippspiel. Ohne Anmeldung, nur zum Spaß.",
     ogDescription:
-      "Tippe jedes Spiel der WM 2026 mit virtuellen Punkten, klettere im Ranking und lies KI-Vorschauen. Kostenlos, nur zum Spaß.",
+      "Live-Tabellen, wer weiterkommt, die besten Gruppendritten und Ergebnisprognosen zur WM 2026 — plus ein kostenloses Tippspiel. Nur zum Spaß.",
     siteName: "WC2026.cool — WM-2026-Tippspiel",
     appName: "WC2026 Predictor",
   },
   fr: {
-    title: "Jeu de prédictions de la Coupe du monde 2026 — gratuit, sans inscription",
+    title: "Mondial 2026 : classement, qui se qualifie et pronostics de score",
     description:
-      "Prédis chaque match de la Coupe du monde 2026 avec des points virtuels, grimpe au classement et lis des aperçus IA. Gratuit, juste pour le plaisir.",
+      "Classements en direct du Mondial 2026, scénarios de qualification, la course aux meilleurs troisièmes et des pronostics de score du modèle — plus un jeu de prédictions gratuit. Sans inscription, juste pour le plaisir.",
     ogDescription:
-      "Prédis chaque match de la Coupe du monde 2026 avec des points virtuels, grimpe au classement et lis des aperçus IA. Gratuit, juste pour le plaisir.",
+      "Classements en direct, qui se qualifie, les meilleurs troisièmes et des pronostics de score du Mondial 2026 — plus un jeu de prédictions gratuit. Juste pour le plaisir.",
     siteName: "WC2026.cool — Jeu de prédictions de la Coupe du monde 2026",
     appName: "WC2026 Predictor",
   },
