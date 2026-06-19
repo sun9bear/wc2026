@@ -1,15 +1,32 @@
+"use client";
+
 import Link from "next/link";
+import { useSyncExternalStore } from "react";
 import type { FixtureMatch } from "@/lib/fixtures/matches";
 import { TeamBadge } from "@/components/TeamBadge";
 import { LocalTime } from "@/components/LocalTime";
+import { LiveScore } from "@/components/LiveScore";
 import { stageName, groupName } from "@/lib/football/teams";
 import { getDict, localeHref, type Locale } from "@/i18n";
 
+// 客户端时间戳只读一次(getSnapshot 稳定)，与 MatchList 同模式：避免在 render 里调用 Date.now()
+// 引发的纯度/水合问题(SSR 与首帧 now=0 → started=false 一致，mount 后再判定)。
+const emptySubscribe = () => () => {};
+let clientNow = 0;
+function getClientNow() {
+  if (clientNow === 0) clientNow = Date.now();
+  return clientNow;
+}
+const LIVE_WINDOW_MS = 140 * 60_000;
+
 export function MatchCard({ match, locale }: { match: FixtureMatch; locale: Locale }) {
   const t = getDict(locale);
+  const now = useSyncExternalStore(emptySubscribe, getClientNow, () => 0);
   const settled =
     match.status === "settled" && match.homeScore != null && match.awayScore != null;
-  const started = !settled && new Date(match.kickoffAt).getTime() <= Date.now();
+  const kickoffMs = new Date(match.kickoffAt).getTime();
+  // started 仅 mount 后判定，且限定在直播窗口(140min)内——避免久未结算的旧场一直显示「进行中」。
+  const started = !settled && now !== 0 && kickoffMs <= now && now <= kickoffMs + LIVE_WINDOW_MS;
 
   return (
     <Link
@@ -39,6 +56,9 @@ export function MatchCard({ match, locale }: { match: FixtureMatch; locale: Loca
             <div className="font-head text-xl font-bold">
               {match.homeScore} : {match.awayScore}
             </div>
+          ) : started ? (
+            // 进行中：显示实时比分+分钟（拿不到则内部回退 VS+时间）。
+            <LiveScore matchId={match.id} kickoffAt={match.kickoffAt} locale={locale} />
           ) : (
             <>
               <div className="font-head text-sm font-bold text-muted">VS</div>

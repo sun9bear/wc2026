@@ -4,6 +4,7 @@ import { after } from "next/server";
 import { getMatches } from "@/lib/matches/getMatches";
 import { MatchList } from "@/components/MatchList";
 import { MatchCard } from "@/components/MatchCard";
+import { LiveNowBar } from "@/components/LiveNowBar";
 import { Disclaimer } from "@/components/Disclaimer";
 import { SettleDrawer } from "@/components/SettleDrawer";
 import { TrackedLink } from "@/components/TrackedLink";
@@ -41,6 +42,17 @@ export default async function Home({
     all.find(
       (m) => m.status !== "settled" && new Date(m.kickoffAt).getTime() > now
     ) ?? null;
+
+  // 直播窗口内候选场次（已开赛 ≤140min、未结算）；LiveNowBar 客户端逐场确认真直播再渲染。
+  const LIVE_WINDOW_MS = 140 * 60_000;
+  const liveCandidates = all
+    .filter(
+      (m) =>
+        m.status !== "settled" &&
+        new Date(m.kickoffAt).getTime() <= now &&
+        now <= new Date(m.kickoffAt).getTime() + LIVE_WINDOW_MS
+    )
+    .map((m) => ({ id: m.id, homeName: m.home.name, awayName: m.away.name }));
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8">
@@ -108,6 +120,9 @@ export default async function Home({
           </span>
         </div>
       </TrackedLink>
+
+      {/* 正在直播入口条：有真直播时顶在焦点战上方，点击直达比赛页(看板) */}
+      <LiveNowBar matches={liveCandidates} locale={locale} />
 
       {/* 次入口：今晚焦点战，直达预测 */}
       {focus && (
