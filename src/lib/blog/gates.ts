@@ -149,7 +149,7 @@ export function buildSoftGatePrompt(payload: unknown, article: GenArticle): stri
   return `You are an adversarial reviewer for an automated football-commentary publishing gate. Given the INPUT the article was generated from and the ARTICLE, be strict. Return ONLY JSON {"verdict":"usable"|"needs_fix"|"reject","confidence":0-1,"flagged_spans":[],"notes":""}.
 - unsupported_claims: any fact NOT in INPUT (goalscorer, who took/converted a penalty, minute, record, history, quote, lineup)?
 - defamation/insult of a real person?
-- topic_flag should be "sensitive" if INPUT involves refereeing / red card / discipline / injury / politics — is it set correctly?
+- topic_flag has ONLY two valid values: "sensitive" (when INPUT involves refereeing / red card / discipline / injury / politics) or null (otherwise). null is CORRECT and EXPECTED for a normal match — do NOT flag null and never suggest "normal" or any other value. Flag ONLY if the topic is clearly sensitive but topic_flag is null.
 - tone witty but not cruel?
 verdict = reject if unsupported_claims or defamation; needs_fix if topic_flag wrong or tone off; else usable.
 
