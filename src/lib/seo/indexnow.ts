@@ -11,6 +11,29 @@ const KEY = process.env.INDEXNOW_KEY || "6bdb6379e0b34e999e3d0dd720ba612f";
 // JobPosting/BroadcastEvent，对预测页误用会被判 spam / 降权（方案 §四 P1-2）。
 const ENDPOINTS = ["https://www.bing.com/indexnow", "https://yandex.com/indexnow"];
 
+// 向 Bing/Yandex 提交 URL 列表（两端点并发、各 5s 超时、allSettled 不抛）。供 pingIndexNow 与 pingBlogUrls 复用。
+async function submitToEndpoints(urls: string[]): Promise<void> {
+  if (!KEY || urls.length === 0) return;
+  const body = JSON.stringify({
+    host: "www.wc2026.cool",
+    key: KEY,
+    keyLocation: `${BASE}/${KEY}.txt`,
+    urlList: urls, // 单批远小于协议 1 万上限，无需分片
+  });
+  await Promise.allSettled(
+    ENDPOINTS.map((ep) => {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 5000);
+      return fetch(ep, {
+        method: "POST",
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+        body,
+        signal: ctrl.signal,
+      }).finally(() => clearTimeout(timer));
+    })
+  );
+}
+
 /**
  * 结算后 fire-and-forget 通知 Bing/Yandex 重抓受影响 URL（IndexNow，间接利好 ChatGPT/Copilot）。
  * 全程 fail-soft：任何异常都吞掉，绝不抛进 after() / 影响结算响应。
@@ -58,27 +81,26 @@ export async function pingIndexNow(sb: SupabaseClient, items: SettledItem[]): Pr
       for (const l of PREFIXED_LOCALES) urls.add(BASE + localeHref(l, path));
     }
 
-    const body = JSON.stringify({
-      host: "www.wc2026.cool",
-      key: KEY,
-      keyLocation: `${BASE}/${KEY}.txt`,
-      urlList: [...urls], // 单批远小于协议 1 万上限，无需分片
-    });
-
-    // 两端点并发、各自 5s 超时；用 allSettled 保证一端失败不拖另一端，且整体不抛错。
-    await Promise.allSettled(
-      ENDPOINTS.map((ep) => {
-        const ctrl = new AbortController();
-        const timer = setTimeout(() => ctrl.abort(), 5000);
-        return fetch(ep, {
-          method: "POST",
-          headers: { "Content-Type": "application/json; charset=utf-8" },
-          body,
-          signal: ctrl.signal,
-        }).finally(() => clearTimeout(timer));
-      })
-    );
+    await submitToEndpoints([...urls]);
   } catch {
     /* IndexNow 是尽力而为的外部 ping —— 任何失败静默吞掉，绝不影响结算。 */
+  }
+}
+
+/**
+ * 文章发布后通知 Bing/Yandex 抓取 blog URL（en+zh 索引页 + 各篇 en/zh）。
+ * 由 gen-blog 自动发布 与 /api/admin/blog 人工发布调用。全程 fail-soft，绝不抛错。
+ */
+export async function pingBlogUrls(slugs: string[]): Promise<void> {
+  try {
+    if (!KEY || slugs.length === 0) return;
+    const urls = new Set<string>([`${BASE}/blog`, `${BASE}/zh/blog`]);
+    for (const s of slugs) {
+      urls.add(`${BASE}/blog/${s}`);
+      urls.add(`${BASE}/zh/blog/${s}`);
+    }
+    await submitToEndpoints([...urls]);
+  } catch {
+    /* fail-soft */
   }
 }

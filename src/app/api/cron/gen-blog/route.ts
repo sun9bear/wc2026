@@ -13,6 +13,7 @@ import { buildSettledCandidate } from "@/lib/blog/scoreCandidate";
 import { generateForCandidate } from "@/lib/blog/generate";
 import * as llm from "@/lib/blog/llm";
 import { upsertBlogEntry } from "@/lib/blog/store";
+import { pingBlogUrls } from "@/lib/seo/indexnow";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -52,7 +53,8 @@ async function runGenBlog(autoPublish: boolean, cap: number): Promise<void> {
     const cand = buildSettledCandidate(delta, classifyProbDelta(delta), null);
     if (!cand) continue;
     const draft = await generateForCandidate(cand, llm, { autoPublish });
-    await upsertBlogEntry(cand, draft, nowIso); // upsert 最后一步：中途超时→未落库→下次自愈重试
+    const { slug, error } = await upsertBlogEntry(cand, draft, nowIso); // upsert 最后一步：中途超时→未落库→下次自愈重试
+    if (!error && draft.status === "published") await pingBlogUrls([slug]); // 自动发布→通知 Bing/Yandex 抓取
     made++;
   }
 }

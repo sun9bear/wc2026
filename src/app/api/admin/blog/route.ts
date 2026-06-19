@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import {
   adminSecret,
   safeEqual,
@@ -10,6 +10,7 @@ import {
   type AdminStatus,
 } from "@/lib/blog/admin";
 import { rateLimit } from "@/lib/rateLimit";
+import { pingBlogUrls } from "@/lib/seo/indexnow";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -74,6 +75,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "bad status" }, { status: 400 });
       }
       const affected = await setStatus(slugs, status as AdminStatus);
+      if (status === "published") after(() => pingBlogUrls(slugs)); // 人工发布→通知 Bing/Yandex 抓取
       return NextResponse.json({ ok: true, affected });
     }
     return NextResponse.json({ error: "unknown action" }, { status: 400 });

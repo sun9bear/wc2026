@@ -35,9 +35,52 @@ function expand(entries: Entry[]): MetadataRoute.Sitemap {
   return out;
 }
 
+// blog 仅 en/zh：单独构建（不走 expand 的 6 语展开），hreflang 只吐 en + zh-Hans + x-default（fail-closed）。
+async function blogSitemap(): Promise<MetadataRoute.Sitemap> {
+  const langs = (path: string) => ({
+    en: BASE + localeHref("en", path),
+    "zh-Hans": BASE + localeHref("zh", path),
+    "x-default": BASE + localeHref("en", path),
+  });
+  const out: MetadataRoute.Sitemap = [];
+  for (const l of ["en", "zh"] as const) {
+    out.push({
+      url: BASE + localeHref(l, "/blog"),
+      changeFrequency: "daily",
+      priority: 0.7,
+      alternates: { languages: langs("/blog") },
+    });
+  }
+  try {
+    const { data } = await supabase
+      .from("blog_entries")
+      .select("slug_en, updated_at, published_at")
+      .eq("status", "published")
+      .order("published_at", { ascending: false })
+      .limit(500);
+    for (const r of (data as { slug_en: string; updated_at: string | null; published_at: string | null }[] | null) ?? []) {
+      const path = `/blog/${r.slug_en}`;
+      const lastModified = r.updated_at ?? r.published_at ?? undefined;
+      for (const l of ["en", "zh"] as const) {
+        out.push({
+          url: BASE + localeHref(l, path),
+          changeFrequency: "weekly",
+          priority: 0.6,
+          ...(lastModified ? { lastModified } : {}),
+          alternates: { languages: langs(path) },
+        });
+      }
+    }
+  } catch {
+    /* fail-soft：库读失败仍保留 /blog 索引页 */
+  }
+  return out;
+}
+
 // 站点地图：静态页 + 全部比赛/球队详情页，每页双 locale。
 // 库读失败则只回静态页（仍含双 locale + hreflang），绝不让 sitemap 报错（CodeX 外审 fail-closed）。
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const blog = await blogSitemap(); // blog 自带 fail-soft，单独构建（en/zh）
   const staticBase: Entry[] = [
     { path: "/", changeFrequency: "hourly", priority: 1 },
     { path: "/combo", changeFrequency: "hourly", priority: 0.9 },
@@ -107,8 +150,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
       ...(settled ? { lastModified: settled } : {}),
     }));
-    return expand([...statics, ...teams, ...matches]);
+    return [...expand([...statics, ...teams, ...matches]), ...blog];
   } catch {
-    return expand(staticBase);
+    return [...expand(staticBase), ...blog];
   }
 }
