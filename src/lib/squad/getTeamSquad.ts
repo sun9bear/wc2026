@@ -7,6 +7,7 @@
 
 import { unstable_cache } from "next/cache";
 import { getServerSupabase } from "@/lib/supabase/server";
+import { normalizeNameSorted } from "@/lib/players/perfScore";
 
 // 站内 teams.name → squad_teams.team_name（仅这 7 处与 squad 侧不同名；其余按名 ilike 直配）。
 const NAME_ALIAS: Record<string, string> = {
@@ -29,7 +30,8 @@ export interface SquadPlayer {
   club: string | null;
   age: number | null;
   caps: number | null;
-  goals: number | null;
+  goals: number | null; // 国家队生涯进球（international_goals）
+  popSlug: string | null; // 若该球员有人气详情页 /player/[slug] 则附 slug，否则 null
 }
 
 export interface TeamSquad {
@@ -101,6 +103,15 @@ async function computeTeamSquad(teamName: string): Promise<TeamSquad | null> {
   const rows = (pr as PlayerRow[] | null) ?? [];
   if (rows.length === 0) return null;
 
+  // 人气榜 slug 映射：41 名精选球星，全局 token 排序名匹配（碰撞风险可忽略）。
+  // 有页才链接 → 多数阵容球员 popSlug=null（人气榜仅覆盖明星）。
+  const { data: pop } = await sb.from("players").select("slug, name").eq("is_active", true);
+  const popMap = new Map<string, string>();
+  for (const r of (pop as { slug: string; name: string }[] | null) ?? []) {
+    const k = normalizeNameSorted(r.name);
+    if (k) popMap.set(k, r.slug);
+  }
+
   const players: SquadPlayer[] = rows.map((p) => ({
     no: p.squad_no,
     pos: (p.position_group as PositionGroup | null) ?? null,
@@ -110,6 +121,7 @@ async function computeTeamSquad(teamName: string): Promise<TeamSquad | null> {
     age: p.age_at_tournament_start,
     caps: p.caps,
     goals: p.international_goals,
+    popSlug: popMap.get(normalizeNameSorted(p.player_name)) ?? null,
   }));
 
   return {

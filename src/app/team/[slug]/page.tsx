@@ -593,7 +593,20 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
                       {list.map((p) => (
                         <tr key={`${pg}-${p.no}-${p.name}`} className="border-b border-border/50 last:border-0">
                           <td className="px-2 py-1.5 font-head tabular-nums text-muted">{p.no ?? "–"}</td>
-                          <td className="px-2 py-1.5">{locale === "zh" ? p.nameZh ?? p.name : p.name}</td>
+                          <td className="px-2 py-1.5">
+                            {p.popSlug ? (
+                              <Link
+                                href={localeHref(locale, `/player/${p.popSlug}`)}
+                                className="text-green hover:underline"
+                              >
+                                {locale === "zh" ? p.nameZh ?? p.name : p.name}
+                              </Link>
+                            ) : locale === "zh" ? (
+                              p.nameZh ?? p.name
+                            ) : (
+                              p.name
+                            )}
+                          </td>
                           <td className="px-2 py-1.5 text-xs text-muted">{p.club ?? "–"}</td>
                           <td className="px-2 py-1.5 text-right font-head tabular-nums">{p.age ?? "–"}</td>
                           <td className="px-2 py-1.5 text-right font-head tabular-nums">{p.caps ?? "–"}</td>

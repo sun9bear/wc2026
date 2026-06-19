@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getPlayer, getPlayerFacts, getPlayerIntro } from "@/lib/players/getPlayer";
+import { getTeamSquad } from "@/lib/squad/getTeamSquad";
+import { normalizeNameSorted } from "@/lib/players/perfScore";
 import { PageContainer } from "@/components/PageContainer";
 import { PlayerVoteButton } from "@/components/PlayerVoteButton";
 import { Disclaimer } from "@/components/Disclaimer";
@@ -27,6 +29,16 @@ function dispName(slug: string, latin: string, locale: Locale): string {
 }
 
 // 详情页本地文案（6 语，页面专属，免动全局 Dict）。
+// 数据卡标签（6 语）。进球来自射手榜(世界杯)；出场/进球/俱乐部来自官方阵容(国家队生涯)。
+const STAT: Record<Locale, { wcGoals: string; intlGoals: string; caps: string; club: string }> = {
+  zh: { wcGoals: "世界杯进球", intlGoals: "国家队进球", caps: "国家队出场", club: "俱乐部" },
+  en: { wcGoals: "World Cup goals", intlGoals: "Int'l goals", caps: "Caps", club: "Club" },
+  es: { wcGoals: "Goles del Mundial", intlGoals: "Goles internac.", caps: "Internac.", club: "Club" },
+  pt: { wcGoals: "Gols na Copa", intlGoals: "Gols pela seleção", caps: "Jogos seleção", club: "Clube" },
+  de: { wcGoals: "WM-Tore", intlGoals: "Länderspieltore", caps: "Länderspiele", club: "Verein" },
+  fr: { wcGoals: "Buts au Mondial", intlGoals: "Buts internat.", caps: "Sélections", club: "Club" },
+};
+
 const UI: Record<Locale, { photos: string; bioSource: string; more: string }> = {
   zh: { photos: "相册", bioSource: "资料来自维基百科 · CC BY-SA", more: "查看词条" },
   en: { photos: "Photos", bioSource: "Bio from Wikipedia · CC BY-SA", more: "Read more" },
@@ -63,6 +75,12 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
   const t = getDict(locale);
   const p = await getPlayer(slug);
   if (!p) notFound();
+
+  // 反查官方阵容拿生涯数据（国家队出场/进球/俱乐部）：按 token 排序名匹配本队阵容。
+  const squad = await getTeamSquad(p.teamName).catch(() => null);
+  const sp =
+    squad?.players.find((x) => normalizeNameSorted(x.name) === normalizeNameSorted(p.name)) ?? null;
+  const stat = STAT[locale];
 
   const name = dispName(slug, p.name, locale);
   const team = teamName(p.teamName, locale);
@@ -121,6 +139,38 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
         <span>⚽ {p.perfScore}</span>
         <span>🔥 {p.buzzScore}</span>
       </div>
+
+      {/* 真实数据卡：世界杯进球(射手榜) + 国家队生涯出场/进球/俱乐部(官方阵容)。只显示有数据的项。 */}
+      {(p.goals > 0 || sp) && (
+        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {p.goals > 0 && (
+            <div className="rounded-md border border-border bg-surface-2 p-3">
+              <div className="font-head text-2xl font-bold tabular-nums text-gold">{p.goals}</div>
+              <div className="mt-0.5 text-[11px] text-muted md:text-xs">🏆 {stat.wcGoals}</div>
+            </div>
+          )}
+          {sp?.goals != null && (
+            <div className="rounded-md border border-border bg-surface-2 p-3">
+              <div className="font-head text-2xl font-bold tabular-nums">{sp.goals}</div>
+              <div className="mt-0.5 text-[11px] text-muted md:text-xs">⚽ {stat.intlGoals}</div>
+            </div>
+          )}
+          {sp?.caps != null && (
+            <div className="rounded-md border border-border bg-surface-2 p-3">
+              <div className="font-head text-2xl font-bold tabular-nums">{sp.caps}</div>
+              <div className="mt-0.5 text-[11px] text-muted md:text-xs">👕 {stat.caps}</div>
+            </div>
+          )}
+          {sp?.club && (
+            <div className="col-span-2 rounded-md border border-border bg-surface-2 p-3 sm:col-span-1">
+              <div className="font-head truncate text-sm font-bold" title={sp.club}>
+                {sp.club}
+              </div>
+              <div className="mt-0.5 text-[11px] text-muted md:text-xs">🏟 {stat.club}</div>
+            </div>
+          )}
+        </div>
+      )}
 
       {blurb && <p className="mt-3 text-sm md:text-base italic text-muted">{blurb}</p>}
 

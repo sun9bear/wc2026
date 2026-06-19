@@ -12,6 +12,21 @@ export function normalizeName(s: string): string {
     .replace(/[^a-z0-9]/g, "");
 }
 
+/** 顺序无关的归一化（token 排序）：跨源匹配「姓 名」(squad: MESSI Lionel) vs「名 姓」(榜单: Lionel Messi)。
+ *  实测 Argentina 3/3、Brazil 2/3 命中；普通 normalizeName 因顺序不同会漏配。 */
+export function normalizeNameSorted(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .sort()
+    .join("");
+}
+
 /** 当前射手榜 → Map<归一化名, 进球数>（同名取最大，稳健）。归一化加权在 rankingMath.ts。 */
 export function buildGoalsMap(scorers: Scorer[]): Map<string, number> {
   const m = new Map<string, number>();
