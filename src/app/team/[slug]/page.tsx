@@ -30,6 +30,62 @@ const fmtP = (x: number) => {
   return v >= 10 ? v.toFixed(0) : v.toFixed(1);
 };
 
+// C3：SportsTeam sameAs → 英文维基百科（最强 GEO 实体锚定信号）。键 = 球队 slug（与 sitemap 一致）。
+// 仅收录确认无误的条目；未命中 → 不输出 sameAs（fail-closed，绝不指错实体）。
+// US/CA/AU 用 "men's national soccer team"（football 在这些国家有歧义）；其余 "X national football team"
+// 至少有重定向到现行男足条目，Google 解析 sameAs 时会跟随重定向。
+const WIKI = "https://en.wikipedia.org/wiki/";
+const TEAM_WIKI: Record<string, string> = {
+  algeria: `${WIKI}Algeria_national_football_team`,
+  argentina: `${WIKI}Argentina_national_football_team`,
+  australia: `${WIKI}Australia_men%27s_national_soccer_team`,
+  austria: `${WIKI}Austria_national_football_team`,
+  belgium: `${WIKI}Belgium_national_football_team`,
+  "bosnia-herzegovina": `${WIKI}Bosnia_and_Herzegovina_national_football_team`,
+  brazil: `${WIKI}Brazil_national_football_team`,
+  canada: `${WIKI}Canada_men%27s_national_soccer_team`,
+  "cape-verde-islands": `${WIKI}Cape_Verde_national_football_team`,
+  colombia: `${WIKI}Colombia_national_football_team`,
+  "congo-dr": `${WIKI}DR_Congo_national_football_team`,
+  croatia: `${WIKI}Croatia_national_football_team`,
+  "curaçao": `${WIKI}Curaçao_national_football_team`,
+  czechia: `${WIKI}Czech_Republic_national_football_team`,
+  ecuador: `${WIKI}Ecuador_national_football_team`,
+  egypt: `${WIKI}Egypt_national_football_team`,
+  england: `${WIKI}England_national_football_team`,
+  france: `${WIKI}France_national_football_team`,
+  germany: `${WIKI}Germany_national_football_team`,
+  ghana: `${WIKI}Ghana_national_football_team`,
+  haiti: `${WIKI}Haiti_national_football_team`,
+  iran: `${WIKI}Iran_national_football_team`,
+  iraq: `${WIKI}Iraq_national_football_team`,
+  "ivory-coast": `${WIKI}Ivory_Coast_national_football_team`,
+  japan: `${WIKI}Japan_national_football_team`,
+  jordan: `${WIKI}Jordan_national_football_team`,
+  mexico: `${WIKI}Mexico_national_football_team`,
+  morocco: `${WIKI}Morocco_national_football_team`,
+  netherlands: `${WIKI}Netherlands_national_football_team`,
+  "new-zealand": `${WIKI}New_Zealand_national_football_team`,
+  norway: `${WIKI}Norway_national_football_team`,
+  panama: `${WIKI}Panama_national_football_team`,
+  paraguay: `${WIKI}Paraguay_national_football_team`,
+  portugal: `${WIKI}Portugal_national_football_team`,
+  qatar: `${WIKI}Qatar_national_football_team`,
+  "saudi-arabia": `${WIKI}Saudi_Arabia_national_football_team`,
+  scotland: `${WIKI}Scotland_national_football_team`,
+  senegal: `${WIKI}Senegal_national_football_team`,
+  "south-africa": `${WIKI}South_Africa_national_football_team`,
+  "south-korea": `${WIKI}South_Korea_national_football_team`,
+  spain: `${WIKI}Spain_national_football_team`,
+  sweden: `${WIKI}Sweden_national_football_team`,
+  switzerland: `${WIKI}Switzerland_national_football_team`,
+  tunisia: `${WIKI}Tunisia_national_football_team`,
+  turkey: `${WIKI}Turkey_national_football_team`,
+  "united-states": `${WIKI}United_States_men%27s_national_soccer_team`,
+  uruguay: `${WIKI}Uruguay_national_football_team`,
+  uzbekistan: `${WIKI}Uzbekistan_national_football_team`,
+};
+
 const COPY = {
   zh: {
     back: "← 返回",
@@ -448,6 +504,8 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
         "@id": `${selfUrl(`/team/${d.slug}`, locale)}#team`,
         name: d.name,
         sport: "Soccer",
+        ...(TEAM_WIKI[d.slug] ? { sameAs: [TEAM_WIKI[d.slug]] } : {}),
+        ...(d.flag ? { logo: d.flag.replace("/w80/", "/w160/") } : {}),
         ...(squad?.coach ? { coach: { "@type": "Person", name: squad.coach } } : {}),
         url: selfUrl(`/team/${d.slug}`, locale),
       },
