@@ -82,9 +82,26 @@ function mockSoftReject(article: object): GenDeps {
   return { generate: async () => fence(article), review: async () => JSON.stringify({ verdict: "reject", confidence: 0.9, notes: "off" }) };
 }
 
+// CLEAN 去掉结尾的站内链接句（数字不变 → 仍过硬闸/软闸，但缺内链）。
+const NOLINK = {
+  ...CLEAN,
+  body: "Panama came in our favorites at 57%, Ghana just 18%, a draw 25%. The scoreboard said 1-0 Ghana. Ghana's chance to advance jumps from 25% to 67%; Panama tumble from 62% to 21%. Title hopes for both stay essentially nil.",
+};
+// 缺内链→定向补链：首次 NOLINK，补链调用（user 含 "MISSING the required internal links"）返回带链 CLEAN。
+function mockNoLinkThenLinked(): GenDeps {
+  return {
+    generate: async (_l, _s, user) => fence(user.includes("MISSING the required internal links") ? CLEAN : NOLINK),
+    review: async () => USABLE,
+  };
+}
+// 始终缺内链：补链后仍无 → 留人工（no_internal_link）。
+function mockNoLinkStuck(): GenDeps {
+  return { generate: async () => fence(NOLINK), review: async () => USABLE };
+}
+
 async function runDeps(label: string, deps: GenDeps, opts: { autoPublish?: boolean }, expect: string): Promise<void> {
   const d = await generateForCandidate(cand, deps, opts);
-  const tag = (x: typeof d.en) => `${x.hard?.pass ? "✓" : "✗"}${x.repaired ? "(repaired)" : ""}`;
+  const tag = (x: typeof d.en) => `${x.hard?.pass ? "✓" : "✗"}${x.linkOk ? "" : "/nolink"}${x.repaired ? "(repaired)" : ""}`;
   console.log(`${label}\n   期望: ${expect}\n   实得: ${d.status} (${d.statusReason}) [en ${tag(d.en)} / zh ${tag(d.zh)}]\n`);
 }
 
@@ -101,4 +118,6 @@ async function run(label: string, article: object, opts: { autoPublish?: boolean
   await runDeps("parse 失败→重新生成→过", mockParseFailThenGood(CLEAN), { autoPublish: true }, "published (en/zh repaired)");
   await runDeps("软闸 needs_fix→带反馈重写→过", mockSoftFixThenUsable(CLEAN, CLEAN), { autoPublish: true }, "published (en/zh repaired)");
   await runDeps("软闸 reject→不重写→人工", mockSoftReject(CLEAN), { autoPublish: true }, "needs_review (soft_gate), 不 repaired");
+  await runDeps("缺内链→定向补链→过", mockNoLinkThenLinked(), { autoPublish: true }, "published (en/zh repaired)");
+  await runDeps("缺内链且补不上→人工", mockNoLinkStuck(), { autoPublish: true }, "needs_review (no_internal_link)");
 })();

@@ -21,6 +21,7 @@ export interface LocaleDraft {
   hard: HardGateResult | null;
   soft: SoftVerdict | null;
   repaired: boolean; // 是否经过 1-shot 定向修复
+  linkOk: boolean; // 正文是否含站内链接 [文字](/路径)
 }
 
 export interface BlogDraft {
@@ -126,6 +127,25 @@ ${JSON.stringify(article)}
 \`\`\``;
 }
 
+/** 正文是否含站内链接 [文字](/路径)（markdown 内链的签名）。 */
+function hasInternalLink(body: string): boolean {
+  return body.includes("](/");
+}
+
+/** 缺站内链接重写 prompt：只补 1-2 个 INPUT.links 里的站内链接，其余（尤其数字/事实）原样不动。 */
+function linkRepairPrompt(payload: unknown, article: GenArticle): string {
+  return `Your previous draft is good but is MISSING the required internal links. Add 1-2 relevant internal links near the end of the body using markdown [text](/path), with paths taken ONLY from INPUT.links (relative internal paths, never external URLs). Keep everything else — especially ALL numbers and facts — exactly the same. Return the corrected full JSON (same five keys title/excerpt/body/keywords/topic_flag).
+
+INPUT (use paths from INPUT.links):
+\`\`\`json
+${JSON.stringify(payload)}
+\`\`\`
+Your previous draft:
+\`\`\`json
+${JSON.stringify(article)}
+\`\`\``;
+}
+
 async function buildLocaleDraft(cand: BlogCandidate, locale: "en" | "zh", deps: GenDeps): Promise<LocaleDraft> {
   const payload = buildInputPayload(cand, locale);
 
@@ -167,6 +187,8 @@ async function buildLocaleDraft(cand: BlogCandidate, locale: "en" | "zh", deps: 
   if (!article) repairUser = userPrompt(payload);
   else if (hard && !hard.pass && isMechanical(hard.reasons)) repairUser = repairPrompt(payload, article, hard);
   else if (hard && hard.pass && soft && soft.verdict === "needs_fix") repairUser = softRepairPrompt(payload, article, soft);
+  // 硬+软都过但缺站内链接 → 定向补链（提示词要求 1-2 个内链，zh 偶发漏；en 100% 有）。
+  else if (hard && hard.pass && soft?.verdict === "usable" && !hasInternalLink(article.body)) repairUser = linkRepairPrompt(payload, article);
 
   let repaired = false;
   if (repairUser) {
@@ -180,7 +202,8 @@ async function buildLocaleDraft(cand: BlogCandidate, locale: "en" | "zh", deps: 
     // r2 仍无有效 article → 保留首轮失败状态（article 可能仍 null → needs_review）
   }
 
-  return { locale, payload, article, parseError, hard, soft, repaired };
+  const linkOk = !!article && hasInternalLink(article.body);
+  return { locale, payload, article, parseError, hard, soft, repaired, linkOk };
 }
 
 /** 候选 → BlogDraft（含两语稿 + 闸结果 + 路由 status）。autoPublish 默认 false（灰度：全清也先 needs_review）。 */
@@ -193,6 +216,8 @@ export async function generateForCandidate(
   const topicSensitive = en.article?.topic_flag === "sensitive" || zh.article?.topic_flag === "sensitive";
   const hardFail = !en.article || !zh.article || !en.hard?.pass || !zh.hard?.pass;
   const softBad = [en.soft, zh.soft].some((s) => !s || s.verdict !== "usable" || s.confidence < SOFT_MIN_CONF);
+  // 任一语种正文缺站内链接（重写后仍缺）→ 不自动发，留人工（强制内链）。
+  const linkMissing = (!!en.article && !en.linkOk) || (!!zh.article && !zh.linkOk);
 
   let status: BlogDraft["status"];
   let statusReason: string;
@@ -205,6 +230,9 @@ export async function generateForCandidate(
   } else if (softBad) {
     status = "needs_review";
     statusReason = "soft_gate";
+  } else if (linkMissing) {
+    status = "needs_review";
+    statusReason = "no_internal_link";
   } else {
     status = opts.autoPublish ? "published" : "needs_review";
     statusReason = opts.autoPublish ? "auto" : "gray_rollout";
