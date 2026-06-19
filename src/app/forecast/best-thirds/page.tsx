@@ -7,7 +7,8 @@ import { JsonLd } from "@/lib/seo/jsonLd";
 import { getSettledIndex } from "@/lib/seo/freshness";
 import { R32, allocateThirds } from "@/lib/prob/bracket";
 import { Disclaimer } from "@/components/Disclaimer";
-import { localeHref, type Locale, BCP47_LOCALE } from "@/i18n";
+import { localeHref, type Locale } from "@/i18n";
+import { LocalTime } from "@/components/LocalTime";
 import { teamName } from "@/lib/football/teams";
 import { localizedAlternates, selfUrl } from "@/lib/seo/canonical";
 
@@ -308,7 +309,7 @@ export default async function BestThirdsPage() {
       <h1 className="font-head mt-3 text-2xl md:text-3xl font-bold">🥉 {c.h1}</h1>
       {idx?.all && (
         <p className="mt-1 text-[11px] md:text-xs text-muted">
-          {c.updated} {new Date(idx.all).toLocaleString(BCP47_LOCALE[locale] ?? "en-US")}
+          {c.updated} <LocalTime iso={idx.all} locale={locale} mode="datetime" />
         </p>
       )}
 

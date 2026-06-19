@@ -9,7 +9,7 @@ import { Sparkline } from "@/components/Sparkline";
 import { TrackedLink } from "@/components/TrackedLink";
 import { JsonLd } from "@/lib/seo/jsonLd";
 import { getSettledIndex } from "@/lib/seo/freshness";
-import { localeHref, type Locale, BCP47_LOCALE } from "@/i18n";
+import { localeHref, type Locale } from "@/i18n";
 import { teamName, groupName } from "@/lib/football/teams";
 import { localizedAlternates, selfUrl, SITE_ORIGIN } from "@/lib/seo/canonical";
 
@@ -284,7 +284,7 @@ export default async function ForecastPage() {
       <JsonLd data={datasetJsonLd} />
       <h1 className="font-head text-2xl md:text-3xl font-bold">📊 {c.h1}</h1>
       <p className="mt-1 text-[11px] md:text-xs text-muted">
-        {c.updated} {new Date(data.updatedAt).toLocaleString(BCP47_LOCALE[locale] ?? "en-US")}
+        {c.updated} <LocalTime iso={data.updatedAt} locale={locale} mode="datetime" />
       </p>
       <Link
         href={localeHref(locale, "/scorers")}
