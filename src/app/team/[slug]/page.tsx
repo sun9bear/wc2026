@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getLocale } from "@/i18n/server";
 import { getTeamDetail, type TeamResult } from "@/lib/prob/getTeamDetail";
 import { getForecast } from "@/lib/prob/pipeline";
+import { getAdvanceRequirements } from "@/lib/prob/requirements";
 import { getTeamSquad, type PositionGroup } from "@/lib/squad/getTeamSquad";
 import { teamSlug } from "@/lib/prob/findTeam";
 import { getSettledIndex } from "@/lib/seo/freshness";
@@ -255,6 +256,87 @@ const SQUAD_COPY: Record<
   },
 };
 
+// B2：出线门槛 prose（复用 getAdvanceRequirements 缓存的蒙卡门槛，渲染成可被搜索/AI 抓取的服务端文字）。
+const REQ_COPY: Record<
+  Locale,
+  {
+    h: (nm: string) => string;
+    already: (nm: string) => string;
+    clinch: (nm: string, pts: number, gd: string, need: number) => string;
+    depends: (nm: string) => string;
+    outcome: (rec: string, p: number, rank: string) => string;
+    rank: (lo: number, hi: number) => string;
+    W: string;
+    D: string;
+    L: string;
+  }
+> = {
+  zh: {
+    h: (nm) => `${nm}还能怎样出线？`,
+    already: (nm) => `${nm}已经锁定 32 强席位。`,
+    clinch: (nm, pts, gd, need) => `${nm}只要拿到 ${pts} 分（净胜球 ${gd}）即可锁定出线，目前还差 ${need} 分。`,
+    depends: (nm) => `${nm}能否出线还要看其他小组的结果；以下是其剩余小组赛各种战绩的出线前景：`,
+    outcome: (rec, p, rank) => `${rec}：约 ${p}% 出线（${rank}）。`,
+    rank: (lo, hi) => (lo === hi ? `小组第 ${lo}` : `小组第 ${lo}-${hi}`),
+    W: "胜", D: "平", L: "负",
+  },
+  en: {
+    h: (nm) => `Can ${nm} still advance?`,
+    already: (nm) => `${nm} has already secured a place in the Round of 32.`,
+    clinch: (nm, pts, gd, need) =>
+      `${nm} clinches a Round-of-32 place with ${pts} points (goal difference ${gd}) — ${need} more point${need === 1 ? "" : "s"} to go.`,
+    depends: (nm) =>
+      `Whether ${nm} advances also depends on other groups; here is how each finish in its remaining group games projects:`,
+    outcome: (rec, p, rank) => `${rec}: about ${p}% chance to advance (${rank}).`,
+    rank: (lo, hi) => (lo === hi ? `finishing #${lo} in the group` : `finishing #${lo}–${hi} in the group`),
+    W: "W", D: "D", L: "L",
+  },
+  es: {
+    h: (nm) => `¿Cómo puede ${nm} todavía clasificar?`,
+    already: (nm) => `${nm} ya tiene asegurada su plaza en los dieciseisavos.`,
+    clinch: (nm, pts, gd, need) =>
+      `${nm} asegura su plaza con ${pts} puntos (diferencia de goles ${gd}); le faltan ${need} punto${need === 1 ? "" : "s"}.`,
+    depends: (nm) =>
+      `Que ${nm} clasifique también depende de otros grupos; así se proyecta cada registro en sus partidos restantes:`,
+    outcome: (rec, p, rank) => `${rec}: alrededor del ${p}% de avanzar (${rank}).`,
+    rank: (lo, hi) => (lo === hi ? `${lo}.º del grupo` : `${lo}.º–${hi}.º del grupo`),
+    W: "V", D: "E", L: "D",
+  },
+  pt: {
+    h: (nm) => `Como ${nm} ainda pode se classificar?`,
+    already: (nm) => `${nm} já garantiu sua vaga nos 16-avos.`,
+    clinch: (nm, pts, gd, need) =>
+      `${nm} garante a vaga com ${pts} pontos (saldo de gols ${gd}); faltam ${need} ponto${need === 1 ? "" : "s"}.`,
+    depends: (nm) =>
+      `A classificação de ${nm} também depende de outros grupos; veja como cada campanha nos jogos restantes se projeta:`,
+    outcome: (rec, p, rank) => `${rec}: cerca de ${p}% de avançar (${rank}).`,
+    rank: (lo, hi) => (lo === hi ? `${lo}.º do grupo` : `${lo}.º–${hi}.º do grupo`),
+    W: "V", D: "E", L: "D",
+  },
+  de: {
+    h: (nm) => `Wie kann ${nm} noch weiterkommen?`,
+    already: (nm) => `${nm} hat das Sechzehntelfinale bereits sicher.`,
+    clinch: (nm, pts, gd, need) =>
+      `${nm} kommt mit ${pts} Punkten (Tordifferenz ${gd}) sicher weiter — noch ${need} Punkt${need === 1 ? "" : "e"}.`,
+    depends: (nm) =>
+      `Ob ${nm} weiterkommt, hängt auch von anderen Gruppen ab; so projiziert sich jede Bilanz in den restlichen Spielen:`,
+    outcome: (rec, p, rank) => `${rec}: rund ${p}% Weiterkommen (${rank}).`,
+    rank: (lo, hi) => (lo === hi ? `Gruppenplatz ${lo}` : `Gruppenplatz ${lo}–${hi}`),
+    W: "S", D: "U", L: "N",
+  },
+  fr: {
+    h: (nm) => `Comment ${nm} peut-il encore se qualifier ?`,
+    already: (nm) => `${nm} a déjà validé sa place en seizièmes de finale.`,
+    clinch: (nm, pts, gd, need) =>
+      `${nm} valide sa place avec ${pts} points (différence de buts ${gd}) ; il reste ${need} point${need === 1 ? "" : "s"}.`,
+    depends: (nm) =>
+      `La qualification de ${nm} dépend aussi des autres groupes ; voici la projection de chaque bilan sur ses matchs restants :`,
+    outcome: (rec, p, rank) => `${rec} : environ ${p}% de se qualifier (${rank}).`,
+    rank: (lo, hi) => (lo === hi ? `${lo}ᵉ du groupe` : `${lo}ᵉ–${hi}ᵉ du groupe`),
+    W: "V", D: "N", L: "D",
+  },
+};
+
 export async function generateMetadata({
   params,
 }: {
@@ -313,9 +395,10 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
   const locale = await getLocale();
   const d = await getTeamDetail(slug);
   if (!d) notFound();
-  const [fc, squad] = await Promise.all([
+  const [fc, squad, reqs] = await Promise.all([
     getForecast().catch(() => null),
     getTeamSquad(d.name).catch(() => null),
+    getAdvanceRequirements(d.id).catch(() => null),
   ]);
   const group = fc?.groups.find((g) => g.letter === d.letter) ?? null;
   const sc = STANDINGS_COPY[locale] ?? STANDINGS_COPY.en;
@@ -432,6 +515,40 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
         </div>
       </div>
       <p className="mt-2 text-[10px] leading-relaxed text-muted md:text-xs">{c.ratingNote}</p>
+
+      {/* B2：出线门槛 prose —— 服务端可抓取，精确命中「can X advance / X 还能出线吗」查询，也是 AI 直接引用的答案。 */}
+      {reqs && reqs.remaining.length > 0 && reqs.records.length > 0 && (() => {
+        const rq = REQ_COPY[locale] ?? REQ_COPY.en;
+        const rPct = (p: number) => (p >= 0.995 ? 100 : p <= 0.005 ? 0 : Math.round(p * 100));
+        const sgd = (n: number) => `${n > 0 ? "+" : ""}${n}`;
+        const recLabel = (r: { w: number; d: number; l: number }) =>
+          [r.w ? `${r.w}${rq.W}` : "", r.d ? `${r.d}${rq.D}` : "", r.l ? `${r.l}${rq.L}` : ""]
+            .filter(Boolean)
+            .join(" ");
+        const need = reqs.clinchPts !== null ? reqs.clinchPts - reqs.curPts : null;
+        const alreadyThrough = reqs.clinchPts !== null && need !== null && need <= 0;
+        const lead = alreadyThrough
+          ? rq.already(nm)
+          : reqs.clinchPts !== null
+            ? rq.clinch(nm, reqs.clinchPts, sgd(reqs.clinchGd ?? 0), need ?? 0)
+            : rq.depends(nm);
+        return (
+          <>
+            <h2 className="font-head mb-2 mt-6 text-sm font-semibold md:text-base">{rq.h(nm)}</h2>
+            <p className="text-sm leading-relaxed md:text-base">{lead}</p>
+            {!alreadyThrough && (
+              <ul className="mt-2 space-y-1.5 text-sm md:text-base">
+                {reqs.records.slice(0, 3).map((r, i) => (
+                  <li key={i} className="flex items-start gap-2">
+                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-green/70" />
+                    <span>{rq.outcome(recLabel(r), rPct(r.p), rq.rank(r.rankLo, r.rankHi))}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        );
+      })()}
 
       <div className="mt-4">
         <SetMyTeamButton slug={d.slug} locale={locale} />

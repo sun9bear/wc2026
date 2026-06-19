@@ -173,6 +173,15 @@ const SCORERS_CTA: Record<Locale, string> = {
   fr: "⚽ Buteurs · Soulier d'or →",
 };
 
+const METHOD_CTA: Record<Locale, string> = {
+  zh: "完整方法论：模型怎么算的 →",
+  en: "Full methodology: how the model works →",
+  es: "Metodología completa: cómo funciona el modelo →",
+  pt: "Metodologia completa: como o modelo funciona →",
+  de: "Vollständige Methodik: wie das Modell funktioniert →",
+  fr: "Méthodologie complète : comment le modèle fonctionne →",
+};
+
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   return {
@@ -510,6 +519,14 @@ export default async function ForecastPage() {
 
       <footer className="mt-8 space-y-2 text-center text-[10px] md:text-xs leading-relaxed text-muted">
         <p>{c.method}</p>
+        <p>
+          <Link
+            href={localeHref(locale, "/methodology")}
+            className="underline transition hover:text-green"
+          >
+            {METHOD_CTA[locale] ?? METHOD_CTA.en}
+          </Link>
+        </p>
         <p>{c.fun}</p>
       </footer>
     </PageContainer>

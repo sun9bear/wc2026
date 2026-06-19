@@ -159,6 +159,10 @@ export default async function RootLayout({
         "@id": "https://www.wc2026.cool/#org",
         name: "wc2026.cool",
         url: "https://www.wc2026.cool/",
+        logo: { "@type": "ImageObject", url: "https://www.wc2026.cool/og.png" },
+        foundingDate: "2026",
+        description:
+          "Free, multilingual World Cup 2026 forecasting tools — group standings, qualification scenarios, a 10,000-run Monte Carlo model and a prediction game.",
       },
     ],
   };

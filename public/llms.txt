@@ -5,6 +5,9 @@
 ## Key pages
 - https://www.wc2026.cool/ — home: today's matches and predictions
 - https://www.wc2026.cool/forecast — advancement and title probabilities (live model)
+- https://www.wc2026.cool/forecast/best-thirds — best third-placed ranking (top 8 advance) & Round-of-32 matchups
+- https://www.wc2026.cool/scorers — top scorers & Golden Boot race (live)
+- https://www.wc2026.cool/methodology — how the model works (data sources, Poisson + 10,000-run Monte Carlo, 2026 tie-breakers, limitations)
 - https://www.wc2026.cool/calculator — third-place qualification scenario calculator
 - https://www.wc2026.cool/rules — 2026 World Cup format and qualification rules explained (48 teams, 12 groups, 8 best thirds)
 - https://www.wc2026.cool/calculator/group/a — Group A: who advances (groups a through l)
@@ -14,6 +17,7 @@
 ## 中文页面 / Chinese pages (zh-Hans)
 - https://www.wc2026.cool/zh/ — 首页：今日比赛与预测
 - https://www.wc2026.cool/zh/forecast — 出线概率与夺冠概率（实时模型）
+- https://www.wc2026.cool/zh/scorers — 射手榜与金靴争夺（实时）
 - https://www.wc2026.cool/zh/forecast/best-thirds — 最佳第三名排名（前 8 晋级）
 - https://www.wc2026.cool/zh/calculator — 第三名出线场景计算器
 - https://www.wc2026.cool/zh/rules — 2026 世界杯赛制与出线规则详解（48 队，12 组，8 个最佳第三名）
@@ -22,6 +26,7 @@
 ## Páginas en español / Spanish pages (es)
 - https://www.wc2026.cool/es/ — inicio: partidos y predicciones de hoy
 - https://www.wc2026.cool/es/forecast — probabilidades de avance y de título (modelo en vivo)
+- https://www.wc2026.cool/es/scorers — goleadores y carrera por la Bota de Oro (en vivo)
 - https://www.wc2026.cool/es/forecast/best-thirds — ranking de los mejores terceros (los 8 primeros avanzan)
 - https://www.wc2026.cool/es/calculator — calculadora de escenarios de clasificación de terceros
 - https://www.wc2026.cool/es/rules — formato y reglas de clasificación del Mundial 2026 (48 equipos, 12 grupos, 8 mejores terceros)
@@ -30,6 +35,7 @@
 ## Páginas em português / Portuguese pages (pt)
 - https://www.wc2026.cool/pt/ — início: jogos e previsões de hoje
 - https://www.wc2026.cool/pt/forecast — probabilidades de avanço e de título (modelo ao vivo)
+- https://www.wc2026.cool/pt/scorers — artilheiros e disputa pela Chuteira de Ouro (ao vivo)
 - https://www.wc2026.cool/pt/forecast/best-thirds — ranking dos melhores terceiros (os 8 primeiros avançam)
 - https://www.wc2026.cool/pt/calculator — calculadora de cenários de classificação de terceiros
 - https://www.wc2026.cool/pt/rules — formato e regras de classificação da Copa 2026 (48 seleções, 12 grupos, 8 melhores terceiros)
@@ -38,6 +44,7 @@
 ## Deutsche Seiten / German pages (de)
 - https://www.wc2026.cool/de/ — Startseite: heutige Spiele und Vorhersagen
 - https://www.wc2026.cool/de/forecast — Wahrscheinlichkeiten für Weiterkommen und Titel (Live-Modell)
+- https://www.wc2026.cool/de/scorers — Torjäger & Rennen um den Goldenen Schuh (live)
 - https://www.wc2026.cool/de/forecast/best-thirds — Rangliste der besten Dritten (Top 8 weiter)
 - https://www.wc2026.cool/de/calculator — Szenario-Rechner für die Qualifikation der Gruppendritten
 - https://www.wc2026.cool/de/rules — Format und Qualifikationsregeln der WM 2026 (48 Teams, 12 Gruppen, 8 beste Dritte)
@@ -46,6 +53,7 @@
 ## Pages en français / French pages (fr)
 - https://www.wc2026.cool/fr/ — accueil : matchs et prédictions du jour
 - https://www.wc2026.cool/fr/forecast — probabilités de qualification et de titre (modèle en direct)
+- https://www.wc2026.cool/fr/scorers — buteurs et course au Soulier d'or (en direct)
 - https://www.wc2026.cool/fr/forecast/best-thirds — classement des meilleurs troisièmes (les 8 premiers se qualifient)
 - https://www.wc2026.cool/fr/calculator — calculateur de scénarios de qualification des troisièmes
 - https://www.wc2026.cool/fr/rules — format et règles de qualification de la Coupe du monde 2026 (48 équipes, 12 groupes, 8 meilleurs troisièmes)

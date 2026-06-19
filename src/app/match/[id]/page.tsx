@@ -273,6 +273,23 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
       ? DURATION_LABEL[extra.duration][locale]
       : null;
 
+  // B3/B4：答案前置（模型胜平负 + 最可能比分），服务端纯文本 —— 命中「X vs Y prediction / 比分预测」查询 + AI 引用。
+  const PRED_COPY: Record<
+    Locale,
+    {
+      label: string;
+      wdl: (home: string, hp: number, dp: number, away: string, ap: number) => string;
+      score: (h: number, a: number, p: number) => string;
+    }
+  > = {
+    zh: { label: "模型预测：", wdl: (h, hp, dp, a, ap) => `${h} 胜 ${hp}%、平局 ${dp}%、${a} 胜 ${ap}%。`, score: (h, a, p) => `最可能比分 ${h}-${a}（约 ${p}%）。` },
+    en: { label: "Model prediction:", wdl: (h, hp, dp, a, ap) => `${h} win ${hp}%, draw ${dp}%, ${a} win ${ap}%.`, score: (h, a, p) => `Most likely score ${h}-${a} (about ${p}%).` },
+    es: { label: "Predicción del modelo:", wdl: (h, hp, dp, a, ap) => `Victoria de ${h} ${hp}%, empate ${dp}%, victoria de ${a} ${ap}%.`, score: (h, a, p) => `Marcador más probable ${h}-${a} (alrededor del ${p}%).` },
+    pt: { label: "Previsão do modelo:", wdl: (h, hp, dp, a, ap) => `Vitória de ${h} ${hp}%, empate ${dp}%, vitória de ${a} ${ap}%.`, score: (h, a, p) => `Placar mais provável ${h}-${a} (cerca de ${p}%).` },
+    de: { label: "Modell-Prognose:", wdl: (h, hp, dp, a, ap) => `Sieg ${h} ${hp}%, Unentschieden ${dp}%, Sieg ${a} ${ap}%.`, score: (h, a, p) => `Wahrscheinlichstes Ergebnis ${h}-${a} (rund ${p}%).` },
+    fr: { label: "Prévision du modèle :", wdl: (h, hp, dp, a, ap) => `Victoire de ${h} ${hp}%, nul ${dp}%, victoire de ${a} ${ap}%.`, score: (h, a, p) => `Score le plus probable ${h}-${a} (environ ${p}%).` },
+  };
+
   // 页眉右上分享（任务 A）：未结算 → 比赛预览卡（mode=match，含 Top-3 比分[任务E] + zh 二维码[任务D]）；
   // 已结算且爆冷 → 摆动卡；其余只给链接分享。
   const headerMatch =
@@ -434,6 +451,29 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
           <TeamBadge name={m.away.name} locale={locale} size="lg" linkToTeam />
         </div>
       </div>
+
+      {/* B3/B4：答案前置概率/比分句（服务端纯文本，置于 betting 倍率网格之上，供搜索/AI 直接引用）。 */}
+      {!settled && (impliedSplit || scoreline?.top?.[0]) && (() => {
+        const pc = PRED_COPY[locale] ?? PRED_COPY.en;
+        const top = scoreline?.top?.[0];
+        const parts: string[] = [];
+        if (impliedSplit)
+          parts.push(
+            pc.wdl(
+              teamName(m.home.name, locale),
+              impliedSplit.hp,
+              impliedSplit.dp,
+              teamName(m.away.name, locale),
+              impliedSplit.ap
+            )
+          );
+        if (top) parts.push(pc.score(top.h, top.a, Math.max(1, Math.round(top.p * 100))));
+        return (
+          <p className="mt-4 rounded-lg border border-green/30 bg-surface px-3 py-2.5 text-sm leading-relaxed md:text-base">
+            <span className="font-semibold text-green">{pc.label}</span> {parts.join(" ")}
+          </p>
+        );
+      })()}
 
       {/* 进行中：直播看板置于文字短评之上（进球文字流 + 最可能比分 + 可展开技术统计）；
           比分/分钟已放大显示在上方页眉，看板内不重复国旗队名。 */}

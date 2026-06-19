@@ -55,6 +55,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
     { path: "/calculator", changeFrequency: "daily", priority: 0.85 },
     { path: "/rules", changeFrequency: "monthly", priority: 0.8, lastModified: "2026-06-14" },
+    { path: "/methodology", changeFrequency: "monthly", priority: 0.6, lastModified: "2026-06-19" },
     // 12 个按组着陆页（脉冲式搜索："Group A who advances" / "X 组出线形势"）
     ..."abcdefghijkl".split("").map((letter) => ({
       path: `/calculator/group/${letter}`,
