@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageContainer } from "@/components/PageContainer";
+import { LocalTime } from "@/components/LocalTime";
 import { getLocale } from "@/i18n/server";
 import { getForecast, type ForecastData } from "@/lib/prob/pipeline";
 import { getTeamAdvanceTrends } from "@/lib/prob/getTrends";
@@ -394,12 +395,7 @@ export default async function ForecastPage() {
               <div className="mb-1.5 flex items-center justify-between text-xs">
                 <TeamName t={m.home} locale={locale} />
                 <span className="text-[10px] md:text-xs text-muted">
-                  {new Date(m.kickoff).toLocaleString(BCP47_LOCALE[locale] ?? "en-US", {
-                    month: "2-digit",
-                    day: "2-digit",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  <LocalTime iso={m.kickoff} locale={locale} mode="datetime" />
                 </span>
                 <TeamName t={m.away} locale={locale} />
               </div>

@@ -5,11 +5,12 @@ import { type Locale, BCP47_LOCALE } from "@/i18n";
 
 // 开赛时间统一用浏览器本地时区渲染（修复：服务端 toLocaleString 按 Vercel UTC 渲染，
 // 与客户端组件的本地时间互相矛盾）。挂载前渲染占位避免 hydration 不一致。
+// tz 默认 true：附带本地时区缩写(如 GMT+8 / PDT)，避免用户误以为是场馆时间/UTC（用户反馈）。
 export function LocalTime({
   iso,
   locale,
   mode = "time",
-  tz = false,
+  tz = true,
 }: {
   iso: string;
   locale: Locale;
