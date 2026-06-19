@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { generatePreviewEn, generateSentimentEn, generateRecapEn } from "@/lib/ai/content";
 import { latestMatchProbs, upsertContent } from "@/lib/ai/store";
@@ -62,6 +62,8 @@ export async function GET(req: NextRequest) {
   }
   const db = createClient(url, sk);
 
+  // 工作闭包：原回填逻辑原样搬入；可同步跑(?debug)或后台 after() 跑（避开 cron-job.org 30s）。
+  const doWork = async () => {
   const nowIso = new Date().toISOString();
   const SELECT =
     "id, stage, kickoff_at, status, home_score, away_score, home:home_team_id(name), away:away_team_id(name)";
@@ -166,11 +168,23 @@ export async function GET(req: NextRequest) {
     settled.filter((m) => !have.has(`${m.id}:recap_en`)).length -
     processed;
 
-  return NextResponse.json({
+  return {
     ok: true,
     processed,
     generated,
     remaining: Math.max(0, remaining),
     ...(debug ? { errors } : {}),
+  };
+  }; // end doWork
+
+  if (debug) return NextResponse.json(await doWork()); // 手动调试(?debug=1)：同步返回，便于看结果/错误
+  // cron 路径：秒回 {started}（避开 cron-job.org 30s 超时），回填在 after() 后台跑（Hobby 60s 内）。
+  after(async () => {
+    try {
+      await doWork();
+    } catch (e) {
+      console.error("[gen-content] after() failed:", e instanceof Error ? e.message : e);
+    }
   });
+  return NextResponse.json({ started: true });
 }
