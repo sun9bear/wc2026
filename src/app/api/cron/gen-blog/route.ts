@@ -59,7 +59,7 @@ async function runGenBlog(autoPublish: boolean, cap: number): Promise<void> {
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   if (!authed(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const autoPublish = process.env.BLOG_AUTO_PUBLISH === "1";
+  const autoPublish = process.env.BLOG_AUTO_PUBLISH?.trim() === "1"; // .trim() 防 env 尾换行静默失效
   const cap = Number(process.env.BLOG_GEN_CAP ?? "1");
   // 秒回 {started} 满足 cron-job.org 30s 超时；生成在 after() 后台跑（Hobby maxDuration 60s 内）。
   after(async () => {

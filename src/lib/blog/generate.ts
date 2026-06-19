@@ -111,43 +111,76 @@ ${JSON.stringify(article)}
 \`\`\``;
 }
 
+/** 软闸 needs_fix 重写 prompt：按审核反馈改文笔/结构，数字与上稿完全一致（不破硬闸），不超 INPUT。 */
+function softRepairPrompt(payload: unknown, article: GenArticle, soft: SoftVerdict): string {
+  return `A reviewer found your previous draft factually fine but flagged quality issues. Revise to address the feedback below. Keep ALL numbers EXACTLY as in your previous draft, introduce NO new numbers or facts beyond INPUT, and return the corrected full JSON (same five keys title/excerpt/body/keywords/topic_flag).
+Reviewer feedback: ${soft.notes || "Improve clarity, flow and headline; remove redundancy and awkward phrasing."}
+
+INPUT (the only source of numbers and facts — do not exceed it):
+\`\`\`json
+${JSON.stringify(payload)}
+\`\`\`
+Your previous draft:
+\`\`\`json
+${JSON.stringify(article)}
+\`\`\``;
+}
+
 async function buildLocaleDraft(cand: BlogCandidate, locale: "en" | "zh", deps: GenDeps): Promise<LocaleDraft> {
   const payload = buildInputPayload(cand, locale);
-  let raw: string;
-  try {
-    raw = await deps.generate(locale, systemPrompt(locale), userPrompt(payload));
-  } catch (e) {
-    return { locale, payload, article: null, parseError: "generate failed: " + (e as Error).message, hard: null, soft: null, repaired: false };
-  }
-  const parsed = parseArticle(raw);
-  let article = parsed.article;
-  if (!article) return { locale, payload, article: null, parseError: parsed.error, hard: null, soft: null, repaired: false };
-  let hard = hardGate(article, payload as unknown as GatePayload);
 
-  // 1-shot 定向修复：仅机械型失败，re-gate 校验，封顶 1 次（修坏了也只是回 needs_review）。
-  let repaired = false;
-  if (!hard.pass && isMechanical(hard.reasons)) {
+  // 生成→解析（一次尝试）。
+  const genParse = async (user: string): Promise<{ article: GenArticle | null; error: string | null }> => {
     try {
-      const fixedParsed = parseArticle(await deps.generate(locale, systemPrompt(locale), repairPrompt(payload, article, hard)));
-      if (fixedParsed.article) {
-        repaired = true;
-        article = fixedParsed.article;
-        hard = hardGate(article, payload as unknown as GatePayload);
+      return parseArticle(await deps.generate(locale, systemPrompt(locale), user));
+    } catch (e) {
+      return { article: null, error: "generate failed: " + (e as Error).message };
+    }
+  };
+  // 评估：硬闸；过则跑软闸（异 provider）。
+  const evaluate = async (a: GenArticle): Promise<{ hard: HardGateResult; soft: SoftVerdict | null }> => {
+    const h = hardGate(a, payload as unknown as GatePayload);
+    let s: SoftVerdict | null = null;
+    if (h.pass) {
+      try {
+        s = parseSoft(await deps.review(locale, buildSoftGatePrompt(payload, a)));
+      } catch {
+        s = null; // 审核调用失败 → 视为不可自动发（softBad 命中）
       }
-    } catch {
-      /* 修复调用失败 → 保留原稿与原 hard，落 needs_review */
     }
+    return { hard: h, soft: s };
+  };
+
+  // 初次生成 + 评估。
+  const first = await genParse(userPrompt(payload));
+  let article = first.article;
+  let parseError = article ? null : first.error;
+  let hard: HardGateResult | null = null;
+  let soft: SoftVerdict | null = null;
+  if (article) ({ hard, soft } = await evaluate(article));
+
+  // 大模型重写（封顶 1 次/语种，重写后必须再过双闸才发；软闸 reject / 题材 sensitive 不重写 → 直接人工）：
+  //  · 无 article（parse 失败/没吐 JSON）→ 重新生成
+  //  · 机械型硬闸失败（数字/博彩词/外链）→ 定向修复
+  //  · 硬闸过但软闸 needs_fix（质量问题）→ 带审核反馈重写
+  let repairUser: string | null = null;
+  if (!article) repairUser = userPrompt(payload);
+  else if (hard && !hard.pass && isMechanical(hard.reasons)) repairUser = repairPrompt(payload, article, hard);
+  else if (hard && hard.pass && soft && soft.verdict === "needs_fix") repairUser = softRepairPrompt(payload, article, soft);
+
+  let repaired = false;
+  if (repairUser) {
+    const r2 = await genParse(repairUser);
+    if (r2.article) {
+      repaired = true;
+      article = r2.article;
+      parseError = null;
+      ({ hard, soft } = await evaluate(article));
+    }
+    // r2 仍无有效 article → 保留首轮失败状态（article 可能仍 null → needs_review）
   }
 
-  let soft: SoftVerdict | null = null;
-  if (hard.pass) {
-    try {
-      soft = parseSoft(await deps.review(locale, buildSoftGatePrompt(payload, article)));
-    } catch {
-      soft = null; // 审核调用失败 → 视为不可自动发（下面 softBad 命中）
-    }
-  }
-  return { locale, payload, article, parseError: null, hard, soft, repaired };
+  return { locale, payload, article, parseError, hard, soft, repaired };
 }
 
 /** 候选 → BlogDraft（含两语稿 + 闸结果 + 路由 status）。autoPublish 默认 false（灰度：全清也先 needs_review）。 */

@@ -43,12 +43,43 @@ function mockDeps(article: object): GenDeps {
   };
 }
 
-// 初次返回 bad，修复调用（user 含 "broke hard rules"）返回 good —— 测 1-shot 定向修复。
+// 初次返回 bad，修复调用（user 含 "broke hard rules"）返回 good —— 测机械型 1-shot 定向修复。
 function mockBadThenGood(bad: object, good: object): GenDeps {
   return {
     generate: async (_l, _s, user) => "```json\n" + JSON.stringify(user.includes("broke hard rules") ? good : bad) + "\n```",
     review: async () => JSON.stringify({ verdict: "usable", confidence: 0.9, notes: "clean" }),
   };
+}
+
+const fence = (o: object) => "```json\n" + JSON.stringify(o) + "\n```";
+const USABLE = JSON.stringify({ verdict: "usable", confidence: 0.9, notes: "clean" });
+
+// parse 失败→重新生成（per-locale 计数：第1次非 JSON，第2次 good）。
+function mockParseFailThenGood(good: object): GenDeps {
+  const n: Record<string, number> = {};
+  return {
+    generate: async (l) => ((n[l] = (n[l] ?? 0) + 1) === 1 ? "sorry, I can't output JSON" : fence(good)),
+    review: async () => USABLE,
+  };
+}
+
+// 软闸 needs_fix→带反馈重写（generate 按是否含 "Reviewer feedback" 切换；review per-locale 第1次 needs_fix，之后 usable）。
+function mockSoftFixThenUsable(first: object, rewritten: object): GenDeps {
+  const rc: Record<string, number> = {};
+  return {
+    generate: async (_l, _s, user) => fence(user.includes("Reviewer feedback") ? rewritten : first),
+    review: async (l) =>
+      JSON.stringify(
+        (rc[l] = (rc[l] ?? 0) + 1) === 1
+          ? { verdict: "needs_fix", confidence: 0.9, notes: "headline redundant" }
+          : { verdict: "usable", confidence: 0.95, notes: "ok" }
+      ),
+  };
+}
+
+// 软闸 reject：不应触发重写（直接人工）。
+function mockSoftReject(article: object): GenDeps {
+  return { generate: async () => fence(article), review: async () => JSON.stringify({ verdict: "reject", confidence: 0.9, notes: "off" }) };
 }
 
 async function runDeps(label: string, deps: GenDeps, opts: { autoPublish?: boolean }, expect: string): Promise<void> {
@@ -67,4 +98,7 @@ async function run(label: string, article: object, opts: { autoPublish?: boolean
   await run("幻觉数字 120%（不可修复:mock 不改）", HALLUC, { autoPublish: true }, "needs_review (hard_gate)");
   await run("题材 sensitive", SENSITIVE, { autoPublish: true }, "needs_review (sensitive_topic)");
   await runDeps("机械错→1-shot 定向修复→过", mockBadThenGood(HALLUC, CLEAN), { autoPublish: true }, "published (en/zh repaired)");
+  await runDeps("parse 失败→重新生成→过", mockParseFailThenGood(CLEAN), { autoPublish: true }, "published (en/zh repaired)");
+  await runDeps("软闸 needs_fix→带反馈重写→过", mockSoftFixThenUsable(CLEAN, CLEAN), { autoPublish: true }, "published (en/zh repaired)");
+  await runDeps("软闸 reject→不重写→人工", mockSoftReject(CLEAN), { autoPublish: true }, "needs_review (soft_gate), 不 repaired");
 })();
