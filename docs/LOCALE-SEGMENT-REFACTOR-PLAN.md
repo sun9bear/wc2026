@@ -3,6 +3,7 @@
 > 状态：**设计稿（未实施）**。作者 2026-06-20。前置任务 B 已上线（移除每响应 Set-Cookie，commit 1376e01）。
 > 目标读者：执行这次重构的会话/人。**这是一次需要专项 + 全量回归的中等规模改造，不是顺手补丁。**
 > **v2 修订（2026-06-20，吸收 CodeX 78/100 审核 + 实测 grep 盘点）**：原稿缓存分类过于乐观。改为**四分类**（§4.3）、新增**结算副作用 gate**（§4.5）、**team 优先于 home/match**（§8）、新增 `_rsc`/函数调用量/searchParams 专项验收（§9）。核心结论不变：值得做、但现在只做低成本试点、不全量。
+> **v3 修订（2026-06-20，CodeX 复审 86/100）**：① **MUST-FIX**——middleware matcher 必须排除所有带扩展名的静态文件，否则裸 `/ads.txt`→rewrite `/en/ads.txt`→**404**（伤 AdSense `ads.txt` / `llms.txt` / GSC 验证 txt / svg），见 §3；② `team/[slug]` 用 `revalidate=600`（对齐数据层），非 900（§4.3 A）；③ 修正 combo 风险描述（实为 getLocale 间接动态，非直读 next/headers，§7）；④ 迁移清单补 `loading.tsx` 等 route special files（§4.2）。CodeX 结论：**可按 Phase 1 开始试点**（动代码前先把 matcher 静态排除补上）。
 
 ---
 
@@ -81,12 +82,17 @@ export default function proxy(req: NextRequest) {
 }
 
 export const config = {
-  // 仍跳过静态资源/api（各前缀形式）；不再注入 x-locale（页面改用 params）。
-  matcher: ["/((?!(?:(?:zh|es|pt|de|fr|en)/)?(?:_next/|api/|favicon|og\\.png|robots|sitemap|icon|apple-icon)).*)"],
+  // ⚠️ MUST-FIX（CodeX v3）：必须排除所有带扩展名的静态文件 `.*\..*`——否则裸路径
+  //   /ads.txt /llms.txt /<gsc验证>.txt /*.svg 等会被 rewrite 成 /en/ads.txt → 404
+  //   （伤 AdSense、llms.txt、GSC 验证）。public/ 下当前有：ads.txt, llms.txt,
+  //   6bdb…txt(验证), file/globe/next/vercel/window.svg, og.png。
+  //   `.*\..*` 一并覆盖 og.png/robots.txt/sitemap.xml/favicon.ico/icon.png/apple-icon.png（都带扩展名）。
+  matcher: ["/((?!api/|_next/|.*\\..*).*)"],
 };
 ```
 
-> 关键变化：**不再注入 `x-locale` 头、不再写任何 cookie**。逻辑比现在更简单。
+> 关键变化：**不再注入 `x-locale` 头、不再写任何 cookie**，逻辑比现在更简单；但 matcher 的静态文件排除是上线前的硬性前置（见上注释）。
+> 验收必查：`/ads.txt`、`/llms.txt`、`/<验证>.txt`、各 `.svg`、`/og.png`、`/robots.txt`、`/sitemap.xml` 全部仍 200 且内容正确（未被 rewrite 到 /en）。
 
 ---
 
@@ -106,6 +112,7 @@ Next 要求**根 layout 含 `<html><body>`**。`<html lang>` 需要 locale。方
    - 删 `const locale = await getLocale();`
    - 改 `const { locale: raw } = await params; const locale = isLocale(raw) ? raw : "en";`（用 `isLocale` 收窄，非法→en 或 `notFound()`）。
 2. 动态子路由（`match/[id]`、`team/[slug]`、`player/[slug]`、`league/[code]`、`calculator/group/[letter]`、`blog/[slug]`）的 `params` 现在**同时含 locale**：`{ locale, id }` / `{ locale, slug }` / `{ locale, letter }` / `{ locale, code }`。更新解构。
+3. **route special files 要随页面一起进 `[locale]`（CodeX v3）**：当前有 5 个 `loading.tsx`——`app/loading.tsx`、`calculator/`、`forecast/`、`match/[id]/`、`team/[slug]/`——迁移对应路由时连同搬到 `app/[locale]/…/loading.tsx`，别只搬 page.tsx（否则该路由迁后丢加载态/可能解析异常）。若后续新增 `error.tsx`/`not-found.tsx` 同理。
 
 ### 4.3 路由四分类（v2 修订 —— 吸收 CodeX 审核 + 实测 `force-dynamic` 盘点）
 
@@ -114,6 +121,7 @@ Next 要求**根 layout 含 `<html><body>`**。`<html lang>` 需要 locale。方
 **A · 纯内容可缓存（仅因 getLocale 动态，去掉即 ISR）→ 直接迁**
 `forecast, best-thirds, about, rules, privacy, disclaimer, watch, methodology, combo, scorers, calculator/group/[letter]`（用 `[letter]` 段、**不读 searchParams**）、**`team/[slug]`**（无副作用，但日志最重 p95 18.2s → 试点后**第一个**迁）。
 配置：`export const revalidate = 900`（对齐数据 `unstable_cache` 节奏）；重子段 `export const dynamicParams = true`（按需渲染+缓存，不构建期全量预渲染）。
+**例外（CodeX v3）：`team/[slug]` 用 `revalidate=600`**——对齐其数据层 `getTeamDetail.ts`（600s），否则页面壳 900s 比数据更滞后。match/[id] 同样 600。
 
 **B · 需先拆 searchParams / 副作用，才能缓存**
 - **首页 `/`**：`?filter` searchParams + `after(maybeAutoSettle)`（page.tsx:38）+ `Date.now()` + 未缓存 `getMatches()`（全部实测确认）。要：① `?filter` 改客户端过滤；② 去 after、结算全交 cron（见 §4.5）；③ `getMatches` 包 `unstable_cache`；④ Date.now 移出渲染。**四项做完才能 ISR。**
@@ -172,7 +180,7 @@ Next 要求**根 layout 含 `<html><body>`**。`<html lang>` 需要 locale。方
 5. **🟠 ISR 首跑成本**：match/team/player 按需渲染，首次仍要冷渲染（之后缓存）。team 页含蒙卡 `getAdvanceRequirements`，首跑可能慢——但只 1 次/revalidate 周期。
 6. **🟡 OG 路由 `/api/og`**：在 `api/` 下、读 `?locale=` 查询参不受影响；确认无 getLocale 依赖（它用查询参）。
 7. **🟡 sitemap/robots/canonical 不得泄漏 `/en`**：回归时 grep 抽查。
-8. **🟡 `combo` 页直接读 `next/headers`**：迁移时改用 `params.locale`（见盘点）。
+8. **🟡 `combo` 页**（CodeX v3 修正）：它**不是**直读 `next/headers`，而是和其它页一样经 `getLocale()` 间接动态。迁移时**只需把 getLocale() 换成 params.locale**，无特殊处理。
 
 ---
 
