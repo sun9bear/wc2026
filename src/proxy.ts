@@ -36,5 +36,7 @@ export const config = {
   // 跳过静态资源与 API（含各前缀形式：/zh/_next、/es/og.png 等）；只在页面请求上运行。
   // 注意：matcher 须为静态字面量（Next 构建期静态分析，读不到 PREFIXED_LOCALES 数组）——
   // 加/删前缀 locale 时手动同步这条正则的 (?:(?:zh|es|pt|de|fr)/)? 段。
-  matcher: ["/((?!(?:(?:zh|es|pt|de|fr)/)?(?:_next/|api/|favicon|og\\.png|robots|sitemap)).*)"],
+  // ads.txt / llms.txt 是根静态文件（AdSense 发布商 ID / LLM 索引）——显式排除，让中间件
+  // 完全不碰它们（防御性：杜绝任何理论上的改写/缓存干扰，确保 AdSense 抓取永远拿到原文）。
+  matcher: ["/((?!(?:(?:zh|es|pt|de|fr)/)?(?:_next/|api/|favicon|og\\.png|robots|sitemap|ads\\.txt|llms\\.txt)).*)"],
 };
