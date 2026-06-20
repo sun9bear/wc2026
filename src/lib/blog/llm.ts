@@ -111,6 +111,39 @@ export async function generate(
   );
 }
 
+/**
+ * 图片描述器：DeepSeek chat API 不支持图像（实测 image_url 400），故用 Gemini 视觉把每张图描述成一句事实，
+ * en/zh 生成都改用这段文字（用户因此不必手填「说明」）。单张失败→空串；整体失败→全空串（降级靠角度）。
+ */
+export async function caption(urls: string[]): Promise<string[]> {
+  if (!urls.length) return [];
+  const fetched = (
+    await Promise.all(
+      urls.map(async (url, i) => {
+        try {
+          const { mimeType, dataB64 } = await fetchImageB64(url);
+          return { label: `Image ${i + 1}:`, mimeType, dataB64 };
+        } catch {
+          return null;
+        }
+      })
+    )
+  ).filter((x): x is GeminiImage => x !== null);
+  if (!fetched.length) return urls.map(() => "");
+  const sys = "You factually describe images for a sports blog editor. No speculation, no opinions.";
+  const user = `Describe each numbered image in ONE short factual sentence (who/what, any on-screen text, setting). Output ONLY JSON: {"captions":[...]} with exactly ${urls.length} strings, in order.`;
+  try {
+    const raw = await withRetry(() => geminiChat(sys, user, REVIEW_TIMEOUT, geminiBlogModel(), fetched));
+    const a = raw.indexOf("{");
+    const b = raw.lastIndexOf("}");
+    const o = a >= 0 && b > a ? (JSON.parse(raw.slice(a, b + 1)) as { captions?: unknown }) : {};
+    const caps = Array.isArray(o.captions) ? o.captions.map(String) : [];
+    return urls.map((_, i) => caps[i] ?? "");
+  } catch {
+    return urls.map(() => "");
+  }
+}
+
 /** 软闸审核（异 provider）：en 文章→DeepSeek 审、zh 文章→Gemini 审；临时过载自动重试 1 次。 */
 export async function review(locale: "en" | "zh", prompt: string): Promise<string> {
   const sys = "You are a strict reviewer. Return ONLY valid JSON.";

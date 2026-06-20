@@ -37,6 +37,7 @@ export interface BlogDraft {
 export interface GenDeps {
   generate: (locale: "en" | "zh", system: string, user: string, images?: { label: string; url: string }[]) => Promise<string>;
   review: (locale: "en" | "zh", prompt: string) => Promise<string>;
+  caption?: (urls: string[]) => Promise<string[]>; // 图片→文字描述（手动撰写器用；DeepSeek 无视觉）
 }
 
 const SOFT_MIN_CONF = 0.6;

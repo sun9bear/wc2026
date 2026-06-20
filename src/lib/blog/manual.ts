@@ -106,15 +106,12 @@ function buildManualPayload(input: ManualInput, locale: "en" | "zh") {
 
 async function buildLocale(input: ManualInput, locale: "en" | "zh", deps: GenDeps): Promise<ManualLocaleDraft> {
   const payload = buildManualPayload(input, locale);
-  // 图片素材直接喂多模态模型（标注 asset 序号供映射 [[asset:N]]）；推文嵌入抓不到→只靠 desc。
-  const images = input.assets
-    .map((a, i) => (a.type === "image" && a.url ? { label: `Image for asset ${i + 1} (see and interpret it)`, url: a.url } : null))
-    .filter((x): x is { label: string; url: string } => x !== null);
-  // 生成→解析；失败(模型偶发不吐有效 JSON，常见于 zh/DeepSeek)重试 1 次。首次失败很快，重试不撑爆 maxDuration。
+  // 纯文本生成：图片已在 generateManualDraft 用 Gemini 描述成文字填进 desc（DeepSeek 无视觉，不能直接喂图）。
+  // 生成→解析；失败(模型偶发不吐有效 JSON，常见于 zh)重试 1 次。首次失败很快，重试不撑爆 maxDuration。
   let article: ManualArticle | null = null;
   for (let attempt = 0; attempt < 2 && !article; attempt++) {
     try {
-      article = parseArticle(await deps.generate(locale, manualSystemPrompt(locale), manualUserPrompt(payload), images));
+      article = parseArticle(await deps.generate(locale, manualSystemPrompt(locale), manualUserPrompt(payload)));
     } catch {
       article = null;
     }
@@ -132,6 +129,16 @@ async function buildLocale(input: ManualInput, locale: "en" | "zh", deps: GenDep
 
 /** 手动文章生成：双语（或单语）→ 解析 → 软闸 → marker 校验。恒 needs_review。 */
 export async function generateManualDraft(input: ManualInput, deps: GenDeps): Promise<ManualDraft> {
+  // 图片：DeepSeek 不支持图像 → 用 Gemini 视觉把"没填 desc 的图片"描述成文字，塞进 desc；之后 en/zh 都靠文字生成。
+  if (deps.caption) {
+    const imgs = input.assets.map((a, i) => ({ a, i })).filter(({ a }) => a.type === "image" && !!a.url && !a.desc?.trim());
+    if (imgs.length) {
+      const caps = await deps.caption(imgs.map(({ a }) => a.url));
+      imgs.forEach(({ i }, k) => {
+        if (caps[k]) input.assets[i] = { ...input.assets[i], desc: caps[k] };
+      });
+    }
+  }
   const want: ("en" | "zh")[] = input.locales.length ? input.locales : ["en", "zh"];
   const results = await Promise.all(want.map((l) => buildLocale(input, l, deps).then((d) => [l, d] as const)));
   const map = new Map<"en" | "zh", ManualLocaleDraft>(results);
