@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale } from "@/i18n/server";
 import { localeHref, type Locale } from "@/i18n";
-import { localizedAlternates } from "@/lib/seo/canonical";
+import { localizedAlternates, selfUrl } from "@/lib/seo/canonical";
+import { JsonLd } from "@/lib/seo/jsonLd";
 import { PageContainer } from "@/components/PageContainer";
 
 // 观赛指南：按地区列官方转播/流媒体渠道（双语，随 locale 切换）。
@@ -310,6 +311,27 @@ const COPY: Record<Locale, WatchCopy> = {
   },
 };
 
+// A3：答案前置 TL;DR / FAQ 问句 / 面包屑（6 语）。
+const TLDR: Record<Locale, string> = {
+  zh: "2026 世界杯全部 104 场：美国 FOX/FS1（西语 Telemundo/Peacock）、加拿大 TSN/RDS、中国 CCTV-5/咪咕/小红书（免费）。其他地区见 FIFA 官网名录。",
+  en: "All 104 World Cup 2026 matches air on FOX/FS1 (Español: Telemundo/Peacock) in the US, TSN/RDS in Canada, and CCTV-5/Migu/Xiaohongshu (free) in China. Elsewhere, see FIFA's official broadcaster list.",
+  es: "Los 104 partidos del Mundial 2026: FOX/FS1 (Telemundo/Peacock en español) en EE. UU., TSN/RDS en Canadá y CCTV-5/Migu/Xiaohongshu (gratis) en China. En otras regiones, consulta la lista oficial de la FIFA.",
+  pt: "Os 104 jogos da Copa 2026: FOX/FS1 (Telemundo/Peacock em espanhol) nos EUA, TSN/RDS no Canadá e CCTV-5/Migu/Xiaohongshu (grátis) na China. Em outras regiões, veja a lista oficial da FIFA.",
+  de: "Alle 104 Spiele der WM 2026: FOX/FS1 (Spanisch: Telemundo/Peacock) in den USA, TSN/RDS in Kanada und CCTV-5/Migu/Xiaohongshu (kostenlos) in China. Anderswo: die offizielle FIFA-Liste.",
+  fr: "Les 104 matchs du Mondial 2026 : FOX/FS1 (espagnol : Telemundo/Peacock) aux États-Unis, TSN/RDS au Canada et CCTV-5/Migu/Xiaohongshu (gratuit) en Chine. Ailleurs, voir la liste officielle de la FIFA.",
+};
+const FAQQ: Record<Locale, (region: string) => string> = {
+  zh: (r) => `${r}在哪看 2026 世界杯？`,
+  en: (r) => `Where can I watch the 2026 World Cup in ${r}?`,
+  es: (r) => `¿Dónde ver el Mundial 2026 en ${r}?`,
+  pt: (r) => `Onde assistir à Copa 2026 em ${r}?`,
+  de: (r) => `Wo läuft die WM 2026 in ${r}?`,
+  fr: (r) => `Où regarder le Mondial 2026 en ${r} ?`,
+};
+const CRUMB_HOME: Record<Locale, string> = {
+  zh: "首页", en: "Home", es: "Inicio", pt: "Início", de: "Startseite", fr: "Accueil",
+};
+
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   const c = COPY[locale] ?? COPY.en;
@@ -317,19 +339,53 @@ export async function generateMetadata(): Promise<Metadata> {
     title: c.title,
     description: c.description,
     alternates: localizedAlternates("/watch", locale),
+    openGraph: {
+      type: "website",
+      url: selfUrl("/watch", locale),
+      siteName: "wc2026.cool",
+      title: c.title,
+      description: c.description,
+      images: [{ url: "/og.png", width: 1080, height: 1440 }],
+    },
+    twitter: { card: "summary_large_image", title: c.title, description: c.description, images: ["/og.png"] },
   };
 }
 
 export default async function WatchPage() {
   const locale = await getLocale();
   const c = COPY[locale] ?? COPY.en;
+  const watchJsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "FAQPage",
+        mainEntity: c.sections.map((s) => ({
+          "@type": "Question",
+          name: FAQQ[locale](s.title),
+          acceptedAnswer: { "@type": "Answer", text: s.body },
+        })),
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: CRUMB_HOME[locale], item: selfUrl("/", locale) },
+          { "@type": "ListItem", position: 2, name: c.h1, item: selfUrl("/watch", locale) },
+        ],
+      },
+    ],
+  };
   return (
     <PageContainer tier="standard">
+      <JsonLd data={watchJsonLd} />
       <Link href={localeHref(locale, "/")} className="text-xs text-muted">
         {c.back}
       </Link>
       <h1 className="font-head mt-3 text-2xl font-bold md:text-3xl">📺 {c.h1}</h1>
-      <p className="mt-1 mb-5 text-xs text-muted">{c.intro}</p>
+      <p className="mt-1 text-xs text-muted">{c.intro}</p>
+      {/* A3：答案前置 TL;DR（命中「where to watch world cup 2026」+ 供 AI 引用） */}
+      <p className="mb-5 mt-3 rounded-lg border border-green/30 bg-surface p-3 text-sm leading-relaxed md:text-base">
+        {TLDR[locale]}
+      </p>
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
         {c.sections.map((s) => (
