@@ -9,7 +9,7 @@ import { Sparkline } from "@/components/Sparkline";
 import { TrackedLink } from "@/components/TrackedLink";
 import { JsonLd } from "@/lib/seo/jsonLd";
 import { getSettledIndex } from "@/lib/seo/freshness";
-import { localeHref, type Locale } from "@/i18n";
+import { localeHref, type Locale, BCP47_LOCALE } from "@/i18n";
 import { teamName, groupName } from "@/lib/football/teams";
 import { localizedAlternates, selfUrl, SITE_ORIGIN } from "@/lib/seo/canonical";
 
@@ -250,24 +250,42 @@ export default async function ForecastPage() {
   const idx = await getSettledIndex().catch(() => null);
   const datasetJsonLd = {
     "@context": "https://schema.org",
-    "@type": "Dataset",
-    name: c.title,
-    description: c.description,
-    url: selfUrl("/forecast", locale),
-    creator: { "@type": "Organization", name: "wc2026.cool", url: `${SITE_ORIGIN}/` },
-    isAccessibleForFree: true,
-    license: selfUrl("/disclaimer", locale), // GSC 推荐字段：数据使用条款（指向免责声明/条款页，locale 化）
-    variableMeasured: (
+    "@graph": [
       {
-        zh: ["出线概率", "夺冠概率"],
-        en: ["chance to advance", "chance to win the title"],
-        es: ["probabilidad de avanzar", "probabilidad de ganar el título"],
-        pt: ["chance de avançar", "chance de ganhar o título"],
-        de: ["Chance aufs Weiterkommen", "Chance auf den Titel"],
-        fr: ["probabilité de se qualifier", "probabilité de gagner le titre"],
-      } as Record<Locale, string[]>
-    )[locale],
-    ...(idx?.all ? { dateModified: idx.all } : {}),
+        "@type": "Dataset",
+        name: c.title,
+        description: c.description,
+        url: selfUrl("/forecast", locale),
+        inLanguage: BCP47_LOCALE[locale], // B3：声明数据语言
+        creator: { "@id": `${SITE_ORIGIN}/#org` }, // B3：复用 layout 的 Organization 节点，去重
+        isAccessibleForFree: true,
+        license: selfUrl("/disclaimer", locale), // GSC 推荐字段：数据使用条款（指向免责声明/条款页，locale 化）
+        variableMeasured: (
+          {
+            zh: ["出线概率", "夺冠概率"],
+            en: ["chance to advance", "chance to win the title"],
+            es: ["probabilidad de avanzar", "probabilidad de ganar el título"],
+            pt: ["chance de avançar", "chance de ganhar o título"],
+            de: ["Chance aufs Weiterkommen", "Chance auf den Titel"],
+            fr: ["probabilité de se qualifier", "probabilité de gagner le titre"],
+          } as Record<Locale, string[]>
+        )[locale],
+        ...(idx?.all ? { dateModified: idx.all } : {}),
+      },
+      {
+        // B1：面包屑 首页 → 实时预测
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: ({ zh: "首页", en: "Home", es: "Inicio", pt: "Início", de: "Startseite", fr: "Accueil" } as Record<Locale, string>)[locale],
+            item: selfUrl("/", locale),
+          },
+          { "@type": "ListItem", position: 2, name: c.h1, item: selfUrl("/forecast", locale) },
+        ],
+      },
+    ],
   };
 
   // 出线概率异动：近 4 天 |Δp_advance| 最大的 6 队，队名/旗从 forecast data 映射。

@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale } from "@/i18n/server";
 import { localeHref, type Locale } from "@/i18n";
-import { localizedAlternates } from "@/lib/seo/canonical";
+import { localizedAlternates, selfUrl } from "@/lib/seo/canonical";
 import { JsonLd } from "@/lib/seo/jsonLd";
 import { PageContainer } from "@/components/PageContainer";
+import { R32, THIRD_SLOT_ORDER, THIRD_ALLOWED } from "@/lib/prob/bracket";
 
 // 常青解释页：2026 新赛制 + 出线/第三名判据（最高需求×最低竞争长尾，最佳 AI 引用候选）。
 // 判据严格对齐 src/lib/prob/standings.ts（已逐字核对 FIFA 规程）：组内相互战绩优先，第三名横排无相互战绩。
@@ -310,26 +311,87 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+// A7：32 强「小组第一 vs 最佳第三」固定对照表标签（6 语）。表格数据来自 bracket.ts（FIFA 规程逐字核对），与赛果无关、常青。
+const R32_TBL: Record<Locale, { h: string; intro: string; cMatch: string; cWinner: string; cThird: string }> = {
+  zh: {
+    h: "32 强：小组第一 vs 最佳第三 对照表",
+    intro: "8 个「小组第一 vs 最佳第三」的固定对阵位（FIFA 赛前对照表）。每个小组第一的对手，是下列允许小组的第三名之一——确保不与同组球队相遇：",
+    cMatch: "场次", cWinner: "小组第一", cThird: "对阵第三名（来自以下小组之一）",
+  },
+  en: {
+    h: "Round of 32: group winner vs best third (combinations)",
+    intro: "The 8 fixed “group winner vs a third-placed team” slots from FIFA's pre-tournament bracket. Each group winner faces the third-placed team from one of the groups listed — never a side from its own group:",
+    cMatch: "Match", cWinner: "Group winner", cThird: "3rd-placed from one of",
+  },
+  es: {
+    h: "Dieciseisavos: primero vs mejor tercero (combinaciones)",
+    intro: "Las 8 posiciones fijas de “primero de grupo vs. mejor tercero” del cuadro previo de la FIFA. Cada primero se enfrenta al tercero de uno de los grupos indicados, nunca de su propio grupo:",
+    cMatch: "Partido", cWinner: "1.º de grupo", cThird: "3.º de uno de estos grupos",
+  },
+  pt: {
+    h: "32 avos: primeiro vs melhor terceiro (combinações)",
+    intro: "As 8 posições fixas de “primeiro do grupo vs. melhor terceiro” do chaveamento prévio da FIFA. Cada primeiro enfrenta o terceiro de um dos grupos listados, nunca do próprio grupo:",
+    cMatch: "Jogo", cWinner: "1.º do grupo", cThird: "3.º de um destes grupos",
+  },
+  de: {
+    h: "Sechzehntelfinale: Gruppensieger vs bester Dritter (Kombinationen)",
+    intro: "Die 8 festen „Gruppensieger gegen Gruppendritten“-Positionen aus dem FIFA-Vorrundenbaum. Jeder Sieger trifft auf den Dritten einer der gelisteten Gruppen – nie aus der eigenen Gruppe:",
+    cMatch: "Spiel", cWinner: "Gruppensieger", cThird: "Dritter aus einer dieser Gruppen",
+  },
+  fr: {
+    h: "16es : premier vs meilleur troisième (combinaisons)",
+    intro: "Les 8 positions fixes « premier de groupe vs meilleur troisième » du tableau préétabli de la FIFA. Chaque premier affronte le troisième de l'un des groupes indiqués, jamais de son propre groupe :",
+    cMatch: "Match", cWinner: "1er du groupe", cThird: "3e de l'un de ces groupes",
+  },
+};
+
 export default async function RulesPage() {
   const locale = await getLocale();
   const c = COPY[locale];
   const q = FAQ_Q[locale] ?? FAQ_Q.en;
+  const rt = R32_TBL[locale];
+  // 8 个「小组第一 vs 最佳第三」固定位（M74/77/79/80/81/82/85/87），来源组取 THIRD_ALLOWED。
+  const thirdFixtures = THIRD_SLOT_ORDER.map((slot) => {
+    const m = R32.find((r) => r.away.kind === "third" && r.away.slot === slot);
+    return {
+      match: m?.match ?? 0,
+      winnerGroup: m && m.home.kind === "winner" ? m.home.group : slot,
+      sources: THIRD_ALLOWED[slot].split(""),
+    };
+  }).sort((a, b) => a.match - b.match);
   const faqJsonLd = {
     "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: [
-      { "@type": "Question", name: q[0], acceptedAnswer: { "@type": "Answer", text: c.formatBody } },
+    "@graph": [
       {
-        "@type": "Question",
-        name: q[1],
-        acceptedAnswer: { "@type": "Answer", text: `${c.groupIntro} ${c.groupList.join(" ")}` },
+        "@type": "FAQPage",
+        mainEntity: [
+          { "@type": "Question", name: q[0], acceptedAnswer: { "@type": "Answer", text: c.formatBody } },
+          {
+            "@type": "Question",
+            name: q[1],
+            acceptedAnswer: { "@type": "Answer", text: `${c.groupIntro} ${c.groupList.join(" ")}` },
+          },
+          {
+            "@type": "Question",
+            name: q[2],
+            acceptedAnswer: { "@type": "Answer", text: `${c.thirdIntro} ${c.thirdList.join(" ")}` },
+          },
+          { "@type": "Question", name: q[3], acceptedAnswer: { "@type": "Answer", text: c.tldr } },
+        ],
       },
       {
-        "@type": "Question",
-        name: q[2],
-        acceptedAnswer: { "@type": "Answer", text: `${c.thirdIntro} ${c.thirdList.join(" ")}` },
+        // B1：面包屑 首页 → 规则
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: ({ zh: "首页", en: "Home", es: "Inicio", pt: "Início", de: "Startseite", fr: "Accueil" } as Record<Locale, string>)[locale],
+            item: selfUrl("/", locale),
+          },
+          { "@type": "ListItem", position: 2, name: c.h1, item: selfUrl("/rules", locale) },
+        ],
       },
-      { "@type": "Question", name: q[3], acceptedAnswer: { "@type": "Answer", text: c.tldr } },
     ],
   };
   return (
@@ -370,6 +432,32 @@ export default async function RulesPage() {
         </ol>
         <p className="mt-2 text-xs leading-relaxed text-muted md:text-sm">{c.thirdNote}</p>
         <p className="mt-1 text-xs leading-relaxed text-muted md:text-sm">{c.fairNote}</p>
+      </section>
+
+      {/* A7：32 强「小组第一 vs 最佳第三」固定对照表（静态、常青，命中 "round of 32 third place combinations"）。 */}
+      <section className="mt-6">
+        <h2 className="font-head mb-2 text-sm font-semibold text-green md:text-base">{rt.h}</h2>
+        <p className="mb-2 text-sm text-text/90 md:text-base">{rt.intro}</p>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-sm md:text-base">
+            <thead>
+              <tr className="border-b border-border text-left text-muted">
+                <th className="py-1.5 pr-3 font-medium">{rt.cMatch}</th>
+                <th className="py-1.5 pr-3 font-medium">{rt.cWinner}</th>
+                <th className="py-1.5 font-medium">{rt.cThird}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {thirdFixtures.map((f) => (
+                <tr key={f.match} className="border-b border-border/50">
+                  <td className="whitespace-nowrap py-1.5 pr-3 text-muted">M{f.match}</td>
+                  <td className="py-1.5 pr-3 font-semibold">{f.winnerGroup}</td>
+                  <td className="py-1.5">{f.sources.join(", ")}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section className="mt-7 rounded-lg border border-border bg-surface p-4">

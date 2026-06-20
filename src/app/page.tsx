@@ -7,9 +7,10 @@ import { MatchCard } from "@/components/MatchCard";
 import { LiveNowBar } from "@/components/LiveNowBar";
 import { SettleDrawer } from "@/components/SettleDrawer";
 import { TrackedLink } from "@/components/TrackedLink";
-import { getDict, localeHref } from "@/i18n";
+import { getDict, localeHref, BCP47_LOCALE } from "@/i18n";
 import { getLocale } from "@/i18n/server";
-import { localizedAlternates } from "@/lib/seo/canonical";
+import { localizedAlternates, selfUrl, SITE_ORIGIN } from "@/lib/seo/canonical";
+import { JsonLd } from "@/lib/seo/jsonLd";
 import { maybeAutoSettle } from "@/lib/settlement/autoSettle";
 import { teamName } from "@/lib/football/teams";
 
@@ -54,8 +55,23 @@ export default async function Home({
     )
     .map((m) => ({ id: m.id, homeName: m.home.name, awayName: m.away.name }));
 
+  // B2：首页工具实体（WebApplication，命中"world cup 2026 predictor/calculator"工具类查询）。
+  const homeJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name: t.appName,
+    applicationCategory: "SportsApplication",
+    operatingSystem: "Web",
+    url: selfUrl("/", locale),
+    inLanguage: BCP47_LOCALE[locale],
+    isAccessibleForFree: true,
+    offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    publisher: { "@id": `${SITE_ORIGIN}/#org` },
+  };
+
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8">
+      <JsonLd data={homeJsonLd} />
       <header className="mb-5">
         <h1 className="font-head text-2xl md:text-3xl font-bold tracking-wide">
           {locale === "zh" ? (
