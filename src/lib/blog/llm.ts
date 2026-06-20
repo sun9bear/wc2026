@@ -37,7 +37,9 @@ async function deepseekBlog(system: string, user: string, timeoutMs: number, ima
         ],
         temperature: 0.6,
         max_tokens: 2200,
-        response_format: { type: "json_object" },
+        // 有图时不强制 json_object：部分多模态实现 vision+JSON 模式不兼容（疑致 zh 带图失败）；
+        // 提示词已要求"只输出 JSON"，parseArticle 也容忍非严格 JSON（从首尾花括号抠）。无图仍用 json_object（更稳）。
+        ...(images?.length ? {} : { response_format: { type: "json_object" as const } }),
       }),
       signal: controller.signal,
     });
