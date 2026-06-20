@@ -110,13 +110,16 @@ async function buildLocale(input: ManualInput, locale: "en" | "zh", deps: GenDep
   const images = input.assets
     .map((a, i) => (a.type === "image" && a.url ? { label: `Image for asset ${i + 1} (see and interpret it)`, url: a.url } : null))
     .filter((x): x is { label: string; url: string } => x !== null);
+  // 生成→解析；失败(模型偶发不吐有效 JSON，常见于 zh/DeepSeek)重试 1 次。首次失败很快，重试不撑爆 maxDuration。
   let article: ManualArticle | null = null;
-  try {
-    article = parseArticle(await deps.generate(locale, manualSystemPrompt(locale), manualUserPrompt(payload), images));
-  } catch {
-    article = null;
+  for (let attempt = 0; attempt < 2 && !article; attempt++) {
+    try {
+      article = parseArticle(await deps.generate(locale, manualSystemPrompt(locale), manualUserPrompt(payload), images));
+    } catch {
+      article = null;
+    }
   }
-  if (!article) return { article: null, soft: null, markerOk: false, markerNote: "生成/解析失败" };
+  if (!article) return { article: null, soft: null, markerOk: false, markerNote: "生成/解析失败（重试后仍失败）" };
   const { ok, note } = checkMarkers(article.body, input.assets.length);
   let soft: SoftVerdict | null = null;
   try {
