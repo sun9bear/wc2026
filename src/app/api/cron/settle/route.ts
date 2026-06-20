@@ -44,6 +44,8 @@ export async function GET(req: NextRequest) {
   try {
     newlySettled = await runSettlement(sb, key);
   } catch (e) {
+    // 持续失败（重试后仍败）才到这里——记日志便于 Vercel 日志排查 / cron 监控告警。
+    console.error("[cron/settle] runSettlement failed after retries:", e);
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "结算失败" },
       { status: 502 }
