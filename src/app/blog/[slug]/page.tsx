@@ -76,7 +76,7 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
       </div>
       <h1 className="font-head mb-4 text-2xl font-bold md:text-3xl">{post.title}</h1>
       <article>
-        <BlogBody md={post.body} />
+        <BlogBody md={post.body} assets={post.assets} locale={bl} />
       </article>
     </PageContainer>
   );

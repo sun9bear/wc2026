@@ -6,6 +6,7 @@ import type { Locale } from "@/i18n";
 import { localeHref } from "@/i18n";
 import { HREFLANG, SITE_ORIGIN } from "@/lib/seo/canonical";
 import { supabase } from "@/lib/supabase/client";
+import type { BlogAsset } from "@/lib/blog/assets";
 
 export type BlogLocale = "en" | "zh";
 export const toBlogLocale = (l: Locale): BlogLocale => (l === "zh" ? "zh" : "en");
@@ -22,6 +23,7 @@ export interface BlogPost extends BlogListItem {
   updatedAt: string;
   matchId: string | null;
   eventType: string | null;
+  assets: BlogAsset[];
 }
 
 interface Row {
@@ -36,6 +38,7 @@ interface Row {
   updated_at?: string;
   match_id?: string | null;
   event_type?: string | null;
+  assets?: BlogAsset[] | null;
 }
 
 const LIST_COLS = "slug_en, title_en, title_zh, excerpt_en, excerpt_zh, published_at, event_type";
@@ -92,7 +95,7 @@ export async function getPublishedBlogBySlug(slug: string, bl: BlogLocale): Prom
   const { data } = await supabase
     .from("blog_entries")
     .select(
-      "slug_en, title_en, title_zh, excerpt_en, excerpt_zh, body_en, body_zh, published_at, updated_at, match_id, event_type"
+      "slug_en, title_en, title_zh, excerpt_en, excerpt_zh, body_en, body_zh, published_at, updated_at, match_id, event_type, assets"
     )
     .eq("status", "published")
     .eq("slug_en", slug)
@@ -111,6 +114,7 @@ export async function getPublishedBlogBySlug(slug: string, bl: BlogLocale): Prom
     updatedAt: r.updated_at ?? r.published_at ?? "",
     matchId: r.match_id ?? null,
     eventType: r.event_type ?? null,
+    assets: Array.isArray(r.assets) ? r.assets : [],
   };
 }
 
