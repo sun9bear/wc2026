@@ -40,6 +40,7 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
     isPartOf: { "@id": `${SITE_ORIGIN}/#website` },
     author: { "@id": `${SITE_ORIGIN}/#org` },
     publisher: { "@id": `${SITE_ORIGIN}/#org` },
+    image: [`${SITE_ORIGIN}/og.png`], // B5：NewsArticle 富结果要求 image（站点社交图，真实资产）
     ...(post.publishedAt ? { datePublished: post.publishedAt } : {}),
     ...(post.updatedAt ? { dateModified: post.updatedAt } : {}),
   };
@@ -65,6 +66,11 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
         {post.publishedAt && (
           <time className="text-xs text-muted" dateTime={post.publishedAt}>
             {post.publishedAt.slice(0, 10)}
+          </time>
+        )}
+        {post.updatedAt && post.updatedAt.slice(0, 10) !== post.publishedAt?.slice(0, 10) && (
+          <time className="text-xs text-muted" dateTime={post.updatedAt}>
+            {(bl === "zh" ? "更新于 " : "Updated ") + post.updatedAt.slice(0, 10)}
           </time>
         )}
       </div>

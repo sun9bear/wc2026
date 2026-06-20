@@ -1,8 +1,8 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getLocale } from "@/i18n/server";
-import { localeHref, type Locale } from "@/i18n";
-import { localizedAlternates } from "@/lib/seo/canonical";
+import { localeHref, type Locale, BCP47_LOCALE } from "@/i18n";
+import { localizedAlternates, selfUrl, SITE_ORIGIN } from "@/lib/seo/canonical";
 import { JsonLd } from "@/lib/seo/jsonLd";
 import { PageContainer } from "@/components/PageContainer";
 
@@ -399,6 +399,19 @@ const ABOUT_FAQ: Record<Locale, { q: string; a: string }[]> = {
   ],
 };
 
+// C2：互链到预测模型 + 方法论（E-E-A-T + 内链）。措辞合规，不用 odds/bet。
+const MORE_LINKS: Record<Locale, { forecast: string; methodology: string }> = {
+  zh: { forecast: "实时出线 & 夺冠概率", methodology: "预测方法论" },
+  en: { forecast: "Live forecast & probabilities", methodology: "How the model works" },
+  es: { forecast: "Pronóstico y probabilidades en vivo", methodology: "Metodología" },
+  pt: { forecast: "Previsão e probabilidades ao vivo", methodology: "Metodologia" },
+  de: { forecast: "Live-Prognose & Wahrscheinlichkeiten", methodology: "Methodik" },
+  fr: { forecast: "Pronostic et probabilités en direct", methodology: "Méthodologie" },
+};
+const CRUMB_HOME: Record<Locale, string> = {
+  zh: "首页", en: "Home", es: "Inicio", pt: "Início", de: "Startseite", fr: "Accueil",
+};
+
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   return { ...(META[locale] ?? META.en), alternates: localizedAlternates("/about", locale) };
@@ -416,14 +429,34 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default async function AboutPage() {
   const locale = await getLocale();
   const c = BODY[locale] ?? BODY.en;
+  const meta = META[locale] ?? META.en;
   const faqJsonLd = {
     "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: (ABOUT_FAQ[locale] ?? ABOUT_FAQ.en).map((it) => ({
-      "@type": "Question",
-      name: it.q,
-      acceptedAnswer: { "@type": "Answer", text: it.a },
-    })),
+    "@graph": [
+      {
+        "@type": "AboutPage",
+        name: meta.title,
+        description: meta.description,
+        url: selfUrl("/about", locale),
+        inLanguage: BCP47_LOCALE[locale],
+        about: { "@id": `${SITE_ORIGIN}/#org` },
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: (ABOUT_FAQ[locale] ?? ABOUT_FAQ.en).map((it) => ({
+          "@type": "Question",
+          name: it.q,
+          acceptedAnswer: { "@type": "Answer", text: it.a },
+        })),
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: CRUMB_HOME[locale], item: selfUrl("/", locale) },
+          { "@type": "ListItem", position: 2, name: c.h1, item: selfUrl("/about", locale) },
+        ],
+      },
+    ],
   };
 
   return (
@@ -463,6 +496,14 @@ export default async function AboutPage() {
 
       <p className="mt-6 text-center text-[11px] text-muted md:text-xs">
         {c.seeAlso}
+        <Link href={localeHref(locale, "/forecast")} className="underline hover:text-text">
+          {MORE_LINKS[locale].forecast}
+        </Link>
+        {" · "}
+        <Link href={localeHref(locale, "/methodology")} className="underline hover:text-text">
+          {MORE_LINKS[locale].methodology}
+        </Link>
+        {" · "}
         <Link href={localeHref(locale, "/privacy")} className="underline hover:text-text">
           {c.privacy}
         </Link>

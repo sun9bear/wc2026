@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale } from "@/i18n/server";
-import { localeHref } from "@/i18n";
+import { localeHref, BCP47_LOCALE } from "@/i18n";
+import { JsonLd } from "@/lib/seo/jsonLd";
+import { selfUrl, SITE_ORIGIN } from "@/lib/seo/canonical";
 import { PageContainer } from "@/components/PageContainer";
 import { EventBadge } from "@/components/EventBadge";
 import { listPublishedBlog, blogAlternates, toBlogLocale, type BlogLocale } from "@/lib/blog/published";
@@ -38,8 +40,39 @@ export default async function BlogIndex() {
   const bl = toBlogLocale(await getLocale());
   const c = T[bl];
   const items = await listPublishedBlog(bl).catch(() => []);
+  const blogJsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Blog",
+        name: c.h1,
+        description: c.desc,
+        url: selfUrl("/blog", bl),
+        inLanguage: BCP47_LOCALE[bl],
+        isPartOf: { "@id": `${SITE_ORIGIN}/#website` },
+        ...(items.length > 0
+          ? {
+              blogPost: items.slice(0, 20).map((it) => ({
+                "@type": "BlogPosting",
+                headline: it.title,
+                url: selfUrl(`/blog/${it.slug}`, bl),
+                ...(it.publishedAt ? { datePublished: it.publishedAt } : {}),
+              })),
+            }
+          : {}),
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: bl === "zh" ? "首页" : "Home", item: selfUrl("/", bl) },
+          { "@type": "ListItem", position: 2, name: c.h1, item: selfUrl("/blog", bl) },
+        ],
+      },
+    ],
+  };
   return (
     <PageContainer tier="prose">
+      <JsonLd data={blogJsonLd} />
       <Link href={localeHref(bl, "/")} className="text-xs text-muted">
         {c.back}
       </Link>
