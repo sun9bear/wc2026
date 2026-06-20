@@ -211,7 +211,7 @@ export default async function ScorersPage() {
               scorers[0].playerName,
               scorers[0].goals,
               teamName(scorers[0].teamName, locale),
-              scorers[1] ? scorers[1].playerName : null,
+              scorers[1] && scorers[1].goals < scorers[0].goals ? scorers[1].playerName : null,
               scorers[1]?.goals ?? 0
             )}
           </p>
