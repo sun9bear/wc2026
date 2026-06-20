@@ -139,7 +139,7 @@ Next 要求**根 layout 含 `<html><body>`**。`<html lang>` 需要 locale。方
 ### 4.5 结算副作用 gate（缓存 home/match 的硬前置 —— CodeX 点 5）
 
 首页与比赛页靠 `after(() => maybeAutoSettle())` 在**每次访问时**驱动结算。**一旦 CDN HIT，这段不再每访问运行 → 结算会漏。** 所以缓存 home/match **之前必须**：
-1. 把结算完全收敛到 `/api/cron/settle`（已约 5 分钟/次），并**确认可靠**——日志里出现过 1 次 `502`，先排查 + 加重试/告警；
+1. 把结算完全收敛到 `/api/cron/settle`（已约 5 分钟/次），并**确认可靠**——✅ 2026-06-20 已加固（commit `5e6073d`：football-data 拉取 8s 超时 + 3 次重试、单场失败不阻断整批、502 路径加 `console.error`），瞬时抖动不再 502。仍需：观察几轮确认 cron-only 结算延迟可接受（终场后几分钟内）+ 可选加 cron 监控告警；
 2. 从 home/match 移除 `after(maybeAutoSettle)`（或保留但不依赖它结算）；
 3. 验证：停掉页面 after、纯靠 cron，结算延迟仍可接受（终场后几分钟内）。
 
