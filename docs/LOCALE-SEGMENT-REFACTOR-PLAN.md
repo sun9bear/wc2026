@@ -2,6 +2,7 @@
 
 > 状态：**设计稿（未实施）**。作者 2026-06-20。前置任务 B 已上线（移除每响应 Set-Cookie，commit 1376e01）。
 > 目标读者：执行这次重构的会话/人。**这是一次需要专项 + 全量回归的中等规模改造，不是顺手补丁。**
+> **v2 修订（2026-06-20，吸收 CodeX 78/100 审核 + 实测 grep 盘点）**：原稿缓存分类过于乐观。改为**四分类**（§4.3）、新增**结算副作用 gate**（§4.5）、**team 优先于 home/match**（§8）、新增 `_rsc`/函数调用量/searchParams 专项验收（§9）。核心结论不变：值得做、但现在只做低成本试点、不全量。
 
 ---
 
@@ -106,17 +107,35 @@ Next 要求**根 layout 含 `<html><body>`**。`<html lang>` 需要 locale。方
    - 改 `const { locale: raw } = await params; const locale = isLocale(raw) ? raw : "en";`（用 `isLocale` 收窄，非法→en 或 `notFound()`）。
 2. 动态子路由（`match/[id]`、`team/[slug]`、`player/[slug]`、`league/[code]`、`calculator/group/[letter]`、`blog/[slug]`）的 `params` 现在**同时含 locale**：`{ locale, id }` / `{ locale, slug }` / `{ locale, letter }` / `{ locale, code }`。更新解构。
 
-### 4.3 每路由缓存配置（决定能否被缓存）
-| 路由 | 配置 | 理由 |
-|---|---|---|
-| forecast, best-thirds, calculator, calculator/group/[letter], rules, methodology, about, watch, privacy, disclaimer, combo, popularity, scorers, league, leaderboard | `export const revalidate = 900`（与数据 `unstable_cache` 节奏对齐）+ `generateStaticParams` 返回 LOCALES | 内容随小时级数据变，ISR 即可，CDN HIT |
-| match/[id], team/[slug], player/[slug], league/[code] | `export const revalidate = 600` + `generateStaticParams` 返回 LOCALES（×可选热门 id/slug）+ `export const dynamicParams = true` | 量大，按需渲染+缓存，不必构建期全量预渲染 |
-| **me** | `export const dynamic = "force-dynamic"` | 读用户态，**必须保持动态、不缓存** |
-| match/[id] 的**进行中比分** | 比分是客户端组件轮询（`LiveScoreProbs` 等），SSR 外壳可缓存；或对 inPlay 场次单独 `dynamic` | 直播数据靠客户端，不阻碍外壳缓存 |
-| admin/blog | 保持动态（后台） | 非公开内容 |
-| blog, blog/[slug] | `revalidate`（按发布节奏，如 3600） | |
+### 4.3 路由四分类（v2 修订 —— 吸收 CodeX 审核 + 实测 `force-dynamic` 盘点）
 
-> `generateStaticParams` 在 `[locale]` 段返回 `LOCALES.map(locale => ({ locale }))`；动态子段嵌套各自的 `generateStaticParams` 或靠 `dynamicParams`。
+⚠️ 原稿缓存表过于乐观。实测 grep 发现 **9 个页面本就 `force-dynamic`**（有真实动态源），不是"只改 locale 就能 ISR"。当前 force-dynamic：`admin/blog, blog, blog/[slug], leaderboard, league, league/[code], page(首页), player/[slug], popularity`。按"额外动态源"四分类：
+
+**A · 纯内容可缓存（仅因 getLocale 动态，去掉即 ISR）→ 直接迁**
+`forecast, best-thirds, about, rules, privacy, disclaimer, watch, methodology, combo, scorers, calculator/group/[letter]`（用 `[letter]` 段、**不读 searchParams**）、**`team/[slug]`**（无副作用，但日志最重 p95 18.2s → 试点后**第一个**迁）。
+配置：`export const revalidate = 900`（对齐数据 `unstable_cache` 节奏）；重子段 `export const dynamicParams = true`（按需渲染+缓存，不构建期全量预渲染）。
+
+**B · 需先拆 searchParams / 副作用，才能缓存**
+- **首页 `/`**：`?filter` searchParams + `after(maybeAutoSettle)`（page.tsx:38）+ `Date.now()` + 未缓存 `getMatches()`（全部实测确认）。要：① `?filter` 改客户端过滤；② 去 after、结算全交 cron（见 §4.5）；③ `getMatches` 包 `unstable_cache`；④ Date.now 移出渲染。**四项做完才能 ISR。**
+- **`/calculator`（裸页）**：`?team` searchParams（calculator/page.tsx:142）。要：team 选择改客户端交互，**或此页保留动态**（SEO 主力是 `group/[letter]`，裸 calculator 保留动态成本低，推荐后者）。
+- **`/match/[id]`**：`after(maybeAutoSettle)`（:224）+ `Date.now()` + 直播比分。要：先过 §4.5 结算 gate；直播比分本就客户端轮询（不挡外壳缓存）；Date.now 用服务端缓存值替代。处理后 `revalidate=600`+`dynamicParams`。
+
+**C · 保留动态（实测 force-dynamic，有真实理由，别碰）**
+`me`（用户态）、`admin/blog`（后台）、**`leaderboard`**（实时排名）、**`popularity`**（实时票数）、**`league` + `league/[code]`**（私域/noindex/口令，CodeX 点 6）、`blog` + `blog/[slug]`（随发布即时更新）、API、直播轮询组件。
+
+**D · 待定 — 调查后再归类**
+- **`player/[slug]`**：现 `force-dynamic` + `Date.now()`。CodeX 列它为"重页面可缓存"，但它显式动态。**先查清为何 force-dynamic**：若纯展示（射手/卡牌）→ 可改 ISR（重路由收益）；若依赖实时数据 → 归 C。
+
+> `generateStaticParams` 在 `[locale]` 段返回 `LOCALES.map(l => ({ locale: l }))`；重子段（team/match/player）靠 `dynamicParams=true`。
+
+### 4.5 结算副作用 gate（缓存 home/match 的硬前置 —— CodeX 点 5）
+
+首页与比赛页靠 `after(() => maybeAutoSettle())` 在**每次访问时**驱动结算。**一旦 CDN HIT，这段不再每访问运行 → 结算会漏。** 所以缓存 home/match **之前必须**：
+1. 把结算完全收敛到 `/api/cron/settle`（已约 5 分钟/次），并**确认可靠**——日志里出现过 1 次 `502`，先排查 + 加重试/告警；
+2. 从 home/match 移除 `after(maybeAutoSettle)`（或保留但不依赖它结算）；
+3. 验证：停掉页面 after、纯靠 cron，结算延迟仍可接受（终场后几分钟内）。
+
+**这是 home/match 进缓存桶的硬门槛——没做完不许迁这两类。**
 
 ### 4.4 保持不变（重要——少改少错）
 - `localeHref / selfUrl / localizedAlternates / hreflang`（canonical.ts）——产出裸 URL，**不动**。
@@ -166,12 +185,13 @@ Next 要求**根 layout 含 `<html><body>`**。`<html lang>` 需要 locale。方
   3. **只迁 1 个静态路由**（如 `forecast`）到 `app/[locale]/forecast/` + `revalidate=900` + `generateStaticParams`。
   4. 部署到**预览环境**，验：① `/forecast` 与 `/zh/forecast` 内容/语言正确；② 第二次 `X-Vercel-Cache: HIT`；③ 零 301（curl 原 URL 直返 200）；④ 客户端从首页软导航到 forecast 正常；⑤ `/en/forecast` 308→`/forecast`；⑥ canonical/hreflang 无 `/en`。
   5. **Phase 1 不过 → 停，不要继续**（证明机制行不通，及时止损，成本最低）。
-- **Phase 2 · 批量迁静态内容页**：about/rules/methodology/calculator/best-thirds/popularity/scorers/watch/privacy/disclaimer/combo/league/leaderboard/blog，逐个改 params + 缓存配置。
-- **Phase 3 · 动态子路由**：match/team/player/league[code]/calculator-group/blog[slug] + ISR + dynamicParams。
-- **Phase 4 · 保持动态**：me（force-dynamic）、admin/blog、直播组件外壳确认。
-- **Phase 5 · 全量回归 + 上线**（见 §9）。
+- **Phase 2 · 迁 `team/[slug]`（最高 ROI 单点，CodeX 点 2）**：它是 A 类（干净、无副作用）**且日志最贵**（p95 18.2s、`.rsc` p95 6.3s）。单独迁、`revalidate=900`+`dynamicParams`，验 `X-Vercel-Cache: HIT`（含 `_rsc`）+ **函数调用量明显下降**。先吃下最重的页面。
+- **Phase 3 · 批量迁 A 类其余**：`about, rules, methodology, best-thirds, calculator/group/[letter], scorers, watch, privacy, disclaimer, combo`，逐个改 params + `revalidate`。
+- **Phase 4 · 结算 gate → 再迁 home + match（B 类）**：先完成 §4.5（结算收敛到 cron + 确认可靠），**再**迁首页(拆 `?filter`+`getMatches` 缓存+去 after+去 Date.now)与 `match/[id]`(去 after + Date.now)。**gate 没过不动这两类。**
+- **Phase 5 · calculator + player 收尾**：`/calculator` 裸页拆 `?team`（或保留动态）；先调查 `player/[slug]` 为何 force-dynamic 再决定 ISR/保留（§4.3 D）。
+- **Phase 6 · 确认 C 类不动 + 全量回归 → 上线**：me/admin/league/league[code]/leaderboard/popularity/blog 保持 force-dynamic；6 语种全量回归（§9）后切 prod。
 
-> 每个 Phase 独立 commit、独立预览验证；prod 切换放最后一步。
+> 每个 Phase 独立 commit、独立预览验证；prod 切换放最后一步。**不要一口气迁完 24 页**（CodeX 明确反对）。
 
 ---
 
@@ -179,6 +199,9 @@ Next 要求**根 layout 含 `<html><body>`**。`<html lang>` 需要 locale。方
 
 - [ ] **零-301**：curl `/`, `/forecast`, `/zh/forecast`, `/es/calculator`, `/match/{id}`, `/team/{slug}` → 全部 200、无 redirect、地址栏不变。
 - [ ] **边缘缓存**：上述内容页第二次请求 `X-Vercel-Cache: HIT`、TTFB < 200ms。
+- [ ] **`_rsc` 请求也命中**（CodeX）：客户端软导航走的 `?_rsc=` / RSC 请求同样 `X-Vercel-Cache: HIT`（否则软导航仍打 origin，team `.rsc` p95 6.3s 不会降）。
+- [ ] **函数调用量下降**（CodeX）：上线后 Vercel function invocations 对比迁移前**明显下降**（爬虫命中边缘而非每次冷渲染）——这是 ROI 的硬证据。
+- [ ] **searchParams 页面按设计仍 MISS**（CodeX）：`/calculator?team=`（若保留动态）、`/me` 等故意动态的页面**应**是 MISS——确认我们没误把它们 ISR 化导致内容错配/陈旧。
 - [ ] **`/en/*` 防重复**：`/en/forecast` → 308 → `/forecast`。
 - [ ] **6 语种内容正确**：en/zh/es/pt/de/fr 各抽 3 页，语言/文案/队名正确。
 - [ ] **canonical & hreflang**：响应内 canonical/alternate 全为裸 URL，无 `/en`。
