@@ -6,6 +6,9 @@ const DISALLOW = [
   "/api/",
   "/me", "/zh/me", "/es/me", "/pt/me", "/de/me", "/fr/me",
   "/admin", "/zh/admin", "/es/admin", "/pt/admin", "/de/admin", "/fr/admin",
+  // /league + /league/[code] 是私域/口令邀请页（无界 code 路径），仅靠 meta-noindex
+  // 会让 Googlebot 逐个抓取浪费预算；显式 disallow（与 /me、/admin 同处理）。
+  "/league", "/zh/league", "/es/league", "/pt/league", "/de/league", "/fr/league",
 ];
 
 // GEO：显式欢迎主流 LLM 爬虫（日志显示 ClaudeBot+ChatGPT-User 占抓取大头）。

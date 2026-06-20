@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale } from "@/i18n/server";
-import { localeHref, type Locale } from "@/i18n";
+import { localeHref, type Locale, BCP47_LOCALE } from "@/i18n";
 import { teamName } from "@/lib/football/teams";
 import { localizedAlternates, selfUrl } from "@/lib/seo/canonical";
 import { getForecast } from "@/lib/prob/pipeline";
@@ -139,6 +139,23 @@ const FAQ: Record<Locale, { q: string; a: string }[]> = {
   ],
 };
 
+// A4：答案前置定义句（GEO，6 语）——把"前2+最佳8第三名晋级"这一核心事实做成可抓取纯文本。
+const INTRO: Record<Locale, string> = {
+  zh: "2026 世界杯：每个小组前 2 名，加上 12 个小组里最好的 8 个第三名，共晋级 32 强。改下面任意剩余赛果，实时看你的队在不在安全线内。",
+  en: "At the World Cup 2026, the top 2 of each of the 12 groups plus the 8 best third-placed teams reach the Round of 32. Flip any remaining result below to see if your team is above the line.",
+  es: "En el Mundial 2026, los 2 primeros de cada uno de los 12 grupos más los 8 mejores terceros llegan a los dieciseisavos. Cambia cualquier resultado restante abajo para ver si tu equipo está por encima del corte.",
+  pt: "Na Copa 2026, os 2 primeiros de cada um dos 12 grupos mais os 8 melhores terceiros chegam às 16-avas. Mude qualquer resultado restante abaixo para ver se sua seleção está acima da linha.",
+  de: "Bei der WM 2026 erreichen die besten 2 jeder der 12 Gruppen plus die 8 besten Gruppendritten das Sechzehntelfinale. Ändere unten ein beliebiges offenes Ergebnis, um zu sehen, ob dein Team über dem Strich liegt.",
+  fr: "Au Mondial 2026, les 2 premiers de chacun des 12 groupes plus les 8 meilleurs troisièmes atteignent les seizièmes. Modifie un résultat restant ci-dessous pour voir si ton équipe est au-dessus de la barre.",
+};
+const FAQ_H: Record<Locale, string> = {
+  zh: "常见问题", en: "Frequently asked questions", es: "Preguntas frecuentes",
+  pt: "Perguntas frequentes", de: "Häufige Fragen", fr: "Questions fréquentes",
+};
+const UPDATED: Record<Locale, string> = {
+  zh: "更新于", en: "Updated", es: "Actualizado", pt: "Atualizado", de: "Aktualisiert", fr: "Mis à jour",
+};
+
 export async function generateMetadata({
   searchParams,
 }: {
@@ -269,7 +286,18 @@ export default async function CalculatorPage({
           />
         </div>
       </div>
-      <h1 className="font-head mb-4 mt-3 text-2xl md:text-3xl font-bold">🧮 {c.h1}</h1>
+      <h1 className="font-head mb-2 mt-3 text-2xl md:text-3xl font-bold">🧮 {c.h1}</h1>
+      <p className="mb-1 text-sm leading-relaxed text-text/90 md:text-base">{INTRO[locale]}</p>
+      {data.updatedAt && (
+        <p className="mb-4 text-[11px] text-muted md:text-xs">
+          {UPDATED[locale]}{" "}
+          {new Date(data.updatedAt).toLocaleDateString(BCP47_LOCALE[locale] ?? "en-US", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          })}
+        </p>
+      )}
       <CalculatorFocus
         locale={locale}
         hot={hotTeams}
@@ -301,6 +329,19 @@ export default async function CalculatorPage({
         focusLetter={hit?.letter ?? null}
         focusTeamId={hit?.team.id ?? null}
       />
+
+      {/* A4：可见 FAQ（与 faqJsonLd 镜像）——把规则问答做成可抓取正文，承接问答型搜索/GEO。 */}
+      <section className="mt-8">
+        <h2 className="font-head mb-3 text-lg font-semibold md:text-xl">{FAQ_H[locale]}</h2>
+        <div className="space-y-4">
+          {FAQ[locale].map((qa, i) => (
+            <div key={i}>
+              <h3 className="font-head text-sm font-semibold md:text-base">{qa.q}</h3>
+              <p className="mt-1 text-sm leading-relaxed text-text/90 md:text-base">{qa.a}</p>
+            </div>
+          ))}
+        </div>
+      </section>
     </PageContainer>
   );
 }

@@ -12,7 +12,8 @@ import { teamName, flagUrl } from "@/lib/football/teams";
 import { nameZhBySlug, wikiTitleBySlug } from "@/data/players.seed";
 import { PHOTOS } from "@/data/players.photos";
 import { GALLERY } from "@/data/players.gallery";
-import { localizedAlternates } from "@/lib/seo/canonical";
+import { localizedAlternates, selfUrl, SITE_ORIGIN } from "@/lib/seo/canonical";
+import { JsonLd } from "@/lib/seo/jsonLd";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +48,35 @@ const UI: Record<Locale, { photos: string; bioSource: string; more: string }> = 
   fr: { photos: "Photos", bioSource: "Biographie de Wikipédia · CC BY-SA", more: "En savoir plus" },
 };
 
+// A1：球员页 SEO/GEO 文案（6 语）——标题/描述对齐「<球员> world cup 2026」查询；答案前置 lede 供抓取/AI 引用。
+const PTITLE: Record<Locale, (name: string, team: string) => string> = {
+  zh: (n, t) => `${n}（${t}）· 2026 世界杯`,
+  en: (n, t) => `${n} — ${t} at the 2026 World Cup`,
+  es: (n, t) => `${n} — ${t} en el Mundial 2026`,
+  pt: (n, t) => `${n} — ${t} na Copa 2026`,
+  de: (n, t) => `${n} — ${t} bei der WM 2026`,
+  fr: (n, t) => `${n} — ${t} au Mondial 2026`,
+};
+const PDESC: Record<Locale, (name: string, team: string, pos: string | null, rank: number) => string> = {
+  zh: (n, t, pos, r) => `${n}（${t}${pos ? " · " + pos : ""}）的 2026 世界杯资料：世界杯进球、国家队出场、球迷人气榜第 ${r} 名与简介。免费、无需注册。`,
+  en: (n, t, pos, r) => `${n} — ${t}${pos ? `, ${pos}` : ""}, at the 2026 World Cup: World Cup goals, caps, fan-favorite rank #${r} and bio. Free, no sign-up.`,
+  es: (n, t, pos, r) => `${n} (${t}${pos ? ` · ${pos}` : ""}) en el Mundial 2026: goles del Mundial, internacionalidades, puesto #${r} entre los favoritos de la afición y biografía. Gratis, sin registro.`,
+  pt: (n, t, pos, r) => `${n} (${t}${pos ? ` · ${pos}` : ""}) na Copa 2026: gols na Copa, jogos pela seleção, #${r} entre os favoritos da torcida e biografia. Grátis, sem cadastro.`,
+  de: (n, t, pos, r) => `${n} (${t}${pos ? ` · ${pos}` : ""}) bei der WM 2026: WM-Tore, Länderspiele, Platz #${r} bei den Fan-Favoriten und Biografie. Kostenlos, ohne Anmeldung.`,
+  fr: (n, t, pos, r) => `${n} (${t}${pos ? ` · ${pos}` : ""}) au Mondial 2026 : buts au Mondial, sélections, #${r} parmi les favoris des fans et biographie. Gratuit, sans inscription.`,
+};
+const LEDE: Record<Locale, (name: string, team: string, pos: string | null, rank: number, votes: number) => string> = {
+  zh: (n, t, pos, r, v) => `${n} 是 ${t} 出战 2026 世界杯的${pos ?? "球员"}，在 wc2026.cool 球迷人气榜排名第 ${r}（${v} 票）。`,
+  en: (n, t, pos, r, v) => `${n} plays for ${t} at the 2026 World Cup${pos ? ` as a ${pos}` : ""}, ranked #${r} in the wc2026.cool fan-favorite index (${v} votes).`,
+  es: (n, t, pos, r, v) => `${n} juega con ${t} en el Mundial 2026${pos ? ` como ${pos}` : ""}, #${r} en el índice de favoritos de wc2026.cool (${v} votos).`,
+  pt: (n, t, pos, r, v) => `${n} joga pela ${t} na Copa 2026${pos ? ` como ${pos}` : ""}, #${r} no índice de favoritos da wc2026.cool (${v} votos).`,
+  de: (n, t, pos, r, v) => `${n} spielt für ${t} bei der WM 2026${pos ? ` als ${pos}` : ""}, Platz #${r} im Fan-Favoriten-Index von wc2026.cool (${v} Stimmen).`,
+  fr: (n, t, pos, r, v) => `${n} joue pour ${t} au Mondial 2026${pos ? ` comme ${pos}` : ""}, #${r} dans l'index des favoris de wc2026.cool (${v} votes).`,
+};
+const HOME_LABEL: Record<Locale, string> = {
+  zh: "首页", en: "Home", es: "Inicio", pt: "Início", de: "Startseite", fr: "Accueil",
+};
+
 export async function generateMetadata({
   params,
 }: {
@@ -56,15 +86,18 @@ export async function generateMetadata({
   const locale = await getLocale();
   const p = await getPlayer(slug);
   if (!p) return {};
-  const t = getDict(locale);
   const name = dispName(slug, p.name, locale);
-  const photo = PHOTOS[slug]?.url;
-  const blurb = locale === "zh" ? p.blurbZh : p.blurbEn;
+  const team = teamName(p.teamName, locale);
+  const pos = p.position ? POS[p.position]?.[locale] ?? null : null;
+  const ogImg = PHOTOS[slug]?.url ?? `${SITE_ORIGIN}/og.png`;
+  const title = PTITLE[locale](name, team);
+  const description = PDESC[locale](name, team, pos, p.rank);
   return {
-    title: `${name} · ${t.popularity.title} · ${t.appName}`,
-    description: blurb ?? `${name} — ${teamName(p.teamName, locale)}`,
+    title,
+    description,
     alternates: localizedAlternates(`/player/${slug}`, locale),
-    openGraph: photo ? { images: [{ url: photo }] } : undefined,
+    openGraph: { type: "profile", title, description, url: selfUrl(`/player/${slug}`, locale), images: [{ url: ogImg }] },
+    twitter: { card: "summary_large_image", title, description, images: [ogImg] },
   };
 }
 
@@ -98,6 +131,35 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
   const gallery = GALLERY[slug] ?? [];
   const ui = UI[locale];
 
+  // A1：Person + 面包屑实体（只填真实字段；sameAs→维基百科是最强 GEO 实体锚定，仅有词条时输出）。
+  const bio = intro?.text ?? blurb ?? undefined;
+  const playerJsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Person",
+        "@id": `${selfUrl(`/player/${slug}`, locale)}#person`,
+        name,
+        ...(pos ? { jobTitle: pos } : {}),
+        ...(photo?.url ? { image: photo.url } : {}),
+        ...(facts.birthDate ? { birthDate: facts.birthDate } : {}),
+        ...(facts.heightCm ? { height: `${facts.heightCm} cm` } : {}),
+        nationality: team,
+        memberOf: { "@type": "SportsTeam", name: team },
+        ...(wikiUrl ? { sameAs: [wikiUrl] } : {}),
+        ...(bio ? { description: bio } : {}),
+        url: selfUrl(`/player/${slug}`, locale),
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: HOME_LABEL[locale], item: selfUrl("/", locale) },
+          { "@type": "ListItem", position: 2, name, item: selfUrl(`/player/${slug}`, locale) },
+        ],
+      },
+    ],
+  };
+
   return (
     <PageContainer tier="prose">
       <Link href={localeHref(locale, "/popularity")} className="text-xs md:text-sm text-muted">
@@ -129,6 +191,11 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
           </div>
         </div>
       </header>
+
+      {/* A1：答案前置 lede（服务端纯文本，命中「<球员> world cup 2026」+ 供 AI 引用） */}
+      <p className="mt-3 text-sm leading-relaxed md:text-base">
+        {LEDE[locale](name, team, pos, p.rank, p.votes)}
+      </p>
 
       {/* Wikidata 事实（CC0）+ 分项 */}
       <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted tabular-nums">
@@ -188,6 +255,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
         </section>
       )}
 
+      <JsonLd data={playerJsonLd} />
       <PlayerVoteButton playerId={p.id} initialVotes={p.votes} locale={locale} />
 
       {/* Commons 相册（自由许可，逐图链 Commons 源页 + 署名；不足 2 张则不显示） */}
