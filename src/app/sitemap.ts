@@ -83,7 +83,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const blog = await blogSitemap(); // blog 自带 fail-soft，单独构建（en/zh）
   const staticBase: Entry[] = [
     { path: "/", changeFrequency: "hourly", priority: 1 },
-    { path: "/combo", changeFrequency: "hourly", priority: 0.9 },
+    { path: "/combo", changeFrequency: "daily", priority: 0.6 },
     { path: "/leaderboard", changeFrequency: "hourly", priority: 0.8 },
     { path: "/watch", changeFrequency: "weekly", priority: 0.7 },
     { path: "/forecast", changeFrequency: "hourly", priority: 0.9 },
