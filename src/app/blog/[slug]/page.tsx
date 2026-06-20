@@ -17,7 +17,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const bl = toBlogLocale(await getLocale());
   const post = await getPublishedBlogBySlug(slug, bl).catch(() => null);
-  if (!post) return { title: bl === "zh" ? "文章未找到" : "Article not found" };
+  // 缺数据在 generateMetadata（流式渲染之前）即 notFound → 真 404；否则 loading.tsx 的 Suspense 流式会让状态码停在 200（软 404）。
+  if (!post) notFound();
   return { title: post.title, description: post.excerpt, alternates: blogAlternates(`/blog/${slug}`, bl) };
 }
 

@@ -403,7 +403,7 @@ export async function generateMetadata({
   const slug = normalizeSlug(rawSlug); // 解码 + NFC：Next 对非 ASCII 段在 page/metadata 间解码不一致
   const locale = await getLocale();
   const d = await getTeamDetail(slug).catch(() => null);
-  if (!d) return {};
+  if (!d) notFound(); // 在 generateMetadata（流式前）判，避免 loading.tsx Suspense 流式致软 404（200）
   const c = COPY[locale];
   const nm = locale === "zh" ? d.zh : teamName(d.name, locale);
   const og = `/api/og?team=${d.slug}&locale=${locale}&u=${encodeURIComponent(localeHref(locale, `/team/${d.slug}`))}`;
