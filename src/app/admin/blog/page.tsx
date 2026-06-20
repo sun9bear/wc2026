@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { isAuthed, listAllBlog, adminSecret } from "@/lib/blog/admin";
 import { BlogAdminClient, BlogAdminLogin } from "@/components/BlogAdminClient";
+import { BlogComposeClient } from "@/components/BlogComposeClient";
 import { PageContainer } from "@/components/PageContainer";
 
 export const dynamic = "force-dynamic";
@@ -28,6 +29,7 @@ export default async function BlogAdminPage() {
   const entries = await listAllBlog().catch(() => []);
   return (
     <PageContainer tier="prose">
+      <BlogComposeClient />
       <BlogAdminClient entries={entries} />
     </PageContainer>
   );
