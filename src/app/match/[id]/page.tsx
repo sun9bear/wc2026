@@ -46,7 +46,7 @@ export async function generateMetadata({
   const alts = localizedAlternates(`/match/${id}`, locale);
 
   const m = await getMatchDetail(id).catch(() => null);
-  if (!m) notFound(); // 在 generateMetadata（流式前）判，避免 loading.tsx Suspense 流式致软 404（200）
+  if (!m) notFound(); // 缺数据→Next not-found 边界（自动 noindex，Google 不收录）。loading.tsx 流式致 HTTP 仍 200，noindex 已消解 SEO 危害
   let base: Metadata = { alternates: alts };
   if (m) {
     const home = teamName(m.home.name, locale);

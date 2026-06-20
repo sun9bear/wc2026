@@ -17,7 +17,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const bl = toBlogLocale(await getLocale());
   const post = await getPublishedBlogBySlug(slug, bl).catch(() => null);
-  // 缺数据在 generateMetadata（流式渲染之前）即 notFound → 真 404；否则 loading.tsx 的 Suspense 流式会让状态码停在 200（软 404）。
+  // 缺数据 → 走 Next not-found 边界 → 自动 noindex（Google 不收录）。
+  // 注：loading.tsx 的 Suspense 流式使 HTTP 状态仍为 200（软 404），noindex 已消解 SEO 危害；要真 404 须移除全站 loading.tsx（牺牲加载骨架）。
   if (!post) notFound();
   return { title: post.title, description: post.excerpt, alternates: blogAlternates(`/blog/${slug}`, bl) };
 }
