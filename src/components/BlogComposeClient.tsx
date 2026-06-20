@@ -62,10 +62,13 @@ export function BlogComposeClient() {
   const submit = async () => {
     if (!angle.trim()) return setMsg("请先填角度/要点");
     if (!en && !zh) return setMsg("至少选一种语言");
-    for (const a of assets) {
-      if (!a.url.trim()) return setMsg("有素材缺 URL/图");
-      if (a.type === "embed" && !a.desc.trim()) return setMsg("推文嵌入缺「说明」(模型抓不到推文,靠它理解)");
-      if (a.type === "image" && (!a.credit.trim() || !a.rightsOk)) return setMsg("图片必须填来源/署名并勾选「确认有权使用」");
+    for (let i = 0; i < assets.length; i++) {
+      const a = assets[i];
+      const tag = `素材 #${i + 1}`;
+      if (!a.url.trim()) return setMsg(`✗ ${tag} 缺 ${a.type === "image" ? "图片" : "推文 URL"}`);
+      if (a.type === "embed" && !a.desc.trim()) return setMsg(`✗ ${tag}（推文）缺「说明」——模型抓不到推文，靠它理解`);
+      if (a.type === "image" && !a.credit.trim()) return setMsg(`✗ ${tag}（图片）缺「来源/署名」（必填，会渲染出处）`);
+      if (a.type === "image" && !a.rightsOk) return setMsg(`✗ ${tag}（图片）需勾选「我确认有权使用此图」`);
     }
     setBusy(true);
     setMsg("生成中…（约 30-60 秒，双语 + 软闸）");
@@ -230,7 +233,11 @@ export function BlogComposeClient() {
             >
               {busy ? "生成中…" : "生成草稿"}
             </button>
-            {msg && <span className="text-xs text-muted">{msg}</span>}
+            {msg && (
+              <span className={`text-sm font-medium ${msg.startsWith("✓") ? "text-green" : msg.startsWith("生成中") ? "text-muted" : "text-red"}`}>
+                {msg}
+              </span>
+            )}
           </div>
           <p className="text-[11px] text-muted">
             手动文章生成后为「待审」草稿，需你在下方列表预览、满意后手动发布（不自动发）。嵌入用官方 X，图片走本站存储。
