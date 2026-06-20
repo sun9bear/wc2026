@@ -63,8 +63,8 @@ export function BlogComposeClient() {
     if (!angle.trim()) return setMsg("请先填角度/要点");
     if (!en && !zh) return setMsg("至少选一种语言");
     for (const a of assets) {
-      if (!a.url.trim()) return setMsg("有素材缺 URL");
-      if (!a.desc.trim()) return setMsg("有素材缺「说明」(模型据此理解)");
+      if (!a.url.trim()) return setMsg("有素材缺 URL/图");
+      if (a.type === "embed" && !a.desc.trim()) return setMsg("推文嵌入缺「说明」(模型抓不到推文,靠它理解)");
       if (a.type === "image" && (!a.credit.trim() || !a.rightsOk)) return setMsg("图片必须填来源/署名并勾选「确认有权使用」");
     }
     setBusy(true);
@@ -205,7 +205,7 @@ export function BlogComposeClient() {
                 <input
                   value={a.desc}
                   onChange={(e) => patch(i, { desc: e.target.value })}
-                  placeholder="一句话说明（必填，模型看不到图/抓不到推文，靠它理解）"
+                  placeholder={a.type === "image" ? "说明（可选，模型会直接看图解读）" : "推文说明（必填，模型抓不到推文，靠它理解）"}
                   className={inputCls}
                 />
                 <div className="grid grid-cols-2 gap-1.5">

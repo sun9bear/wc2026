@@ -46,19 +46,32 @@ interface GenResponse {
   candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] } }[];
 }
 
+// 多模态图片输入（base64 inlineData）。label 标注它对应哪条素材，供模型映射 [[asset:N]]。
+export interface GeminiImage {
+  label: string;
+  mimeType: string;
+  dataB64: string;
+}
+
 async function callGenerate(
   key: string,
   model: string,
   system: string,
   user: string,
-  signal: AbortSignal
+  signal: AbortSignal,
+  images?: GeminiImage[]
 ): Promise<Response> {
+  const parts: Record<string, unknown>[] = [{ text: user }];
+  for (const im of images ?? []) {
+    parts.push({ text: im.label });
+    parts.push({ inlineData: { mimeType: im.mimeType, data: im.dataB64 } });
+  }
   return fetch(`${BASE}/models/${model}:generateContent`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": key },
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: system }] },
-      contents: [{ role: "user", parts: [{ text: user }] }],
+      contents: [{ role: "user", parts }],
       generationConfig: { temperature: 0.9 },
     }),
     signal,
@@ -69,7 +82,8 @@ export async function chat(
   system: string,
   user: string,
   timeoutMs = 15000,
-  modelOverride?: string
+  modelOverride?: string,
+  images?: GeminiImage[]
 ): Promise<string> {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new Error("缺少 GEMINI_API_KEY");
@@ -78,14 +92,14 @@ export async function chat(
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     let model = modelOverride ?? preferredModel();
-    let res = await callGenerate(key, model, system, user, controller.signal);
+    let res = await callGenerate(key, model, system, user, controller.signal, images);
     if (res.status === 404) {
       // 写死的模型名过期——动态解析一次并缓存（每个实例最多发生一次）。
       const found = await resolveFlashModel(key, controller.signal);
       if (found && found !== model) {
         resolvedModel = found;
         model = found;
-        res = await callGenerate(key, model, system, user, controller.signal);
+        res = await callGenerate(key, model, system, user, controller.signal, images);
       }
     }
     if (!res.ok) throw new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 300)}`);

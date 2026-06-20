@@ -106,9 +106,13 @@ function buildManualPayload(input: ManualInput, locale: "en" | "zh") {
 
 async function buildLocale(input: ManualInput, locale: "en" | "zh", deps: GenDeps): Promise<ManualLocaleDraft> {
   const payload = buildManualPayload(input, locale);
+  // 图片素材直接喂多模态模型（标注 asset 序号供映射 [[asset:N]]）；推文嵌入抓不到→只靠 desc。
+  const images = input.assets
+    .map((a, i) => (a.type === "image" && a.url ? { label: `Image for asset ${i + 1} (see and interpret it)`, url: a.url } : null))
+    .filter((x): x is { label: string; url: string } => x !== null);
   let article: ManualArticle | null = null;
   try {
-    article = parseArticle(await deps.generate(locale, manualSystemPrompt(locale), manualUserPrompt(payload)));
+    article = parseArticle(await deps.generate(locale, manualSystemPrompt(locale), manualUserPrompt(payload), images));
   } catch {
     article = null;
   }

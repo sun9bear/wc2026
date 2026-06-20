@@ -35,7 +35,7 @@ export interface BlogDraft {
 }
 
 export interface GenDeps {
-  generate: (locale: "en" | "zh", system: string, user: string) => Promise<string>;
+  generate: (locale: "en" | "zh", system: string, user: string, images?: { label: string; url: string }[]) => Promise<string>;
   review: (locale: "en" | "zh", prompt: string) => Promise<string>;
 }
 

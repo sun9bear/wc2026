@@ -3,16 +3,26 @@
 //   软闸用"异 provider"降相关性盲点：en 文章由 DeepSeek 审、zh 文章由 Gemini 审。
 // 注意：本机网络对 Gemini geo 拦截（见 gemini.ts）——生产 Vercel 可用；本机测试请用 mock（见 scripts/probe-generate.ts）。
 
-import { chat as geminiChat } from "@/lib/ai/gemini";
+import { chat as geminiChat, type GeminiImage } from "@/lib/ai/gemini";
 
 const GEN_TIMEOUT = 60_000; // blog 比短评大；DeepSeek V4 Pro 较慢，给宽限
 const REVIEW_TIMEOUT = 30_000;
 
 /** blog 专用 DeepSeek 调用（独立于 ai/deepseek.ts 的短文案 chat：更大 max_tokens + JSON 模式 + 可配模型）。 */
-async function deepseekBlog(system: string, user: string, timeoutMs: number): Promise<string> {
+async function deepseekBlog(system: string, user: string, timeoutMs: number, images?: GeminiImage[]): Promise<string> {
   const key = process.env.DEEPSEEK_API_KEY;
   if (!key) throw new Error("缺少 DEEPSEEK_API_KEY");
   const model = process.env.DEEPSEEK_BLOG_MODEL?.trim() || "deepseek-chat"; // V4 Pro：设 DEEPSEEK_BLOG_MODEL=deepseek-v4-pro；trim 防 env 尾随空白
+  // 多模态：有图则 user content 用 OpenAI 数组格式（文字 + image_url data URI）；无图则纯字符串（与原行为一致）。
+  const userContent: unknown = images?.length
+    ? [
+        { type: "text", text: user },
+        ...images.flatMap((im) => [
+          { type: "text", text: im.label },
+          { type: "image_url", image_url: { url: `data:${im.mimeType};base64,${im.dataB64}` } },
+        ]),
+      ]
+    : user;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -23,7 +33,7 @@ async function deepseekBlog(system: string, user: string, timeoutMs: number): Pr
         model,
         messages: [
           { role: "system", content: system },
-          { role: "user", content: user },
+          { role: "user", content: userContent },
         ],
         temperature: 0.6,
         max_tokens: 2200,
@@ -62,10 +72,40 @@ async function withRetry<T>(fn: () => Promise<T>, attempts = 2): Promise<T> {
 // 设 GEMINI_BLOG_MODEL=gemini-3.1-flash-lite 即用之；未设则回落 gemini.ts 默认（id 失效会自动解析最新 flash-lite）。
 const geminiBlogModel = (): string | undefined => process.env.GEMINI_BLOG_MODEL?.trim() || undefined; // trim：防 env 值带尾随换行/空白致 400
 
-/** 生成：en→Gemini(GEMINI_BLOG_MODEL)，zh→DeepSeek(V4 Pro)。两 provider 互不抢配额；临时过载自动重试 1 次。 */
-export async function generate(locale: "en" | "zh", system: string, user: string): Promise<string> {
+/** 拉取图片→base64（两家多模态共用）。失败抛错，由 generate 降级为无图。 */
+async function fetchImageB64(url: string): Promise<{ mimeType: string; dataB64: string }> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`图片拉取失败 ${res.status}`);
+  const mimeType = res.headers.get("content-type")?.split(";")[0]?.trim() || "image/jpeg";
+  const dataB64 = Buffer.from(await res.arrayBuffer()).toString("base64");
+  return { mimeType, dataB64 };
+}
+
+/** 生成：en→Gemini(GEMINI_BLOG_MODEL)，zh→DeepSeek(V4 Pro)。images 为可选多模态输入（手动撰写器传图，自动管线不传）。 */
+export async function generate(
+  locale: "en" | "zh",
+  system: string,
+  user: string,
+  images?: { label: string; url: string }[]
+): Promise<string> {
+  // 拉图→base64（两家共用）；单张失败仅丢该图、不阻断生成（降级靠角度/desc）。
+  const fetched: GeminiImage[] | undefined = images?.length
+    ? (
+        await Promise.all(
+          images.map(async (im) => {
+            try {
+              return { label: im.label, ...(await fetchImageB64(im.url)) };
+            } catch {
+              return null;
+            }
+          })
+        )
+      ).filter((x): x is GeminiImage => x !== null)
+    : undefined;
   return withRetry(() =>
-    locale === "en" ? geminiChat(system, user, GEN_TIMEOUT, geminiBlogModel()) : deepseekBlog(system, user, GEN_TIMEOUT)
+    locale === "en"
+      ? geminiChat(system, user, GEN_TIMEOUT, geminiBlogModel(), fetched)
+      : deepseekBlog(system, user, GEN_TIMEOUT, fetched)
   );
 }
 
