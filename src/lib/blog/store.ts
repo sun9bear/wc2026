@@ -5,6 +5,7 @@ import { getServerSupabase } from "@/lib/supabase/server";
 import { teamSlug } from "@/lib/prob/findTeam";
 import type { BlogCandidate } from "./scoreCandidate";
 import type { BlogDraft } from "./generate";
+import type { BlogAsset } from "./assets";
 
 export interface BlogRow {
   slug_en: string;
@@ -68,4 +69,47 @@ export async function upsertBlogEntry(
   const db = getServerSupabase();
   const { error } = await db.from("blog_entries").upsert(row, { onConflict: "slug_en" });
   return { slug: row.slug_en, error: error?.message ?? null };
+}
+
+export interface ManualUpsert {
+  slug: string;
+  titleEn: string | null;
+  titleZh: string | null;
+  excerptEn: string | null;
+  excerptZh: string | null;
+  bodyEn: string | null;
+  bodyZh: string | null;
+  assets: BlogAsset[];
+  topicSensitive: boolean;
+  review: unknown;
+}
+
+/** 手动「热点解读」落库（source=manual，恒 needs_review，不自动发）。 */
+export async function upsertManualEntry(u: ManualUpsert): Promise<{ slug: string; error: string | null }> {
+  const now = new Date().toISOString();
+  const db = getServerSupabase();
+  const { error } = await db.from("blog_entries").upsert(
+    {
+      slug_en: u.slug,
+      slug_zh: u.slug,
+      title_en: u.titleEn,
+      title_zh: u.titleZh,
+      excerpt_en: u.excerptEn,
+      excerpt_zh: u.excerptZh,
+      body_en: u.bodyEn,
+      body_zh: u.bodyZh,
+      assets: u.assets,
+      source: "manual",
+      event_type: "hot_topic",
+      match_id: null,
+      team_ids: [],
+      review: u.review,
+      status: "needs_review",
+      topic_flag: u.topicSensitive ? "sensitive" : null,
+      published_at: null,
+      updated_at: now,
+    },
+    { onConflict: "slug_en" }
+  );
+  return { slug: u.slug, error: error?.message ?? null };
 }

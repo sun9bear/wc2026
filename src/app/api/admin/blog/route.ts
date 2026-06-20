@@ -8,8 +8,10 @@ import {
   setStatus,
   deleteEntries,
   regenerateBySlug,
+  composeManual,
   type AdminStatus,
 } from "@/lib/blog/admin";
+import type { ManualInput } from "@/lib/blog/manual";
 import { rateLimit } from "@/lib/rateLimit";
 import { pingBlogUrls } from "@/lib/seo/indexnow";
 
@@ -26,7 +28,7 @@ export async function POST(req: NextRequest) {
   const secret = adminSecret();
   if (!secret) return NextResponse.json({ error: "admin 未配置（缺 ADMIN_TOKEN/CRON_SECRET）" }, { status: 500 });
 
-  let body: { action?: string; token?: string; slugs?: unknown; status?: string };
+  let body: { action?: string; token?: string; slugs?: unknown; status?: string; input?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -61,6 +63,32 @@ export async function POST(req: NextRequest) {
 
   // 变更类：必须已鉴权。
   if (!(await isAuthed())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  // 手动撰写：用 body.input（角度+素材），不需 slugs。~30-60s 同步生成双语草稿。
+  if (action === "compose") {
+    const inp = (body.input ?? {}) as { angle?: unknown; titleHint?: unknown; locales?: unknown; assets?: unknown };
+    const angle = typeof inp.angle === "string" ? inp.angle : "";
+    if (!angle.trim()) return NextResponse.json({ error: "缺 angle" }, { status: 400 });
+    const locales = Array.isArray(inp.locales)
+      ? (inp.locales.filter((l) => l === "en" || l === "zh") as ("en" | "zh")[])
+      : [];
+    const rawAssets = Array.isArray(inp.assets) ? (inp.assets as Record<string, unknown>[]) : [];
+    const assets = rawAssets.filter(
+      (a) => a && typeof a.url === "string" && (a.type === "embed" || a.type === "image")
+    ) as unknown as ManualInput["assets"];
+    try {
+      const r = await composeManual({
+        angle,
+        titleHint: typeof inp.titleHint === "string" ? inp.titleHint : undefined,
+        locales,
+        assets,
+      });
+      if (!r.ok) return NextResponse.json({ error: r.error || "compose failed" }, { status: 500 });
+      return NextResponse.json({ ok: true, slug: r.slug, reason: r.reason });
+    } catch (e) {
+      return NextResponse.json({ error: e instanceof Error ? e.message : "compose error" }, { status: 500 });
+    }
+  }
 
   const slugs = Array.isArray(body.slugs) ? body.slugs.filter((s): s is string => typeof s === "string") : [];
   if (!slugs.length) return NextResponse.json({ error: "no slugs" }, { status: 400 });

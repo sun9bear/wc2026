@@ -9,7 +9,9 @@ import { getMatchProbDelta, classifyProbDelta } from "@/lib/blog/getProbDelta";
 import { buildSettledCandidate } from "@/lib/blog/scoreCandidate";
 import { generateForCandidate } from "@/lib/blog/generate";
 import * as llm from "@/lib/blog/llm";
-import { upsertBlogEntry } from "@/lib/blog/store";
+import { upsertBlogEntry, upsertManualEntry } from "@/lib/blog/store";
+import { generateManualDraft, type ManualInput } from "@/lib/blog/manual";
+import { slugify, ensureUniqueSlug } from "@/lib/blog/slug";
 
 export const ADMIN_COOKIE = "wc_admin";
 export const ADMIN_STATUSES = ["draft", "needs_review", "published", "hidden", "rejected"] as const;
@@ -129,4 +131,39 @@ export async function regenerateBySlug(slug: string): Promise<{ ok: boolean; sta
   const { error } = await upsertBlogEntry(cand, draft, new Date().toISOString());
   if (error) return { ok: false, error };
   return { ok: true, status: draft.status };
+}
+
+/**
+ * 手动「热点解读」撰写：角度 + 素材 → 双语生成（manual generator）→ en 标题 slugify 去重 → 落 needs_review 草稿。
+ * 慢操作（LLM，~30-60s 同步）。返回 slug + reason（供后台预览/发布）。
+ */
+export async function composeManual(input: ManualInput): Promise<{ ok: boolean; slug?: string; reason?: string; error?: string }> {
+  if (!input.angle?.trim()) return { ok: false, error: "缺角度" };
+  const draft = await generateManualDraft(input, llm);
+  const en = draft.en?.article;
+  const zh = draft.zh?.article;
+  if (!en && !zh) return { ok: false, error: "生成失败: " + draft.reason };
+  const db = getServerSupabase();
+  const { data } = await db.from("blog_entries").select("slug_en");
+  const taken = new Set(((data as { slug_en: string }[] | null) ?? []).map((r) => r.slug_en));
+  const base = slugify(en?.title || zh?.title || input.titleHint || "post");
+  const slug = ensureUniqueSlug(base, taken);
+  const r = await upsertManualEntry({
+    slug,
+    titleEn: en?.title ?? null,
+    titleZh: zh?.title ?? null,
+    excerptEn: en?.excerpt ?? null,
+    excerptZh: zh?.excerpt ?? null,
+    bodyEn: en?.body ?? null,
+    bodyZh: zh?.body ?? null,
+    assets: input.assets,
+    topicSensitive: draft.topicSensitive,
+    review: {
+      reason: draft.reason,
+      en: draft.en ? { soft: draft.en.soft, markerOk: draft.en.markerOk, markerNote: draft.en.markerNote } : null,
+      zh: draft.zh ? { soft: draft.zh.soft, markerOk: draft.zh.markerOk, markerNote: draft.zh.markerNote } : null,
+    },
+  });
+  if (r.error) return { ok: false, error: r.error };
+  return { ok: true, slug, reason: draft.reason };
 }
