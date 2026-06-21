@@ -3,6 +3,7 @@
 
 import { getServerSupabase } from "@/lib/supabase/server";
 import { teamSlug } from "@/lib/prob/findTeam";
+import { slugify } from "./slug";
 import type { BlogCandidate } from "./scoreCandidate";
 import type { BlogDraft } from "./generate";
 import type { BlogAsset } from "./assets";
@@ -30,7 +31,8 @@ export interface BlogRow {
 
 /** 纯函数：候选 + 草稿 → blog_entries 行（便于单测，不触网）。 */
 export function buildBlogRow(cand: BlogCandidate, draft: BlogDraft, nowIso: string): BlogRow {
-  const slug = `${teamSlug(cand.delta.match.home)}-${teamSlug(cand.delta.match.away)}-${draft.eventType}`;
+  // slugify 去音标→ASCII（非 ASCII slug 在 /blog/[slug] 路由编码/归一不一致会打不开，如 curaçao）。
+  const slug = slugify(`${teamSlug(cand.delta.match.home)}-${teamSlug(cand.delta.match.away)}-${draft.eventType}`);
   const en = draft.en.article;
   const zh = draft.zh.article;
   return {

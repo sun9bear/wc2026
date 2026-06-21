@@ -5,6 +5,7 @@ export function slugify(title: string): string {
   const s = title
     .toLowerCase()
     .normalize("NFKD")
+    .replace(/[̀-ͯ]/g, "") // 去组合音标：ç→c、é→e、ñ→n（否则音标会被当非字母转成连字符，如 curaçao→curac-ao）
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 60)

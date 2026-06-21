@@ -40,6 +40,7 @@ const mockDeps: GenDeps = {
 
 (async () => {
   eq("slugify 含音标/标点", slugify("Mbappé's Wonder Goal!"), "mbappe-s-wonder-goal");
+  eq("slugify 去音标 ç(curaçao)", slugify("ecuador-curaçao-upset"), "ecuador-curacao-upset");
   eq("slugify 全中文→post", slugify("姆巴佩进球了"), "post");
   eq("ensureUniqueSlug 去重", ensureUniqueSlug("x", new Set(["x", "x-2"])), "x-3");
   eq("ensureUniqueSlug 不撞", ensureUniqueSlug("y", new Set(["x"])), "y");
